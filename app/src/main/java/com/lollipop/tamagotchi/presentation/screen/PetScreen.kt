@@ -592,7 +592,7 @@ fun PetScreen(
                     )
                 }
             }
-            // M7.S2 迎接气泡：离线回归一次性问候（居中浮层，点击/超时消失）
+            // M7.S2 迎接气泡：离线回归一次性问候（靠下浮层，点击/超时消失，避免挡宠物）
             GreetingBubble(settleSummary = settleSummary)
         }
     }
@@ -746,7 +746,8 @@ internal fun RoundHeader(title: String, closeDir: ChevronDir, onDismiss: () -> U
 /**
  * 离线回归一次性问候气泡（M7.S2，doc/04 §5 / doc/03 §7.6）。
  * 长离线优先以 [SettlementSummary.endingMood] 定调，短离线按离开时长分档（I18n.greetingRes）。
- * 居中浮层，点击或 4.5s 后自动消失；文案走扩展函数映射（core 不引 R）。
+ * 靠下浮层（屏幕下方、圆形可视区内，避免居中挡住宠物），点击或 4.5s 后自动消失；
+ * 文案走扩展函数映射（core 不引 R）。
  */
 @Composable
 private fun GreetingBubble(settleSummary: SettlementSummary?) {
@@ -767,6 +768,8 @@ private fun GreetingBubble(settleSummary: SettlementSummary?) {
         ) {
             Box(
                 Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 56.dp)
                     .background(ColorToken.bg.copy(alpha = 0.9f), shape = CircleShape)
                     .border(1.dp, ColorToken.Accent.copy(alpha = 0.24f), CircleShape)
                     .padding(horizontal = 14.dp, vertical = 8.dp),

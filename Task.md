@@ -346,10 +346,10 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 #### M8.S1 插件模型 + 注册表 + 执行器（P1 + 手测）
 
 **任务**
-- [ ] `PluginSpec/PluginTriggerType`（LAUNCH_APP / OPEN_SETTINGS / LOCAL_ACTION）+ `PluginRegistry` 默认表（微信/支付宝/健康/电话 / Wi-Fi/蓝牙/电量 / 手电筒(相机权限默认关)/勿扰/计时器）（doc/05 §2/§3）。
-- [ ] 用户偏好接入：SP `plugins.sort/hidden` 读写（01 §9）。
-- [ ] `PluginExecutor`（data/plugin，05 §5）：expectedPackages 依序 `getLaunchIntentForPackage` 探测 → LAUNCH_APP/OPEN_SETTINGS/LOCAL_ACTION 分发 → try-catch `notFound` → Bubble/Toast 不 crash；权限类前置（05 §6 手电筒）。
-- [ ] 注册表纯逻辑单测 + 真实设备手测容错。
+- [x] `PluginSpec/PluginTriggerType`（LAUNCH_APP / OPEN_SETTINGS / LOCAL_ACTION）+ `PluginRegistry` 默认表（微信/支付宝/健康/电话 / Wi-Fi/蓝牙/电量 / 手电筒(相机权限默认关)/勿扰/计时器）（doc/05 §2/§3）。
+- [x] 用户偏好接入：`PluginPrefs`(order/hidden 纯数据) + `PluginPrefsStore`(SP `plugin_prefs` 读写) + `applyPrefs` 纯函数（01 §9）。
+- [x] `PluginExecutor`（domain 纯函数，05 §5）：expectedPackages 依序 `resolveLaunch` 探测 → LAUNCH_APP/OPEN_SETTINGS/LOCAL_ACTION 分发 → try-catch `notFound` → `PluginNotifier` 提示不 crash；权限类前置（05 §6 手电筒）留 M8.S2。解析/本地动作/通知经 `PluginResolver`/`LocalActionRunner`/`PluginNotifier` 端口注入（domain 零 Android 依赖，故执行器可单测）。
+- [x] 注册表纯逻辑单测（Registry/Prefs/Executor 三套，含 LAUNCH 命中/未命中、OPEN_SETTINGS/LocalAction 成败、null target 不崩）+ 真实设备手测容错（待真机走查）。
 
 **产出**：`domain/plugin/`、`data/plugin/PluginExecutor.kt`、默认插件表。
 
@@ -638,8 +638,8 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 | M4 宠物活起来 | 自主走/停/睡 | ☑ | S1 收盘：BehaviorFSM 纯函数 + FSMResult 契约（SICK>睡眠>SAD>IDLE/WALKING、22:00~07:00 入睡、防穿模 clamp+随机换向、行走帧 0→3、seed 可复现），单测 10 例全绿。S2 收盘：PetLivingSprite 主循环（250ms tick、生命周期闸 onPause/onStop 停=0 后台 CPU、面板覆盖亦停）+ PetRenderer v1（WALKING dir×帧循环 / IDLE 呼吸 tick 相位 / SLEEPING 暗罩+Zzz / 归一化坐标→活动区映射），主环真实快照；doc/07 §9 增「睡眠帧缺失」风险行。编译与 testDebugUnitTest 全绿；真机手测（走/停/睡观感、帧序反向复核 M2 朝向、22:00 入睡、后台 0 CPU）与 M1–M3 一并批量补验。**M4.S2 布局修订：宠物活动范围=全屏叠层（环形把手为 overlay、可重叠、恒不出屏），doc/00 T-21 记录** |
 | M5 时间流逝 settle v1 | 时间旅行拨回数值推进 | ☑ | S1 收盘：SettleEngine 快速积分兜底全程（幂等 noOp、白昼/夜间睡眠/SICK 三速率档 × trait 系数、饥饿/脏心情修正、SAD 累计 4h 推进与健康下滑、clamp 归零、sickTotal 只增一次、状态推进只写 SICK/SAD/IDLE），SettlementSummary + 时间线占位类型 + AttributeDelta + Clock(SystemClock) + settle 作息/系数注记回写 doc/01 §11。S2 收盘：结算编排入 PetActivity.EntryFlow（冷启动五阶 reveal 完成 force 结算 → SettleEngine+save @Default → 主线程一次 apply=profile state 更新；热恢复 Lifecycle observer 距上次 ≥5s 节流；时间旅行 Debug——长按主屏精灵核对屏内置「结算 Debug」拨回 1h/6h/24h/72h 后立即结算，幂等可反复点）；PetLivingSprite 档案刷新软合并（同宠保留跑动坐标，避免结算瞬移）；BaseActivity.bootSettle 职责移交 EntryFlow 并移除，doc/08 §2/§3 口径回写。单测 15 例全绿 + 编译绿。真机手测（时间旅行拨 24h→重启/立即结算按扣减刷新、health 触底 SICK 表现、夜间回血耗率低、首帧 Logo→状态环先现快照→apply 后平滑跳变且全程可交互、settle 不阻塞）与 M1–M4 一并批量补验 |
 | M6 照顾闭环 | 喂/玩/抚/治面板闭环 | ☑ | S1 收盘：`domain/engine/Actions.kt`——ActionRule（doc/01 §6.3/§7/§10：冷却 2h/1h/10min 写 next-until、上限喂 sat<95/玩 mood<90、边际收益递减 sat/mood/int、health 不走递减、口味契合 food.flavor==personality.flavor 该餐 sat/mood ×1.1）+ PetActions.onFeed/onPlay/onPet/onHeal 纯函数（heal 仅 SICK +40 治愈、SAD 动作后 mood≥40 即时解除、EATING/EXCITED 短态不落持久快照）；`domain/log/SessionLog.kt` 骨架（append ts 升序 / liveCount / entries / liveLogsSince，动作成功即 append ACTION_*，openWith M7）；M6.S1 落地注记回写 doc/01 §11 + doc/02 §5；单测 22 例全绿（Actions 18 / SessionLog 4，全套 58 例 testDebugUnitTest 通过）。S2 收盘（面板闭环）：操作面板真实动作列表（「状态」首项 + 投喂/玩耍/抚摸 + SICK 治疗；冷却/属性满 → 空心胶囊行内倒计时，面板开启每秒刷新、到点自动恢复实心；SLEEPING 熟睡动作收为空心提示）；投喂 → 食物子页（返回 chevron 行内首元素 + 口味类别色覆写实心胶囊 + 契合标注）；状态面板环形进度 + 主环配色 + 行尾环低值预警 `<30`（告警色 2Hz 呼吸、行首圆点转告警色）；三入口合一（顶缘下拉 / 屏顶状态图标 / 下面板「状态」= 收起下展开上）；屏顶状态图标区（饿碗/闷云/脏滴/病十字，异常才亮、随语义色、点击即状态面板）；执行链 = EntryFlow.performAction（domain 纯函数 + Default 存档 → 主线程 apply profile → 上抛 ActionEvent → PetScreen 收面板 + PetFx 短演出：EATING 咀嚼 / EXCITED 蹦跳 / AFFECTION 亲昵摇摆 / TREATED 治愈 + 气泡 + 属性浮字；`ui/MiniProgressRing` 增 warn 预警呼吸，`ColorToken` 增 FoodBalanced…FoodNovel 口味类别色）；doc/06 §3.1/§3.2/§4.1/§6 落地注记回写。编译绿 + 全套单测绿（58 例）。真机手测（喂/玩/抚/治表现、冷却实时、低值图标联动、SICK 治疗闭环、杀进程冷却/stats 保持）与 M1–M5 一并批量补验 |
-| M7 离线叙事回放 | 迎接语气 + 回放时间线 | ☐ | |
-| M8 右滑插件清单 | 实心/空心 + 容错 + 编辑 | ☐ | |
+| M7 离线叙事回放 | 迎接语气 + 回放时间线 | ☑ | S1+S2 收盘：共享速率模型 `SettleModel`(DecayModel+simulateSegments) 防漂移；`DefaultOfflineTimelineBuilder`——physio 份额切分严格守恒(=快速积分 totalDelta)、突发受控(|ΣΔ|≤3/24h、正向略多)、封顶 48(>72h→24)、种子=lastSettledAt 确定性、EndingMood 推导；`SettleEngine.settle` 长窗(≥20min)挂 `SettlementSummary.offlineTimeline+endingMood`。S2：`SessionLog.openWith` 铺开场段(ReplayEntry+SettleEntry) + 单测；i18n 扩展函数（`EndingMood.labelRes` / `offlineEventBubbleRes` / `greetingRes`，core 不引 R，沿用用户确认的扩展函数方案）+ 三语言字符串；`EntryFlow` 调 `openWith` 并透出 `settleSummary`；`PetScreen` 加迎接气泡(GreetingBubble，4.5s/点击消失) + 状态面板内回放时间线列表。全量单测绿。 |
+| M8 右滑插件清单 | 实心/空心 + 容错 + 编辑 | ☐ | S1 收盘：domain 插件模型 + 注册表(10 项) + `PluginExecutor`(纯函数, 端口注入) + `PluginPrefsStore`(SP) + Android 解析/本地动作实现；Registry/Prefs/Executor 单测全绿（24 套全绿）；真机手测(第三方拉起/权限/容错)留 M8.S2 一并补验 |
 | M9 在线惊喜 + 回顾 | 随机事件 + 本次小结 | ☐ | |
 | M10 质感 + 走查调参 | 情绪/短脚本 + 08§5 走查 | ☐ | |
 | M11 清洁/洗澡 | 脏→清洁→净 + 泡泡表现 | ☐ | |
