@@ -106,6 +106,8 @@ import com.lollipop.tamagotchi.domain.engine.ActionHint
 import com.lollipop.tamagotchi.domain.engine.ActionResult
 import com.lollipop.tamagotchi.domain.engine.ActionRule
 import com.lollipop.tamagotchi.domain.engine.ActionType
+import com.lollipop.tamagotchi.domain.engine.OfflineEvent
+import com.lollipop.tamagotchi.domain.engine.SettlementSummary
 import com.lollipop.tamagotchi.presentation.render.FxFloat
 import com.lollipop.tamagotchi.presentation.render.FxKind
 import com.lollipop.tamagotchi.presentation.render.PetFx
@@ -159,6 +161,7 @@ private enum class StatusIconKind { HUNGRY, SAD, DIRTY, SICK }
 @Composable
 fun PetScreen(
     profile: PetProfile,
+    settleSummary: SettlementSummary? = null,
     onSettleReady: () -> Unit,
     onTimeTravel: ((hours: Long) -> Unit)? = null,
     onResetProfile: (() -> Unit)? = null,
@@ -566,6 +569,7 @@ fun PetScreen(
                 OverlayLayer(
                     p = mounted,
                     profile = profile,
+                    settleSummary = settleSummary,
                     onResetProfile = onResetProfile,
                     reveal = { reveal },
                     sheetExtent = sheetExtent,
@@ -588,6 +592,8 @@ fun PetScreen(
                     )
                 }
             }
+            // M7.S2 迎接气泡：离线回归一次性问候（居中浮层，点击/超时消失）
+            GreetingBubble(settleSummary = settleSummary)
         }
     }
 }
@@ -598,6 +604,7 @@ fun PetScreen(
 private fun BoxScope.OverlayLayer(
     p: Panel,
     profile: PetProfile,
+    settleSummary: SettlementSummary? = null,
     onResetProfile: (() -> Unit)?,
     reveal: () -> Float,
     sheetExtent: SnapshotStateMap<Panel, Int>,
@@ -630,7 +637,11 @@ private fun BoxScope.OverlayLayer(
                     .onSizeChanged { sheetExtent[Panel.Status] = it.height },
             ) {
                 RoundSheet(edge = edge, glow = ColorToken.Health.copy(alpha = 0.07f)) {
-                    StatusPanelBody(profile = profile, onDismiss = onDismiss)
+                    StatusPanelBody(
+                        profile = profile,
+                        settleTimeline = settleSummary?.offlineTimeline,
+                        onDismiss = onDismiss,
+                    )
                 }
             }
 
@@ -732,9 +743,52 @@ internal fun RoundHeader(title: String, closeDir: ChevronDir, onDismiss: () -> U
     }
 }
 
+/**
+ * 离线回归一次性问候气泡（M7.S2，doc/04 §5 / doc/03 §7.6）。
+ * 长离线优先以 [SettlementSummary.endingMood] 定调，短离线按离开时长分档（I18n.greetingRes）。
+ * 居中浮层，点击或 4.5s 后自动消失；文案走扩展函数映射（core 不引 R）。
+ */
+@Composable
+private fun GreetingBubble(settleSummary: SettlementSummary?) {
+    var resId by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(settleSummary) {
+        if (settleSummary != null) {
+            resId = greetingRes(settleSummary.elapsedMs, settleSummary.endingMood)
+            delay(4500)
+            resId = null
+        }
+    }
+    if (resId != null) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .clickable { resId = null },
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                Modifier
+                    .background(ColorToken.bg.copy(alpha = 0.9f), shape = CircleShape)
+                    .border(1.dp, ColorToken.Accent.copy(alpha = 0.24f), CircleShape)
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+            ) {
+                Text(
+                    stringResource(resId!!),
+                    color = ColorToken.Accent,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+        }
+    }
+}
+
 /** 状态面板（顶）：滚动列表在上，对侧（底部）固定收起条，列表滚动不影响收起条。 */
 @Composable
-private fun ColumnScope.StatusPanelBody(profile: PetProfile, onDismiss: () -> Unit) {
+private fun ColumnScope.StatusPanelBody(
+    profile: PetProfile,
+    settleTimeline: List<OfflineEvent>? = null,
+    onDismiss: () -> Unit,
+) {
     Box(
         Modifier
             .fillMaxWidth()
@@ -769,6 +823,22 @@ private fun ColumnScope.StatusPanelBody(profile: PetProfile, onDismiss: () -> Un
                 fontSize = 11.sp,
                 modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
             )
+            // M7.S2 离线回放：把本次离线时间线铺进状态面板底部（圆表友好滚动）
+            if (settleTimeline != null && settleTimeline.isNotEmpty()) {
+                RoundListSpacer()
+                PanelTitle(stringResource(R.string.replay_title))
+                settleTimeline.forEach { ev ->
+                    RoundListSpacer()
+                    PillItem(
+                        stringResource(offlineEventBubbleRes(ev.eventId) ?: R.string.ev_idle_pass),
+                        filled = false,
+                        contentPadding = PaddingValues(start = 18.dp, end = 11.dp),
+                        icon = { ColorDot(if (ev.highlight) ColorToken.Accent else ColorToken.Text2) },
+                        trailing = null,
+                        onClick = null,
+                    )
+                }
+            }
             RoundEdgeSpace(48.dp)
         }
     }

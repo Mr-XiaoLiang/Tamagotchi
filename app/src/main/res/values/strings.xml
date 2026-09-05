@@ -79,4 +79,31 @@
     <string name="trait_curiosity">好奇</string>
     <string name="trait_temper">温和</string>
     <string name="trait_learner">聪慧</string>
+
+    <!-- M7 离线叙事：结局基调 / 事件气泡 / 迎接 / 回放 -->
+    <string name="ending_joyful">睡得好香，精神满满！</string>
+    <string name="ending_grumbling">有点闷闷的…</string>
+    <string name="ending_needy">饿坏啦，快喂喂我！</string>
+    <string name="ending_sleepy">打了个盹儿～</string>
+    <string name="ending_sickly">好像有点不舒服…</string>
+
+    <string name="ev_wait_hungry">肚子咕咕叫，找吃的</string>
+    <string name="ev_dull_wander">晃来晃去好无聊</string>
+    <string name="ev_dust_dirty">沾了一身灰</string>
+    <string name="ev_sleep_sound">睡得正香</string>
+    <string name="ev_ail_sick">有点晕乎乎</string>
+    <string name="ev_idle_pass">发呆中</string>
+    <string name="ev_found_leftover">翻到一点存货</string>
+    <string name="ev_self_play">自己玩得开心</string>
+    <string name="ev_nice_dream">做了个好梦</string>
+    <string name="ev_spooked_noise">被响声吓一跳</string>
+    <string name="ev_knock_bowl">碰翻了饭碗</string>
+
+    <string name="greet_back">你回来啦！</string>
+    <string name="greet_miss">想你啦，去哪了？</string>
+    <string name="greet_wait">等了好久～</string>
+    <string name="greet_longwait">你终于回来啦！</string>
+    <string name="greet_verylong">这么久才回来，人家想死你了</string>
+
+    <string name="replay_title">在你离开的这段时间…</string>
 </resources>

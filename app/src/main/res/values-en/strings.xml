@@ -70,4 +70,31 @@
     <string name="trait_curiosity">Curious</string>
     <string name="trait_temper">Calm</string>
     <string name="trait_learner">Smart</string>
+
+    <!-- M7 offline narrative: ending moods / event bubbles / greeting / replay -->
+    <string name="ending_joyful">Slept great, full of energy!</string>
+    <string name="ending_grumbling">Feeling a bit sulky…</string>
+    <string name="ending_needy">Starving—feed me already!</string>
+    <string name="ending_sleepy">Took a little nap~</string>
+    <string name="ending_sickly">Feeling a bit off…</string>
+
+    <string name="ev_wait_hungry">Tummy rumbling, hunting for food</string>
+    <string name="ev_dull_wander">Wandering around, bored</string>
+    <string name="ev_dust_dirty">Got all dusty</string>
+    <string name="ev_sleep_sound">Sleeping soundly</string>
+    <string name="ev_ail_sick">Feeling a little dizzy</string>
+    <string name="ev_idle_pass">Zoning out</string>
+    <string name="ev_found_leftover">Found some leftovers</string>
+    <string name="ev_self_play">Playing happily alone</string>
+    <string name="ev_nice_dream">Had a nice dream</string>
+    <string name="ev_spooked_noise">Startled by a loud noise</string>
+    <string name="ev_knock_bowl">Knocked the bowl over</string>
+
+    <string name="greet_back">You\'re back!</string>
+    <string name="greet_miss">Missed you—where\'d you go?</string>
+    <string name="greet_wait">Waited so long~</string>
+    <string name="greet_longwait">You\'re finally back!</string>
+    <string name="greet_verylong">Took you forever—I missed you so much</string>
+
+    <string name="replay_title">While you were away…</string>
 </resources>

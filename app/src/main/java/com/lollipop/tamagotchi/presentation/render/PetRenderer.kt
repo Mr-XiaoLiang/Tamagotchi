@@ -327,13 +327,26 @@ private fun DrawScope.drawSleepZzz(
     )
     val tickSec = tick / 4f // 250ms/tick
     val rise = side * 0.9f
+    val layout = textMeasurer.measure("Z", style)
     repeat(3) { i ->
         // 每颗相位：0.8s 升程、0.8s/3 交错起步 → 视觉上三颗连续上浮
         val zi = (tickSec / 0.8f + i * 0.333f) % 1f
-        val layout = textMeasurer.measure("Z", style)
+        // 透明度方向：靠近宝可梦(头部, zi≈0)不透明、越往上飘(zi→1)越淡，
+        // 经典 zzz 上浮消散。头部极短淡入避免硬冒出；顶点附近淡出使循环回收不可见。
+        // 注意：此前写成「头部淡入/顶点淡出」会把视觉流误导成向下，已纠正。
+        val alpha = when {
+            zi < 0.1f -> zi / 0.1f
+            zi > 0.6f -> (1f - zi) / 0.4f
+            else -> 1f
+        }.coerceIn(0f, 1f)
         val x = baseX + sin(zi * 2.0 * PI).toFloat() * side * 0.08f
-        val y = baseY - zi * rise - layout.size.height
-        drawText(layout, topLeft = Offset(x - layout.size.width / 2f, y))
+        // 方向：随 zi 增大 y 增大 = 朝屏上方浮动（按真机观察已翻转，原 baseY - zi*rise 被感知为向下）。
+        val y = baseY + zi * rise - layout.size.height
+        drawText(
+            layout,
+            topLeft = Offset(x - layout.size.width / 2f, y),
+            color = ColorToken.Text2.copy(alpha = alpha),
+        )
     }
 }
 

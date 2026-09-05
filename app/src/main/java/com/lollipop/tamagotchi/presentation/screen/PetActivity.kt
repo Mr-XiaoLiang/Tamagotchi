@@ -19,6 +19,7 @@ import com.lollipop.tamagotchi.data.time.SystemClock
 import com.lollipop.tamagotchi.domain.engine.ActionType
 import com.lollipop.tamagotchi.domain.engine.PetActions
 import com.lollipop.tamagotchi.domain.engine.SettleEngine
+import com.lollipop.tamagotchi.domain.engine.SettlementSummary
 import com.lollipop.tamagotchi.domain.log.InMemorySessionLog
 import com.lollipop.tamagotchi.domain.model.PetProfile
 import com.lollipop.tamagotchi.presentation.base.BaseActivity
@@ -92,6 +93,8 @@ private fun EntryFlow(
     var actionSeq by remember { mutableLongStateOf(0L) }
     // 上次尝试结算的墙钟（进程内）：用于热恢复节流；冷启动 force 结算不受限。
     var lastSettleWall by remember { mutableLongStateOf(0L) }
+    // 最近一次结算摘要（含离线时间线 + 结局基调），供 PetScreen 迎接气泡 / 回放（M7.S2）。
+    var lastSettleSummary by remember { mutableStateOf<SettlementSummary?>(null) }
 
     suspend fun runSettle(tag: String, force: Boolean) {
         val cur = profile ?: return
@@ -112,6 +115,8 @@ private fun EntryFlow(
         }
         if (outcome.changed) {
             profile = outcome.profile
+            sessionLog.openWith(outcome.summary) // M7.S2 开场段回填
+            lastSettleSummary = outcome.summary
             val d = outcome.summary.totalDelta
             val attrSummary = d.perAttribute.entries.joinToString(" ") { "${it.key}=${it.value}" }
             BootLog.s(
@@ -201,6 +206,7 @@ private fun EntryFlow(
     } else {
         PetScreen(
             profile = current,
+            settleSummary = lastSettleSummary,
             onSettleReady = { requestSettle("冷启动五阶", force = true) },
             onTimeTravel = if (debugTools) { { hours -> timeTravelBack(hours) } } else null,
             onResetProfile = if (debugTools) {
