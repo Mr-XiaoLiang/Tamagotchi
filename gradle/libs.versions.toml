@@ -1,6 +1,8 @@
 [versions]
 agp = "9.4.0"
 kotlin = "2.4.10"
+junit = "4.13.2"
+orgjson = "20240303"
 composeBom = "2026.08.00"
 composeMaterial3 = "1.6.2"
 composeFoundation = "1.6.2"
@@ -11,6 +13,8 @@ coreSplashscreen = "1.2.0"
 material3 = "1.4.0"
 
 [libraries]
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+orgjson = { group = "org.json", name = "json", version.ref = "orgjson" }
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 ui = { group = "androidx.compose.ui", name = "ui" }
 ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }

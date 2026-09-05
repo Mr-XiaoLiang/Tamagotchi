@@ -28,10 +28,12 @@ enum class SheetEdge { Top, Bottom, Start, End }
 @Composable
 fun RoundSheet(
     edge: SheetEdge,
-    glow: Color = Color.White.copy(alpha = 0.04f),
     modifier: Modifier = Modifier,
+    glow: Color = Color.White.copy(alpha = 0.04f),
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    // 内容一律自上而下排列：面板「对侧固定收起条 + 滚动列表区」的先后由调用方按其布局组装，
+    // 滚动区带 weight(1f) 会把整块占满；edge 仅决定背景晕光与语义，不再影响排列方向。
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -39,11 +41,7 @@ fun RoundSheet(
             .glowFrom(edge, glow)
             .padding(horizontal = roundSafeInset(), vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = when (edge) {
-            SheetEdge.Top -> Arrangement.Top
-            SheetEdge.Bottom -> Arrangement.Bottom
-            else -> Arrangement.Center
-        },
+        verticalArrangement = Arrangement.Top,
         content = content,
     )
 }

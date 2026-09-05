@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,6 +38,7 @@ fun PillItem(
     filled: Boolean = false,
     color: Color? = null,
     icon: (@Composable () -> Unit)? = null,
+    textAlign: TextAlign = TextAlign.Start,
     onClick: (() -> Unit)? = null,
 ) {
     val bg = if (filled) (color ?: ColorToken.PillFilled) else Color.Transparent
@@ -66,6 +68,7 @@ fun PillItem(
             fontWeight = FontWeight.Medium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            textAlign = textAlign,
             modifier = Modifier.weight(1f),
         )
     }
