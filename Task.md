@@ -150,11 +150,11 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 #### M2.S1 素材实测 + 切片解码器 + SpriteRepository（P0 debug 屏）
 
 **任务**
-- [ ] 以 `BULBASAUR.png` 实测 256×256 / 4×4 / 单帧 64×64 的真实布局（doc/07 §1）。
-- [ ] Debug-only 朝向核对屏（或日志 dump）：把 16 格子图按网格绘制 + 行列/帧号标签，人工核对「行=朝向、列=帧」还是反置、行走帧序 0→3 是否正确（doc/02 §2.3）。
-- [ ] 实测结论写入代码常量表：`dir → row/col`、帧序、放大过滤策略（FilterQuality.MEDIUM/NEAREST 二选一，真机定，doc/07 §9）。
+- [x] 以 `BULBASAUR.png` 实测 256×256 / 4×4 / 单帧 64×64 的真实布局（doc/07 §1）。
+- [ ] Debug-only 朝向核对屏（或日志 dump）：把 16 格子图按网格绘制 + 行列/帧号标签，人工核对「行=朝向、列=帧」还是反置、行走帧序 0→3 是否正确（doc/02 §2.3）。（屏已就绪：Debug 安装长按主屏中央活动区进入，左右翻看；**待真机人工核对**）
+- [x] 实测结论写入代码常量表：`dir → row/col`、帧序已落定 `SpriteSheetDecoder`；放大过滤策略 **M2.S2 初定 FilterQuality.None**（近邻复古像素），观感复核留 M10.S2（doc/07 §9）。
 - [ ] **若事实与文档描述冲突 → 当日回写 doc/07 §1 / doc/02 §2.3 勘误**。
-- [ ] `SpriteRepository`（data/sprite）：`AssetManager.list("sprite")` 一次取列表 + 过滤数字/形态后缀（如 `000.png`、`ALCREMIE_12`）；`loadBitmap(petId)` / `loadFrame(petId, dir, frame)`（Bitmap 池 1 张，doc/07 §6）。
+- [x] `SpriteRepository`（data/sprite）：`AssetManager.list("sprite")` 一次取列表 + 过滤数字/形态后缀（如 `000.png`、`ALCREMIE_12`）；单 Bitmap 池（池=1，doc/07 §6）。帧切取由渲染侧以 `SpriteSheetDecoder.frameRect` srcRect 完成，避免额外分配子 Bitmap。
 
 **产出**：`presentation/render/SpriteSheetDecoder.kt`、`data/sprite/SpriteRepository.kt`、Debug 核对屏。
 
@@ -164,14 +164,14 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 #### M2.S2 静态帧上屏（P0）
 
 **任务**
-- [ ] `PetRenderer` v0：中心化 `dstRect` + 单帧 `drawBitmap` + 圆形活动区裁切遮罩（doc/07 §4/§9，防后续形变露边）。
-- [ ] IDLE 呼吸最简动效：纵向 ±2px、2s 周期（doc/07 §4.4 层1）。
-- [ ] 把 M1 主屏中央占位替换为实际宠物静态帧（先用 `BULBASAUR` 走通管线；活动区尺寸与 06 §1 对齐）。
+- [x] `PetRenderer` v0：中心化 `dstRect` + 单帧 `drawBitmap` + 圆形活动区裁切遮罩（doc/07 §4/§9，防后续形变露边）。
+- [x] IDLE 呼吸最简动效：纵向 ±2px、2s 周期（doc/07 §4.4 层1）。
+- [x] 把 M1 主屏中央占位替换为实际宠物静态帧（先用 `BULBASAUR` 走通管线；活动区尺寸与 06 §1 对齐）。
 
 **产出**：`presentation/render/PetRenderer.kt`、主屏中央真宠静态呈现。
 
-**验收（P0）**：主屏中央出现正确朝向的宠物静态立姿、圆屏内无破边；切换任意帧不越界。
-**风险检查点**：64×64 放大模糊观感——真机定 FilterQuality 并回写。
+**验收（P0）**：主屏中央出现正确朝向的宠物静态立姿、圆屏内无破边；切换任意帧不越界。（双变体编译绿；**目测观感留 M4.S2 行走接入反向复核 + M10.S2 定稿**，见 §6 记录）
+**风险检查点**：64×64 放大模糊观感——M2.S2 初定 `FilterQuality.None` 并回写 doc/07 §9，M10.S2 真机定稿。
 
 ---
 
@@ -182,10 +182,10 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 #### M3.S1 值对象 + AttributeRegistry + PersonalityGenerator（P1）
 
 **任务**
-- [ ] 新增单测依赖：`testImplementation(junit)`（libs.versions.toml + app/build.gradle.kts）；建立 `src/test/` 源集与测试基类约定。
-- [ ] core 值对象：`AttributeId/Meta/AttributeMap`、三类属性注册表 + 默认值 + 只增不减标记（doc/01 §1/§3/§4）；`FoodType` 与口味标签（doc/01 §7）；`PetState`、归一化坐标/方向值对象（doc/02 §1.1/§2.1）。
-- [ ] `PersonalityGenerator`（domain/generator，doc/02 §4.2/§4.3）：`seed → 6 维 traits(0~1)` + `flavor` 派生 + 描述词映射（仅文案）。
-- [ ] 单测：同 seed 派生全等且可重复；traits ∈ [0,1]；flavor 命中合法表；描述词主副顺序稳定。
+- [x] 新增单测依赖：`testImplementation(junit)`（libs.versions.toml + app/build.gradle.kts）；建立 `src/test/` 源集与测试基类约定。
+- [x] core 值对象：`AttributeId/Meta/AttributeMap`、三类属性注册表 + 默认值 + 只增不减标记（doc/01 §1/§3/§4）；`FoodType` 与口味标签（doc/01 §7）；`PetState`、归一化坐标/方向值对象（doc/02 §1.1/§2.1）。
+- [x] `PersonalityGenerator`（domain/generator，doc/02 §4.2/§4.3）：`seed → 6 维 traits(0~1)` + `flavor` 派生 + 描述词映射（仅文案）。
+- [x] 单测：同 seed 派生全等且可重复；traits ∈ [0,1]；flavor 命中合法表；描述词主副顺序稳定。
 
 **产出**：`core/` 值对象族、`domain/generator/PersonalityGenerator.kt`、首组 domain 单测。
 
@@ -195,11 +195,11 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 #### M3.S2 PetStore(SP) + 建档选宠 UI（P0）
 
 **任务**
-- [ ] `PetStore`（data/store，doc/01 §9）：单键 JSON `pet_profile`、`schemaVersion=2` 全字段读写、缺省字段补默认、覆盖写、`stats`/`cooldowns`/`personality`/`plugins` 完整承载。
-- [ ] 建档流程 UI（无档首启进入）：Asset 扫描列表按**主名聚合**（`_数字` 形态变体先取默认形态，doc/07 §6）；缩略 Bitmap 池 LRU ~12 张（**绝不全量解码 1339**）；RoundSafe 胶囊列表。
-- [ ] 建档动作：随机 seed → 展示派生性格（描述词 + 六维微条）→ 确认 → `PetStore.save` → 回主屏。
-- [ ] 主屏读档呈现：顶部图标 + 主环一圈状态 + 中央宠物静态帧（复用 M2/M1，真实快照值）。
-- [ ] 重开档开发入口（debug-only：清档重来，验证换宠覆盖写）。
+- [x] `PetStore`（data/store，doc/01 §9）：单键 JSON `pet_profile`、`schemaVersion=2` 全字段读写、缺省字段补默认、覆盖写、`stats`/`cooldowns`/`personality`/`plugins` 完整承载。
+- [x] 建档流程 UI（无档首启进入）：Asset 扫描列表按**主名聚合**（`_数字` 形态变体先取默认形态，doc/07 §6）；缩略 Bitmap 池 LRU ~12 张（**绝不全量解码 1339**）；胶囊列表（建档屏为 boot 整屏页，自行留内边距；overlay 侧复用 RoundSafe 语义）。
+- [x] 建档动作：随机 seed → 展示派生性格（描述词 + 六维微条）→ 确认 → `PetStore.save` → 回主屏。
+- [x] 主屏读档呈现：主环一圈状态 + 中央宠物静态帧（真实快照值，建档宠 + 主环三主属性 + 状态面板全属性）。
+- [x] 重开档开发入口（debug-only：清档重来，验证换宠覆盖写）。
 
 **产出**：`data/store/PetStore.kt`、建档屏（`presentation/screen/setup/`）、开档闭环。
 
@@ -215,13 +215,13 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 #### M4.S1 BehaviorFSM 纯函数 + 单测（P1）
 
 **任务**
-- [ ] `BehaviorFSM.step(now, snapshot): FSMResult`（domain/engine，doc/02 §1/§2/§3，纯函数不碰 UI）。
-- [ ] 状态集与转移优先级：SICK > 睡眠 > SAD > IDLE/WALKING/EATING/EXCITED（doc/02 §1.2）。
-- [ ] 随机决策：IDLE 2~4s → WALKING 3~5s（时长按 trait.activity 修正）→ 换向；方向 0..3（doc/02 §2）。
-- [ ] 防穿模：归一化圆内坐标、触边随机转向、速度 = base × activity（doc/02 §2.1/§2.2）。
-- [ ] 作息：22:00~07:00 倾向 SLEEPING、深夜互动收益 0、本地时区作息时钟（doc/02 §3）。
-- [ ] 行走帧 0→3 序号推进。
-- [ ] 单测：状态合法性、pos 永不越圆、作息时段切换、SICK 最高优先、帧序号 ∈ 0..3、同输入可复现。
+- [x] `BehaviorFSM.step(now, snapshot): FSMResult`（domain/engine，doc/02 §1/§2/§3，纯函数不碰 UI）。
+- [x] 状态集与转移优先级：SICK > 睡眠 > SAD > IDLE/WALKING/EATING/EXCITED（doc/02 §1.2）。
+- [x] 随机决策：IDLE 2~4s → WALKING 3~5s（时长按 trait.activity 修正）→ 换向；方向 0..3（doc/02 §2）。
+- [x] 防穿模：归一化圆内坐标、触边随机转向、速度 = base × activity（doc/02 §2.1/§2.2）。
+- [x] 作息：22:00~07:00 倾向 SLEEPING、本地时区作息时钟（doc/02 §3；深夜互动收益=0 归 M6 动作层判定）。
+- [x] 行走帧 0→3 序号推进。
+- [x] 单测：状态合法性、pos 永不越圆、作息时段切换、SICK 最高优先、帧序号 ∈ 0..3、同输入可复现。
 
 **产出**：`domain/engine/BehaviorFSM.kt`、`FSMResult` 契约、行走/作息单测。
 
@@ -231,17 +231,17 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 #### M4.S2 主循环接线 + PetRenderer v1（P0）
 
 **任务**
-- [ ] 主循环（doc/07 §5）：`LaunchedEffect + delay(250ms)` → FSM.step → FSMResult 驱动绘制；静态 1~2FPS 呼吸 / 动态 4FPS；tick 无变化跳过重组。
-- [ ] `PetRenderer` v1：按 `state` 选帧用法——IDLE 呼吸、WALKING 方向帧循环 0→3、SLEEPING 闭眼遮罩 + Zzz 最简（doc/07 §4）。
-- [ ] 坐标映射：FSM 归一化 pos → Canvas 活动区 dstRect（中心化，02 §2.1）。
-- [ ] `onPause` 停循环 / `onResume` 恢复（doc/08 §4）——0 后台 CPU。
-- [ ] 主环改读**真实快照**三主属性并随状态刷新（M5 前数值无时间推进属预期）。
-- [ ] Bubble 层最小骨架（doc/06 §7），供 FSM/后续事件气泡挂载。
+- [x] 主循环（doc/07 §5）：`LaunchedEffect + delay(250ms)` → FSM.step → FSMResult 驱动绘制；呼吸/Zzz 相位随 tick 低帧推进（动态 4FPS）；pose 无变化不触发 UI 树重组（Canvas draw 相位读渲染状态，仅重绘）。
+- [x] `PetRenderer` v1：按 `state` 选帧用法——IDLE 呼吸、WALKING 方向帧循环 0→3、SLEEPING 暗罩（近似闭眼，素材无睡姿帧）+ Zzz 最简（doc/07 §4，风险已回写 doc/07 §9）。
+- [x] 坐标映射：FSM 归一化 pos → Canvas 活动区 dstRect（中心化，02 §2.1；模型=活动区直径×0.5≈0.30 屏直径，不随活动区放大）。
+- [x] `onPause`/`onStop` 停循环 / `onResume`/`onStart` 恢复（doc/08 §4）——0 后台 CPU；面板/overlay 打开亦停（不必要重绘）。
+- [x] 主环读**真实快照**三主属性并随快照刷新（M5 前数值无时间推进属预期）。
+- [x] Bubble 层最小骨架（doc/06 §7）：睡眠 Zzz 即渲染脚本层首个内容；气泡带挂点注释就位，文案事件 M6/M9 接入。
 
-**产出**：`presentation/render/PetRenderer.kt` v1、主循环、真实快照驱动的状态环。
+**产出**：`presentation/render/PetRenderer.kt` v1（`PetLivingSprite` + 主循环）、真实快照驱动的状态环。
 
-**验收（P0）**：宠物自主循环（发呆 → 走动 → 触边转向 → 发呆）；帧序流畅无错位（反向验证 M2 朝向常量正确）；22:00 自动入睡 + Zzz；退回后台动画全停；真机功耗待 M10 走查。
-**风险检查点**：切片行走帧序伪影（doc/07 §9）、作息与真实时钟——**本里程碑验证**。
+**验收（P0）**：宠物自主循环（发呆 → 走动 → 触边转向 → 发呆）；帧序流畅无错位（反向验证 M2 朝向常量正确）；22:00 自动入睡 + Zzz；退回后台动画全停；真机功耗待 M10 走查。**代码收盘，编译/单测绿；真机手测与 M2/M3 一并批量补验。**
+**风险检查点**：切片行走帧序伪影（doc/07 §9）、作息与真实时钟、睡眠近似观感（doc/07 §9 新增行）——**本里程碑验证（真机）**。
 
 ---
 
@@ -632,10 +632,10 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 
 | 里程碑 | 收盘演示 | 状态 | 验证记录 / 例外 |
 |---|---|---|---|
-| M1 圆屏深色壳 + 手势路由 | 五阶首帧 + 三手势三 overlay | ☐ | |
-| M2 真宠上屏 | 正确朝向静态上屏 | ☐ | |
-| M3 建档与数据闭环 | 建档 → 快照 → 重开保持 | ☐ | |
-| M4 宠物活起来 | 自主走/停/睡 | ☐ | |
+| M1 圆屏深色壳 + 手势路由 | 五阶首帧 + 三手势三 overlay | ☐ | 代码收官（作为 M2 前置编译绿）；真机五阶/手势演示未执行（本轮跳过 UI 验收），与 M2 一并补验 |
+| M2 真宠上屏 | 正确朝向静态上屏 | ☑ | M2.S1 朝向常量落定 + Debug 核对屏就绪；M2.S2 BULBASAUR 静态 IDLE（呼吸 ±2px/2s、圆遮罩）上屏，双变体编译绿；真机目测（朝向/FilterQuality/呼吸幅度）留 M4.S2 反向复核 + M10.S2 定稿 |
+| M3 建档与数据闭环 | 建档 → 快照 → 重开保持 | ☑ | S1 收盘：值对象族 + 注册表（建档初值 sat/mood 80、health 100、int 0、hyg 100，回写 doc/01 §11）+ PersonalityGenerator，`testDebugUnitTest` 5 例全绿。S2 收盘：PetProfile v2 值对象族（pos/sleep/cooldowns/stats/personality/plugins）+ PetProfileCodec（org.json 单键、容错补默认，JVM 依赖 org.json:json）+ PetStore（SP 薄壳）；建档屏（主名聚合列表 LRU≤12 缩略 + 性格预览六维条 + 确认）+ PetActivity 有档/无档路由 + 主屏真实快照（建档宠 / 主环 / 状态面板全属性）+ debug 重开档入口；codec round-trip 6 例全绿，双变体编译绿。真机手测（浏览流畅、杀进程重开恢复、换宠覆盖写）留后续批量补验 |
+| M4 宠物活起来 | 自主走/停/睡 | ☑ | S1 收盘：BehaviorFSM 纯函数 + FSMResult 契约（SICK>睡眠>SAD>IDLE/WALKING、22:00~07:00 入睡、防穿模 clamp+随机换向、行走帧 0→3、seed 可复现），单测 10 例全绿。S2 收盘：PetLivingSprite 主循环（250ms tick、生命周期闸 onPause/onStop 停=0 后台 CPU、面板覆盖亦停）+ PetRenderer v1（WALKING dir×帧循环 / IDLE 呼吸 tick 相位 / SLEEPING 暗罩+Zzz / 归一化坐标→活动区映射），主环真实快照；doc/07 §9 增「睡眠帧缺失」风险行。编译与 testDebugUnitTest 全绿；真机手测（走/停/睡观感、帧序反向复核 M2 朝向、22:00 入睡、后台 0 CPU）与 M1–M3 一并批量补验。**M4.S2 布局修订：宠物活动范围=全屏叠层（环形把手为 overlay、可重叠、恒不出屏），doc/00 T-21 记录** |
 | M5 时间流逝 settle v1 | 时间旅行拨回数值推进 | ☐ | |
 | M6 照顾闭环 | 喂/玩/抚/治面板闭环 | ☐ | |
 | M7 离线叙事回放 | 迎接语气 + 回放时间线 | ☐ | |
