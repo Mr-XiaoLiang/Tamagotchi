@@ -252,10 +252,10 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 #### M5.S1 SettleEngine v1（短窗快速积分）+ 单测（P1）
 
 **任务**
-- [ ] `Clock` 抽象（data/time：真实实现 + 可注入 debug 假时钟）。
-- [ ] `SettleEngine`（domain/engine，doc/01 §6/§8.1/§8.2 **只先实现 <20min 快速积分分支**）：幂等（`now <= lastSettledAt` → noOp）；速率表（饱腹 -2/h 白天、作息档、清洁 -0.6/h、智力不衰减）× trait 系数；状态推进（health 触底 → SICK、mood 持续低 → SAD、sat<20 → hungry）；统一 clamp 地板归零不致死；结算后 `lastSettledAt = now` 并落盘。
-- [ ] `SettlementSummary` 结构（doc/01 §8.3）：elapsedMs / totalDelta / timeline=null / endingMood 先占位。
-- [ ] 单测：0 区间 noOp；1h 扣减 = 速率×系数；clamp 到 0；SICK/SAD/hungry 推进；**同窗口重复结算幂等**。
+- [x] `Clock` 抽象（data/time：真实实现 + 可注入 debug 假时钟）。
+- [x] `SettleEngine`（domain/engine，doc/01 §6/§8.1/§8.2 **只先实现 <20min 快速积分分支**）：幂等（`now <= lastSettledAt` → noOp）；速率表（饱腹 -2/h 白天、作息档、清洁 -0.6/h、智力不衰减）× trait 系数；状态推进（health 触底 → SICK、mood 持续低 → SAD、sat<20 → hungry）；统一 clamp 地板归零不致死；结算后 `lastSettledAt = now` 并落盘。
+- [x] `SettlementSummary` 结构（doc/01 §8.3）：elapsedMs / totalDelta / timeline=null / endingMood 先占位。
+- [x] 单测：0 区间 noOp；1h 扣减 = 速率×系数；clamp 到 0；SICK/SAD/hungry 推进；**同窗口重复结算幂等**。
 
 **产出**：`domain/engine/SettleEngine.kt`、`data/time/Clock`、`SettlementSummary`。
 
@@ -265,12 +265,12 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 #### M5.S2 五阶 ⑤ 接入 + 时间旅行 Debug（P0）
 
 **任务**
-- [ ] PetActivity 第⑤阶：后台 settle(now) → 主线程一次 apply = `PetStore.save` + 数值层/状态环刷新 + 动作可用性（doc/08 §1/§3；SessionLog 开场段 M7 接）。
-- [ ] `onResume` 距上次 settle ≥ 5s 再 settle（doc/08 §3 热启动表）。
-- [ ] **Debug 时间旅行工具**（debug-only）：入口（长按主屏或 debug 浮钮）拨回 `lastSettledAt` 1h/6h/24h/72h；状态图标/主环/动作冷却随 apply 刷新。
-- [ ] settle 全程 logcat 打点，验证结算不阻塞首帧。
+- [x] PetActivity 第⑤阶：后台 settle(now) → 主线程一次 apply = `PetStore.save` + 数值层/状态环刷新 + 动作可用性（doc/08 §1/§3；SessionLog 开场段 M7 接）。
+- [x] `onResume` 距上次 settle ≥ 5s 再 settle（doc/08 §3 热启动表）。
+- [x] **Debug 时间旅行工具**（debug-only）：入口（长按主屏或 debug 浮钮）拨回 `lastSettledAt` 1h/6h/24h/72h；状态图标/主环/动作冷却随 apply 刷新。
+- [x] settle 全程 logcat 打点，验证结算不阻塞首帧。
 
-**产出**：`bootSettle` 真实现、Debug 时间旅行入口、启动时序打点。
+**产出**：结算编排在 `PetActivity.EntryFlow`（持档案事实源的组合层）：冷启动五阶 reveal 完成后 force 结算、热恢复 observer（≥5s 节流）、时间旅行回拨后立即结算；settle+save 放 `Dispatchers.Default`，apply = 主线程 profile state 一次更新（原 BaseActivity.bootSettle 职责移交并移除，doc/08 §2/§3 已回写）。
 
 **验收（P0）**：时间旅行拨回 24h → 重启 → 主环/状态图标按扣减刷新（health 触底则宠物 SICK 表现）；SLEEPING 窗口耗率显著低；首帧 Logo → 状态环先现快照 → settle apply 后数值平滑跳变、全程 UI 可交互。
 **风险检查点**：settle 后台时长/不阻塞（08 §6）、主线程 SP 读——**本里程碑验证**。
@@ -284,15 +284,15 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 #### M6.S1 ActionRule + 动作 domain + SessionLog 骨架（P1）
 
 **任务**
-- [ ] `ActionRule`（doc/01 §10）：可用条件（`now >= 冷却until` 且 属性 < 上限）表 + 边际收益递减（doc/01 §6.3）。
-- [ ] domain 动作：`onFeed(food)/onPlay/onPet/onHeal`（doc/02 §5 预留位，v1 只实现这四个）：返回新快照 + 动作 FSM 提示（EATING/EXCITED/亲昵）+ delta + `stats` 命中 +1 + 冷却写 next-until（doc/01 §9）。
-- [ ] 食物类型效果 + 口味契合：`trait.flavor` 对食物权重加成（doc/01 §7 / 02 §4）。
-- [ ] `SessionLog` 骨架（domain/log，doc/04 §7）：`append` / `liveCount` / `entries`（先只存 list；`openWith`/ReplayEntry M7 扩展）；动作成功即 `append(ACTION_*)`。
-- [ ] 单测：冷却阻挡、效果边界 clamp、边际收益递减、口味契合命中、**治疗仅 SICK 可点**（health +40）、stats 计数。
+- [x] `ActionRule`（doc/01 §10）：可用条件（`now >= 冷却until` 且 属性 < 上限）表 + 边际收益递减（doc/01 §6.3）。
+- [x] domain 动作：`onFeed(food)/onPlay/onPet/onHeal`（doc/02 §5 预留位，v1 只实现这四个）：返回新快照 + 动作 FSM 提示（EATING/EXCITED/亲昵）+ delta + `stats` 命中 +1 + 冷却写 next-until（doc/01 §9）。
+- [x] 食物类型效果 + 口味契合：`trait.flavor` 对食物权重加成（doc/01 §7 / 02 §4）。
+- [x] `SessionLog` 骨架（domain/log，doc/04 §7）：`append` / `liveCount` / `entries`（先只存 list；`openWith`/ReplayEntry M7 扩展）；动作成功即 `append(ACTION_*)`。
+- [x] 单测：冷却阻挡、效果边界 clamp、边际收益递减、口味契合命中、**治疗仅 SICK 可点**（health +40）、stats 计数。
 
-**产出**：`domain/engine/ActionRule` + 四个动作函数、`domain/log/SessionLog` 骨架、动作单测。
+**产出**：`domain/engine/Actions.kt`（ActionRule 条件/数值规则 + PetActions 四动作）、`domain/log/SessionLog.kt` 骨架、动作单测。
 
-**验收（P1）**：单测全绿。
+**验收（P1）**：单测全绿（Actions 18 例 + SessionLog 4 例，全套 58 例通过）。
 
 #### M6.S2 操作/状态面板闭环（P0）
 
@@ -636,8 +636,8 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 | M2 真宠上屏 | 正确朝向静态上屏 | ☑ | M2.S1 朝向常量落定 + Debug 核对屏就绪；M2.S2 BULBASAUR 静态 IDLE（呼吸 ±2px/2s、圆遮罩）上屏，双变体编译绿；真机目测（朝向/FilterQuality/呼吸幅度）留 M4.S2 反向复核 + M10.S2 定稿 |
 | M3 建档与数据闭环 | 建档 → 快照 → 重开保持 | ☑ | S1 收盘：值对象族 + 注册表（建档初值 sat/mood 80、health 100、int 0、hyg 100，回写 doc/01 §11）+ PersonalityGenerator，`testDebugUnitTest` 5 例全绿。S2 收盘：PetProfile v2 值对象族（pos/sleep/cooldowns/stats/personality/plugins）+ PetProfileCodec（org.json 单键、容错补默认，JVM 依赖 org.json:json）+ PetStore（SP 薄壳）；建档屏（主名聚合列表 LRU≤12 缩略 + 性格预览六维条 + 确认）+ PetActivity 有档/无档路由 + 主屏真实快照（建档宠 / 主环 / 状态面板全属性）+ debug 重开档入口；codec round-trip 6 例全绿，双变体编译绿。真机手测（浏览流畅、杀进程重开恢复、换宠覆盖写）留后续批量补验 |
 | M4 宠物活起来 | 自主走/停/睡 | ☑ | S1 收盘：BehaviorFSM 纯函数 + FSMResult 契约（SICK>睡眠>SAD>IDLE/WALKING、22:00~07:00 入睡、防穿模 clamp+随机换向、行走帧 0→3、seed 可复现），单测 10 例全绿。S2 收盘：PetLivingSprite 主循环（250ms tick、生命周期闸 onPause/onStop 停=0 后台 CPU、面板覆盖亦停）+ PetRenderer v1（WALKING dir×帧循环 / IDLE 呼吸 tick 相位 / SLEEPING 暗罩+Zzz / 归一化坐标→活动区映射），主环真实快照；doc/07 §9 增「睡眠帧缺失」风险行。编译与 testDebugUnitTest 全绿；真机手测（走/停/睡观感、帧序反向复核 M2 朝向、22:00 入睡、后台 0 CPU）与 M1–M3 一并批量补验。**M4.S2 布局修订：宠物活动范围=全屏叠层（环形把手为 overlay、可重叠、恒不出屏），doc/00 T-21 记录** |
-| M5 时间流逝 settle v1 | 时间旅行拨回数值推进 | ☐ | |
-| M6 照顾闭环 | 喂/玩/抚/治面板闭环 | ☐ | |
+| M5 时间流逝 settle v1 | 时间旅行拨回数值推进 | ☑ | S1 收盘：SettleEngine 快速积分兜底全程（幂等 noOp、白昼/夜间睡眠/SICK 三速率档 × trait 系数、饥饿/脏心情修正、SAD 累计 4h 推进与健康下滑、clamp 归零、sickTotal 只增一次、状态推进只写 SICK/SAD/IDLE），SettlementSummary + 时间线占位类型 + AttributeDelta + Clock(SystemClock) + settle 作息/系数注记回写 doc/01 §11。S2 收盘：结算编排入 PetActivity.EntryFlow（冷启动五阶 reveal 完成 force 结算 → SettleEngine+save @Default → 主线程一次 apply=profile state 更新；热恢复 Lifecycle observer 距上次 ≥5s 节流；时间旅行 Debug——长按主屏精灵核对屏内置「结算 Debug」拨回 1h/6h/24h/72h 后立即结算，幂等可反复点）；PetLivingSprite 档案刷新软合并（同宠保留跑动坐标，避免结算瞬移）；BaseActivity.bootSettle 职责移交 EntryFlow 并移除，doc/08 §2/§3 口径回写。单测 15 例全绿 + 编译绿。真机手测（时间旅行拨 24h→重启/立即结算按扣减刷新、health 触底 SICK 表现、夜间回血耗率低、首帧 Logo→状态环先现快照→apply 后平滑跳变且全程可交互、settle 不阻塞）与 M1–M4 一并批量补验 |
+| M6 照顾闭环 | 喂/玩/抚/治面板闭环 | ☐ | S1 收盘：`domain/engine/Actions.kt`——ActionRule（doc/01 §6.3/§7/§10：冷却 2h/1h/10min 写 next-until、上限喂 sat<95/玩 mood<90、边际收益递减 sat/mood/int、health 不走递减、口味契合 food.flavor==personality.flavor 该餐 sat/mood ×1.1）+ PetActions.onFeed/onPlay/onPet/onHeal 纯函数（heal 仅 SICK +40 治愈、SAD 动作后 mood≥40 即时解除、EATING/EXCITED 短态不落持久快照）；`domain/log/SessionLog.kt` 骨架（append ts 升序 / liveCount / entries / liveLogsSince，动作成功即 append ACTION_*，openWith M7）；M6.S1 落地注记回写 doc/01 §11 + doc/02 §5；单测 22 例全绿（Actions 18 / SessionLog 4，全套 58 例 testDebugUnitTest 通过）。S2 接操作/状态面板闭环 |
 | M7 离线叙事回放 | 迎接语气 + 回放时间线 | ☐ | |
 | M8 右滑插件清单 | 实心/空心 + 容错 + 编辑 | ☐ | |
 | M9 在线惊喜 + 回顾 | 随机事件 + 本次小结 | ☐ | |

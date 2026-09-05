@@ -2,8 +2,11 @@ package com.lollipop.tamagotchi.presentation.screen.debug
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -47,10 +51,15 @@ import com.lollipop.tamagotchi.presentation.theme.ColorToken
  * 左列标注行=朝向（0下/1左/2右/3上）、顶列标注帧号，左右切换上一只/下一只，
  * 人工核对「行=朝向、列=帧 0→3」映射是否正确；发现不符回写 render/SpriteSheetDecoder 常量。
  *
- * 入口：Debug 构建（BuildConfig.DEBUG）在 PetScreen 中央活动区长按；release 不编译。
+ * 入口：Debug 构建在 PetScreen 中央活动区长按；release 不编译。
+ * M5.S2 起叠加「结算 Debug · 时间旅行」：非空 [onTimeTravel] 时展示，
+ * 把 lastSettledAt 拨回 1h/6h/24h/72h 并立即结算（EntryFlow 侧幂等 apply），验证离线推进。
  */
 @Composable
-internal fun DebugSpeciesGridScreen(onDismiss: () -> Unit) {
+internal fun DebugSpeciesGridScreen(
+    onDismiss: () -> Unit,
+    onTimeTravel: ((hours: Long) -> Unit)? = null,
+) {
     val context = LocalContext.current
     val repo = remember(context) { SpriteRepository(context.assets) }
     val pets = remember(repo) { repo.listPets() }
@@ -129,7 +138,66 @@ internal fun DebugSpeciesGridScreen(onDismiss: () -> Unit) {
                     fontSize = 11.sp,
                 )
             }
+
+            if (onTimeTravel != null) {
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    "结算 Debug · 时间旅行",
+                    color = ColorToken.Accent,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(Modifier.fillMaxWidth()) {
+                    TimeTravelChip("1h", Modifier.weight(1f)) {
+                        onTimeTravel(1)
+                        onDismiss()
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    TimeTravelChip("6h", Modifier.weight(1f)) {
+                        onTimeTravel(6)
+                        onDismiss()
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    TimeTravelChip("24h", Modifier.weight(1f)) {
+                        onTimeTravel(24)
+                        onDismiss()
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    TimeTravelChip("72h", Modifier.weight(1f)) {
+                        onTimeTravel(72)
+                        onDismiss()
+                    }
+                }
+                Text(
+                    "把 lastSettledAt 拨回 N 小时并立即结算（幂等、可反复点）：验证离线扣减 / SICK·SAD 推进 / 夜间回血；点按即落盘，重启亦可复现。",
+                    color = ColorToken.Text2,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
         }
+    }
+}
+
+/** 时间旅行回拨按钮（debug-only）：等宽热区 ≥36dp、文字不透明 ≥11sp（doc/06 §8）。 */
+@Composable
+private fun RowScope.TimeTravelChip(label: String, modifier: Modifier, onClick: () -> Unit) {
+    Box(
+        modifier
+            .height(38.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(ColorToken.Accent.copy(alpha = 0.1f))
+            .border(1.dp, ColorToken.Accent.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            label,
+            color = ColorToken.Accent,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 

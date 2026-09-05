@@ -110,6 +110,7 @@ private const val HANDLE_HINT_MS = 10_000L
 fun PetScreen(
     profile: PetProfile,
     onSettleReady: () -> Unit,
+    onTimeTravel: ((hours: Long) -> Unit)? = null,
     onResetProfile: (() -> Unit)? = null,
 ) {
     var stage by remember { mutableStateOf(BootStage.Shell) }
@@ -439,7 +440,10 @@ fun PetScreen(
                     enter = fadeIn(animationSpec = tween(200)),
                     exit = fadeOut(animationSpec = tween(150)),
                 ) {
-                    DebugSpeciesGridScreen(onDismiss = { debugGrid = false })
+                    DebugSpeciesGridScreen(
+                        onDismiss = { debugGrid = false },
+                        onTimeTravel = onTimeTravel,
+                    )
                 }
             }
         }

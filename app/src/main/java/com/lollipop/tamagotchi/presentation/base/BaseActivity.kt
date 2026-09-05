@@ -24,8 +24,9 @@ import kotlinx.coroutines.withContext
  *
  * 职责：
  *  - 纯黑根视图 + 首帧 Logo（原生 View，无 Compose —— 白名单例外）；
- *  - [injectContent]：数据（后台）就绪后注入 Compose 内容并淡入、移除 Logo 壳；
- *  - [bootSettle]：⑤结算挂钩，M1 占位 no-op，M3+ 覆写接入离线结算。
+ *  - [injectContent]：数据（后台）就绪后注入 Compose 内容并淡入、移除 Logo 壳。
+ *  - 离线结算（⑤）由持有档案事实源的组合层编排（PetActivity.EntryFlow，M5.S2 起），
+ *    Activity 自身不再承担结算逻辑。
  */
 abstract class BaseActivity : ComponentActivity() {
 
@@ -92,10 +93,5 @@ abstract class BaseActivity : ComponentActivity() {
                 .withEndAction { removeShell() }
                 .start()
         }
-    }
-
-    /** ⑤结算（M1：无持久化数据，no-op；M3+ 覆写）。 */
-    protected open fun bootSettle() {
-        BootLog.s(BootStage.Settle, "bootSettle：M1 无持久化数据，no-op（M3+ 接入离线结算）")
     }
 }

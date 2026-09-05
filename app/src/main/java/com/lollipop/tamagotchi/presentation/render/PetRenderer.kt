@@ -114,10 +114,29 @@ fun PetLivingSprite(
 ) {
     val seed = profile.personality.seed
     val fsm = remember(seed) { BehaviorFSM(seed = seed) }
-    // tick 间连续快照（协程内读写，不参与重组；profile 换档时重建对齐）
-    var work by remember(profile) { mutableStateOf(profile) }
+    // tick 间连续快照（协程内读写，不参与重组）：仅首次建档/换宠时初始化；
+    // 同宠档案刷新（M5.S2 settle apply）走下方软合并——保留行走位置，只对齐状态字段，
+    // 避免宠物每次结算瞬移回档位坐标。
+    var work by remember { mutableStateOf(profile) }
     // 当前渲染帧（每 tick 写一次；组合期订阅 → 低帧重组重绘，UI 树其它节点不动）
-    var living by remember(profile) { mutableStateOf(restingPose(profile)) }
+    var living by remember { mutableStateOf(restingPose(profile)) }
+
+    // profile 变化：同 petId = settle apply/建档快照刷新 → 软合并（跑动坐标/行走进度延续）；
+    // 异 petId = 换宠/重开档 → 整档对齐。
+    LaunchedEffect(profile) {
+        if (work.petId == profile.petId) {
+            work = work.copy(
+                attributes = profile.attributes,
+                sadDurationHours = profile.sadDurationHours,
+                milestones = profile.milestones,
+                fsmState = profile.fsmState,
+            )
+            if (profile.fsmState == PetState.SLEEPING) work = work.copy(isAsleep = true)
+        } else {
+            work = profile
+            living = restingPose(profile)
+        }
+    }
 
     LaunchedEffect(fsm, running, profile) {
         if (!running) return@LaunchedEffect
