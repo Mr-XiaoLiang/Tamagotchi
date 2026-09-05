@@ -54,4 +54,11 @@ object ColorToken {
      * doc/06 §4.1 未给 HEX，编码期暂定；真机/后续回写 doc/06 §4.1。
      */
     val Warn = Color(0xFFCF5D5D)
+
+    // ── 食物口味类别色（doc/06 §4.1 类别覆写：投喂食物按口味覆写胶囊背景，M6.S2）──
+    val FoodBalanced = Color(0xFFC4B7A3) // 均衡 沙米
+    val FoodHearty = Color(0xFFDE9E63)   // 贪吃 橙棕
+    val FoodLight = Color(0xFFA8C2A5)    // 清淡 草青
+    val FoodSweet = Color(0xFFDCA5B4)    // 甜口 柔粉
+    val FoodNovel = Color(0xFFAFA6D6)    // 新奇 浅紫
 }

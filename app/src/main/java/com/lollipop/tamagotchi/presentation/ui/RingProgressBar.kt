@@ -4,6 +4,11 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -128,15 +133,29 @@ fun MiniProgressRing(
     modifier: Modifier = Modifier,
     size: Dp = 24.dp,
     strokeWidth: Dp = 3.5.dp,
+    warn: Boolean = false,
 ) {
     val frac = (value / 100f).coerceIn(0f, 1f)
+    // 低值预警（warn）：前景弧换告警色 + 2Hz 呼吸（doc/06 §2/§3.2；弧/轨为装饰性描边，允许低 alpha）
+    val ringColor = if (warn) ColorToken.Warn else color
+    var pulse by remember { mutableFloatStateOf(1f) }
+    LaunchedEffect(warn) {
+        while (warn) {
+            pulse = 0.45f
+            kotlinx.coroutines.delay(500)
+            pulse = 1f
+            kotlinx.coroutines.delay(500)
+        }
+        pulse = 1f
+    }
+    val alpha = if (warn) pulse else 1f
     Canvas(modifier.size(size)) {
         val strokePx = strokeWidth.toPx()
         val radius = (this.size.width - strokePx) / 2f
         val center = Offset(this.size.width / 2f, this.size.height / 2f)
         // 底轨：全圆低透明槽道
         drawCircle(
-            color = color.copy(alpha = 0.16f),
+            color = ringColor.copy(alpha = 0.16f * alpha),
             radius = radius,
             center = center,
             style = Stroke(width = strokePx),
@@ -144,7 +163,7 @@ fun MiniProgressRing(
         // 前景：自 12 点按 frac 覆盖
         if (frac > 0f) {
             drawArc(
-                color = color,
+                color = ringColor.copy(alpha = alpha),
                 startAngle = -90f,
                 sweepAngle = 360f * frac,
                 useCenter = false,

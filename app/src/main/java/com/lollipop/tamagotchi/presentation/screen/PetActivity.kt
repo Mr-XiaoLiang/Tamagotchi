@@ -13,9 +13,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import com.lollipop.tamagotchi.core.attribute.FoodType
 import com.lollipop.tamagotchi.data.store.PetStore
 import com.lollipop.tamagotchi.data.time.SystemClock
+import com.lollipop.tamagotchi.domain.engine.ActionType
+import com.lollipop.tamagotchi.domain.engine.PetActions
 import com.lollipop.tamagotchi.domain.engine.SettleEngine
+import com.lollipop.tamagotchi.domain.log.InMemorySessionLog
 import com.lollipop.tamagotchi.domain.model.PetProfile
 import com.lollipop.tamagotchi.presentation.base.BaseActivity
 import com.lollipop.tamagotchi.presentation.boot.BootLog
@@ -81,6 +85,11 @@ private fun EntryFlow(
     val scope = rememberCoroutineScope()
     val settleEngine = remember { SettleEngine() }
     val clock = remember { SystemClock() }
+    // 会话内动作流水（M6.S2：喂食/玩耍/抚摸/治疗追加；本进程生命周期，不跨冷启动）
+    val sessionLog = remember { InMemorySessionLog() }
+    // 最近一次动作执行事件（成功才置位；id 单调自增 → UI 据此重启短演出，见 PetScreen）
+    var lastActionEvent by remember { mutableStateOf<ActionEvent?>(null) }
+    var actionSeq by remember { mutableLongStateOf(0L) }
     // 上次尝试结算的墙钟（进程内）：用于热恢复节流；冷启动 force 结算不受限。
     var lastSettleWall by remember { mutableLongStateOf(0L) }
 
@@ -116,6 +125,30 @@ private fun EntryFlow(
 
     fun requestSettle(tag: String, force: Boolean = false) {
         scope.launch { runSettle(tag, force) }
+    }
+
+    /**
+     * M6.S2 动作执行：domain [PetActions] 纯函数 → Default 存档 → 主线程 apply profile
+     * + 上抛 [ActionEvent]（成功才置位；被 UI 判定的冷却/属性满/熟睡不会走到这里）。
+     */
+    fun performAction(type: ActionType, food: FoodType?) {
+        scope.launch {
+            val cur = profile ?: return@launch
+            val now = clock.nowMillis()
+            val result = withContext(Dispatchers.Default) {
+                val r = when (type) {
+                    ActionType.FEED -> PetActions.onFeed(cur, now, food ?: return@withContext null, sessionLog)
+                    ActionType.PLAY -> PetActions.onPlay(cur, now, sessionLog)
+                    ActionType.PET -> PetActions.onPet(cur, now, sessionLog)
+                    ActionType.HEAL -> PetActions.onHeal(cur, now, sessionLog)
+                }
+                if (r != null) store.save(r.profile)
+                r
+            } ?: return@launch
+            profile = result.profile
+            actionSeq++
+            lastActionEvent = ActionEvent(id = actionSeq, result = result)
+        }
     }
 
     /** Debug 时间旅行（M5.S2）：把 lastSettledAt 拨回 [hours] 前并立即结算（幂等，可重复点）。 */
@@ -178,6 +211,8 @@ private fun EntryFlow(
             } else {
                 null
             },
+            onAction = { type, food -> performAction(type, food) },
+            actionEvent = lastActionEvent,
         )
     }
 }

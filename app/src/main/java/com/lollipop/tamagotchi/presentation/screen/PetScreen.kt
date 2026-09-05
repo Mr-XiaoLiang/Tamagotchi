@@ -38,6 +38,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,6 +65,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -85,6 +88,24 @@ import com.lollipop.tamagotchi.presentation.component.SheetEdge
 import com.lollipop.tamagotchi.presentation.theme.BlackGlowBackground
 import com.lollipop.tamagotchi.presentation.theme.ColorToken
 import com.lollipop.tamagotchi.presentation.screen.debug.DebugSpeciesGridScreen
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import com.lollipop.tamagotchi.core.attribute.FoodFlavor
+import com.lollipop.tamagotchi.core.attribute.FoodType
+import com.lollipop.tamagotchi.core.behavior.PetState
+import com.lollipop.tamagotchi.domain.engine.ActionDenied
+import com.lollipop.tamagotchi.domain.engine.ActionHint
+import com.lollipop.tamagotchi.domain.engine.ActionResult
+import com.lollipop.tamagotchi.domain.engine.ActionRule
+import com.lollipop.tamagotchi.domain.engine.ActionType
+import com.lollipop.tamagotchi.presentation.render.FxFloat
+import com.lollipop.tamagotchi.presentation.render.FxKind
+import com.lollipop.tamagotchi.presentation.render.PetFx
 import com.lollipop.tamagotchi.presentation.ui.MiniProgressRing
 import com.lollipop.tamagotchi.presentation.ui.RingProgressBar
 import kotlinx.coroutines.delay
@@ -104,6 +125,24 @@ private const val HANDLE_HINT_MS = 10_000L
  */
 private val EdgeBand = 32.dp
 
+/** 状态行/图标低值预警阈值（<30，doc/06 §2/§3.1）。 */
+private const val LOW_VALUE_WARN = 30f
+
+/**
+ * 一次动作执行事件（EntryFlow 动作成功 → 上抛结果供 UI 触发短演出/收面板）。
+ * [id] 单调自增：即使连续两次动作内容完全一致，也能驱动 [PetScreen] 重启演出。
+ */
+data class ActionEvent(
+    val id: Long,
+    val result: ActionResult,
+)
+
+/** 操作面板页内子级：动作列表 ⇄ 食物选择（投喂子页）。 */
+private enum class ActionPage { Actions, Feed }
+
+/** 主屏顶内「状态图标区」图标种类（doc/06 §3.1：饥饿/不开心/脏/病，异常才亮）。 */
+private enum class StatusIconKind { HUNGRY, SAD, DIRTY, SICK }
+
 /**
  * 主屏四区 + 三 overlay 路由（doc/06 §1/§2/§5，Task.md M1.S2）。
  *
@@ -120,6 +159,10 @@ fun PetScreen(
     onSettleReady: () -> Unit,
     onTimeTravel: ((hours: Long) -> Unit)? = null,
     onResetProfile: (() -> Unit)? = null,
+    /** M6.S2：请求执行动作（投喂需 [FoodType]；EntryFlow 执行、存档、上抛 [actionEvent]）。 */
+    onAction: (type: ActionType, food: FoodType?) -> Unit = { _, _ -> },
+    /** M6.S2：最近一次动作执行事件（成功才非空，[ActionEvent.id] 单调自增）。 */
+    actionEvent: ActionEvent? = null,
 ) {
     var stage by remember { mutableStateOf(BootStage.Shell) }
     // 当前挂载面板：null=主屏；非 null=抽屉在「拖出中 / 展开动画 / 全开 / 收回动画」任一阶段
@@ -172,6 +215,36 @@ fun PetScreen(
             }
             if (reveal == 0f) panel = null
         }
+    }
+
+    /**
+     * 面板间切换（doc/06 §3.2 三入口合一）：操作面板「状态」首项 = 先收回当前底面板、
+     * 再展开顶状态面板（收起下 ⇄ 展开上成对发生），避免两个抽屉同时抢屏。
+     */
+    fun swapToPanel(target: Panel) {
+        val cur = panel ?: return
+        if (cur == target) return
+        scope.launch {
+            animate(initialValue = reveal, targetValue = 0f, animationSpec = tween(140)) { v, _ ->
+                reveal = v
+            }
+            panel = target
+            animate(initialValue = 0f, targetValue = 1f, animationSpec = tween(200)) { v, _ ->
+                reveal = v
+            }
+        }
+    }
+
+    // ── M6.S2 动作执行事件：成功 → 收面板 + 构建短演出（气泡/浮字/宠物表现）──
+    var seenActionId by remember { mutableStateOf(-1L) }
+    var currentFx by remember { mutableStateOf<PetFx?>(null) }
+    LaunchedEffect(actionEvent) {
+        val ev = actionEvent ?: return@LaunchedEffect
+        if (ev.id == seenActionId) return@LaunchedEffect
+        seenActionId = ev.id
+        // 先收面板（动作发生在面板内；收起后主屏可见宠物演出）
+        closeSheet()
+        currentFx = ev.result.toPetFx(ev.id)
     }
 
     LaunchedEffect(Unit) {
@@ -389,6 +462,8 @@ fun PetScreen(
                     sheet = petSheet,
                     running = livingRunning,
                     modifier = Modifier.fillMaxSize(),
+                    // M6.S2：动作短演出指令（气泡/浮字/蹦跳/咀嚼/亲昵，内部按 tick 相位推进）
+                    fx = currentFx,
                 )
             }
 
@@ -436,6 +511,49 @@ fun PetScreen(
                 EdgeHint(ChevronDir.Left)
             }
 
+            // ── 状态图标区（顶内「主环内沿」提示带，doc/06 §3.1；点击 = 展开状态面板）──
+            // 与顶缘下拉/下面板「状态」同一入口（§3.2 三入口合一）。异常才亮（低值阈值见
+            // doc/06 §2）：饥饿/不开心/脏 <30 分别亮碗/云/水滴，SICK 亮「病」十字；
+            // 图标沿用对应属性语义色（§4）。平时空载隐藏、不占常观感。
+            val iconRowR = ringOuter * 0.62f
+            val statusIcons = if (stage >= BootStage.Status) {
+                buildList {
+                    if (profile.attributes[AttributeId.SATIATION] < LOW_VALUE_WARN) {
+                        add(StatusIconKind.HUNGRY)
+                    }
+                    if (profile.attributes[AttributeId.MOOD] < LOW_VALUE_WARN) {
+                        add(StatusIconKind.SAD)
+                    }
+                    if (profile.attributes[AttributeId.HYGIENE] < LOW_VALUE_WARN) {
+                        add(StatusIconKind.DIRTY)
+                    }
+                    if (profile.fsmState == PetState.SICK) add(StatusIconKind.SICK)
+                }
+            } else {
+                emptyList()
+            }
+            if (statusIcons.isNotEmpty()) {
+                Box(
+                    Modifier
+                        .align(Alignment.Center)
+                        .offset(y = -iconRowR)
+                        .alpha(statusAlpha),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        statusIcons.forEach { kind ->
+                            StatusIconButton(
+                                kind = kind,
+                                onClick = { openSheet(Panel.Status) },
+                            )
+                        }
+                    }
+                }
+            }
+
             // ── Overlay 层（置顶，互斥）────────────────────────
             // 面板挂载 = panel 非空；reveal（0..1）决定整块面板平移出/入屏的程度。
             // reveal 以 lambda 传给 graphicsLayer，只触发重绘、不引发整树重组。
@@ -448,6 +566,8 @@ fun PetScreen(
                     reveal = { reveal },
                     sheetExtent = sheetExtent,
                     onDismiss = { closeSheet() },
+                    onAction = onAction,
+                    onShowStatus = { swapToPanel(Panel.Status) },
                 )
             }
 
@@ -478,6 +598,8 @@ private fun BoxScope.OverlayLayer(
     reveal: () -> Float,
     sheetExtent: SnapshotStateMap<Panel, Int>,
     onDismiss: () -> Unit,
+    onAction: (type: ActionType, food: FoodType?) -> Unit,
+    onShowStatus: () -> Unit,
 ) {
     val edge = when (p) {
         Panel.Status -> SheetEdge.Top
@@ -518,7 +640,12 @@ private fun BoxScope.OverlayLayer(
                     .onSizeChanged { sheetExtent[Panel.Action] = it.height },
             ) {
                 RoundSheet(edge = edge, glow = ColorToken.Satiation.copy(alpha = 0.08f)) {
-                    ActionPanelBody(onDismiss)
+                    ActionPanelBody(
+                        onDismiss = onDismiss,
+                        profile = profile,
+                        onAction = onAction,
+                        onShowStatus = onShowStatus,
+                    )
                 }
             }
 
@@ -616,15 +743,17 @@ private fun ColumnScope.StatusPanelBody(profile: PetProfile, onDismiss: () -> Un
                 if (index > 0) RoundListSpacer()
                 val color = attributeColor(meta.id)
                 val value = profile.attributes[meta.id]
+                // 低值预警（<30，doc/06 §2/§3.2）：行尾迷你环换告警色 2Hz 呼吸
+                val warn = value < LOW_VALUE_WARN
                 PillItem(
                     "${meta.id.label}  ${value.roundToInt()}",
                     filled = false,
                     // 右留白 11dp = 环外缘到行上下边距（46 行高 − 24 环径）/ 2，
                     // 使环与胶囊右端半圆同圆心（同心内嵌观感）。
                     contentPadding = PaddingValues(start = 18.dp, end = 11.dp),
-                    icon = { ColorDot(color) },
+                    icon = { ColorDot(if (warn) ColorToken.Warn else color) },
                     trailing = {
-                        MiniProgressRing(value = value, color = color)
+                        MiniProgressRing(value = value, color = color, warn = warn)
                     },
                     onClick = null,
                 )
@@ -643,7 +772,6 @@ private fun ColumnScope.StatusPanelBody(profile: PetProfile, onDismiss: () -> Un
 }
 
 /** 属性 → 主题色（与主环/建档预览同源，doc/01 §3）。 */
-@Composable
 private fun attributeColor(id: AttributeId): Color = when (id) {
     AttributeId.SATIATION -> ColorToken.Satiation
     AttributeId.MOOD -> ColorToken.Mood
@@ -652,33 +780,345 @@ private fun attributeColor(id: AttributeId): Color = when (id) {
     AttributeId.HYGIENE -> ColorToken.Hygiene
 }
 
-/** 操作面板（底）：对侧（顶部）固定收起条 + 下方滚动列表，列表滚动不影响收起条。 */
+/**
+ * 状态图标按钮（主屏顶内，doc/06 §3.1）：热区 ≥30dp、字形 22dp、颜色随属性语义色；
+ * 点击任一图标 = 展开状态面板（与顶缘下拉同入口）。
+ */
 @Composable
-private fun ColumnScope.ActionPanelBody(onDismiss: () -> Unit) {
+private fun StatusIconButton(kind: StatusIconKind, onClick: () -> Unit) {
+    val tint = when (kind) {
+        StatusIconKind.HUNGRY -> ColorToken.Satiation
+        StatusIconKind.SAD -> ColorToken.Mood
+        StatusIconKind.DIRTY -> ColorToken.Hygiene
+        StatusIconKind.SICK -> ColorToken.Health
+    }
+    val description = when (kind) {
+        StatusIconKind.HUNGRY -> "饥饿"
+        StatusIconKind.SAD -> "不开心"
+        StatusIconKind.DIRTY -> "脏"
+        StatusIconKind.SICK -> "生病"
+    }
+    Box(
+        modifier = Modifier
+            .size(30.dp)
+            .clip(CircleShape)
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = "$description（点按查看状态）" },
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(Modifier.size(22.dp)) {
+            drawStatusIcon(kind = kind, tint = tint)
+        }
+    }
+}
+
+/** 状态图标字形（碗=饿 / 云=不开心 / 水滴=脏 / 圆角十字=病），单色随属性色。 */
+private fun DrawScope.drawStatusIcon(kind: StatusIconKind, tint: Color) {
+    val l = size.width
+    val strokeW = l * 0.13f
+    when (kind) {
+        StatusIconKind.HUNGRY -> {
+            // 碗：碗口线 + 碗身下半弧
+            drawLine(
+                color = tint,
+                start = Offset(l * 0.14f, l * 0.36f),
+                end = Offset(l * 0.86f, l * 0.36f),
+                strokeWidth = strokeW,
+            )
+            drawArc(
+                color = tint,
+                startAngle = 0f,
+                sweepAngle = 180f,
+                useCenter = false,
+                topLeft = Offset(l * 0.14f, l * 0.32f),
+                size = Size(l * 0.72f, l * 0.72f),
+                style = Stroke(width = strokeW),
+            )
+        }
+        StatusIconKind.SAD -> {
+            // 云：三圆簇（不开心）
+            drawCircle(tint, radius = l * 0.21f, center = Offset(l * 0.5f, l * 0.64f))
+            drawCircle(tint, radius = l * 0.17f, center = Offset(l * 0.32f, l * 0.5f))
+            drawCircle(tint, radius = l * 0.17f, center = Offset(l * 0.68f, l * 0.5f))
+        }
+        StatusIconKind.DIRTY -> {
+            // 水滴（脏）
+            val path = Path().apply {
+                moveTo(l * 0.5f, l * 0.1f)
+                cubicTo(l * 0.04f, l * 0.52f, l * 0.2f, l * 0.9f, l * 0.5f, l * 0.9f)
+                cubicTo(l * 0.8f, l * 0.9f, l * 0.96f, l * 0.52f, l * 0.5f, l * 0.1f)
+                close()
+            }
+            drawPath(path, tint)
+        }
+        StatusIconKind.SICK -> {
+            // 圆角十字（病）
+            val r = l * 0.12f
+            drawRoundRect(
+                color = tint,
+                topLeft = Offset(l * 0.26f, l * 0.42f),
+                size = Size(l * 0.48f, l * 0.16f),
+                cornerRadius = CornerRadius(r, r),
+            )
+            drawRoundRect(
+                color = tint,
+                topLeft = Offset(l * 0.42f, l * 0.26f),
+                size = Size(l * 0.16f, l * 0.48f),
+                cornerRadius = CornerRadius(r, r),
+            )
+        }
+    }
+}
+
+/**
+ * 操作面板（底）：对侧（顶部）固定收起条 + 滚动列表；页内两级（动作列表 ⇄ 食物选择）。
+ * M6.S2 接入真实动作（Task.md M6.S2 / doc/06 §6 + doc/01 §10）：
+ * - 「状态」首项 = 收起下、展开上（§3.2 三入口合一）；
+ * - 投喂/玩耍/抚摸：可执行 = 实心；冷却/属性满 = 空心只读（行内附原因/倒计时）；
+ * - 投喂 → 食物子页（口味类别色覆写胶囊背景，契合口味提示）；动作执行经 [onAction] 上抛；
+ * - SICK 时出现「治疗」（引擎条件仅 SICK，见 ActionRule）；熟睡（SLEEPING）时深夜互动
+ *   收益为 0，四个动作收起为空心提示行（doc/06 §6 睡眠窗口不互动）。
+ */
+@Composable
+private fun ColumnScope.ActionPanelBody(
+    onDismiss: () -> Unit,
+    profile: PetProfile,
+    onAction: (type: ActionType, food: FoodType?) -> Unit,
+    onShowStatus: () -> Unit,
+) {
     DismissStrip(dir = ChevronDir.Down, onDismiss)
     Box(
         Modifier
             .fillMaxWidth()
             .weight(1f),
     ) {
-        RoundList {
-            RoundEdgeSpace(48.dp)
-            PanelTitle("操作 · 占位")
-            PillItem("投喂 · 占位", filled = true, color = ColorToken.Satiation, onClick = null)
-            RoundListSpacer()
-            PillItem("玩耍 · 占位", filled = true, color = ColorToken.Mood, onClick = null)
-            RoundListSpacer()
-            PillItem("抚摸 · 占位", filled = false, onClick = null)
-            RoundListSpacer()
-            Text(
-                "M6 接真实动作与冷却",
-                color = ColorToken.Text2,
-                fontSize = 11.sp,
-                modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
+        var page by remember { mutableStateOf(ActionPage.Actions) }
+        // 面板打开期间每秒推进一次当前时刻：冷却行的剩余倒计时实时刷新（到点自动恢复实心）
+        var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(1000)
+                nowMs = System.currentTimeMillis()
+            }
+        }
+        if (page == ActionPage.Actions) {
+            ActionListPage(
+                profile = profile,
+                nowMs = nowMs,
+                onShowStatus = onShowStatus,
+                onOpenFeed = { page = ActionPage.Feed },
+                onAction = onAction,
             )
-            RoundEdgeSpace(48.dp)
+        } else {
+            FeedPage(
+                profile = profile,
+                onBack = { page = ActionPage.Actions },
+                onPick = { onAction(ActionType.FEED, it) },
+            )
         }
     }
+}
+
+/** 操作面板 · 动作列表页。 */
+@Composable
+private fun ActionListPage(
+    profile: PetProfile,
+    nowMs: Long,
+    onShowStatus: () -> Unit,
+    onOpenFeed: () -> Unit,
+    onAction: (type: ActionType, food: FoodType?) -> Unit,
+) {
+    RoundList {
+        RoundEdgeSpace(48.dp)
+        PanelTitle("操作")
+        // 状态：三入口合一的「收起下、展开上」（doc/06 §3.2）
+        PillItem("状态", filled = true, onClick = onShowStatus)
+        RoundListSpacer()
+        if (profile.fsmState == PetState.SLEEPING) {
+            // 熟睡中：深夜互动收益 = 0，动作不占位（doc/06 §6 睡眠窗口不互动）
+            PillItem("呼噜中… 醒来后再来照顾", filled = false)
+        } else {
+            val mood = profile.attributes[AttributeId.MOOD]
+            val feedDenied = ActionRule.feedDenied(profile, nowMs)
+            val playDenied = ActionRule.playDenied(profile, nowMs)
+            val petDenied = ActionRule.petDenied(profile, nowMs)
+            // 投喂（可执行 → 进入食物子页；冷却/吃饱 → 空心只读）
+            ActionRow(
+                title = "投喂",
+                denied = feedDenied,
+                dotColor = ColorToken.Satiation,
+                onClick = onOpenFeed,
+            )
+            RoundListSpacer()
+            ActionRow(
+                title = "玩耍",
+                denied = playDenied,
+                dotColor = ColorToken.Mood,
+                onClick = { onAction(ActionType.PLAY, null) },
+            )
+            RoundListSpacer()
+            ActionRow(
+                title = "抚摸",
+                denied = petDenied,
+                dotColor = ColorToken.Health,
+                onClick = { onAction(ActionType.PET, null) },
+            )
+            // 治疗：仅 SICK 才出现（不 SICK 不占位，引擎同条件拦截）
+            if (profile.fsmState == PetState.SICK) {
+                RoundListSpacer()
+                PillItem("治疗", filled = true, onClick = { onAction(ActionType.HEAL, null) })
+            }
+        }
+        RoundListSpacer()
+        Text(
+            "冷却 / 属性满自动只读 · 喂食需选口味（契合 +10%）",
+            color = ColorToken.Text2,
+            fontSize = 11.sp,
+            modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
+        )
+        RoundEdgeSpace(48.dp)
+    }
+}
+
+/** 操作面板 · 食物选择子页（doc/06 §6 投喂：口味类别色覆写胶囊背景）。 */
+@Composable
+private fun FeedPage(
+    profile: PetProfile,
+    onBack: () -> Unit,
+    onPick: (FoodType) -> Unit,
+) {
+    RoundList {
+        RoundEdgeSpace(48.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // 子页返回（滚动首元素行，chevron ≥20dp 视觉、热区 ≥30dp）
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = onBack),
+                contentAlignment = Alignment.Center,
+            ) {
+                MiniChevron(dir = ChevronDir.Left, tint = ColorToken.Accent, size = 20.dp)
+            }
+            Text(
+                "选择食物 · ${profile.petName}",
+                color = ColorToken.Accent,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(start = 6.dp),
+            )
+        }
+        RoundListSpacer()
+        FoodType.entries.forEachIndexed { index, food ->
+            if (index > 0) RoundListSpacer()
+            val matched = food.flavor == profile.personality.flavor
+            val suffix = if (matched) "契合" else food.flavor.label
+            PillItem(
+                text = "${food.icon} ${food.label} · $suffix",
+                filled = true,
+                color = foodTint(food.flavor),
+                onClick = { onPick(food) },
+            )
+        }
+        RoundListSpacer()
+        Text(
+            "契合口味（性格档案）额外 +10% 收益",
+            color = ColorToken.Text2,
+            fontSize = 11.sp,
+            modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
+        )
+        RoundEdgeSpace(48.dp)
+    }
+}
+
+/**
+ * 动作行：可执行 = 实心胶囊（[onClick]）；denied 非空 = 空心只读 + 行内原因
+ * （doc/06 §8.3：冷却倒计时 / 属性已满说明）。
+ */
+@Composable
+private fun ColumnScope.ActionRow(
+    title: String,
+    denied: ActionDenied?,
+    dotColor: Color,
+    onClick: () -> Unit,
+) {
+    if (denied == null) {
+        PillItem(
+            text = title,
+            filled = true,
+            icon = { ColorDot(dotColor) },
+            onClick = onClick,
+        )
+    } else {
+        PillItem(
+            text = "$title · ${denied.reasonText()}",
+            filled = false,
+            icon = { ColorDot(dotColor) },
+            onClick = null,
+        )
+    }
+}
+
+/** 不可执行原因 → 只读行内说明（空心胶囊文案，doc/06 §8.3）。 */
+private fun ActionDenied.reasonText(): String = when (this) {
+    is ActionDenied.Cooldown -> "冷却 ${fmtRemain(remainMs)}"
+    is ActionDenied.AttributeCeiling -> when (id) {
+        AttributeId.SATIATION -> "已经吃饱啦"
+        else -> "心情很好啦"
+    }
+    ActionDenied.NotSick -> "没有生病"
+}
+
+/** 剩余时长 → mm:ss / h:mm:ss。 */
+private fun fmtRemain(remainMs: Long): String {
+    val totalSec = ((remainMs.coerceAtLeast(0) + 999) / 1000)
+    val h = totalSec / 3600
+    val m = (totalSec % 3600) / 60
+    val s = totalSec % 60
+    val p2 = { v: Long -> v.toString().padStart(2, '0') }
+    return if (h > 0) "$h:${p2(m)}:${p2(s)}" else "${p2(m)}:${p2(s)}"
+}
+
+/** 食物口味 → 类别覆写色（M6.S2 新增类别色，doc/06 §4.1）。 */
+private fun foodTint(flavor: FoodFlavor): Color = when (flavor) {
+    FoodFlavor.BALANCED -> ColorToken.FoodBalanced
+    FoodFlavor.HEARTY -> ColorToken.FoodHearty
+    FoodFlavor.LIGHT -> ColorToken.FoodLight
+    FoodFlavor.SWEET -> ColorToken.FoodSweet
+    FoodFlavor.NOVEL -> ColorToken.FoodNovel
+}
+
+/** ActionResult → 表现层短演出指令（气泡文案 + 属性浮字；nonce = 动作事件自增号）。 */
+private fun ActionResult.toPetFx(nonce: Long): PetFx {
+    val kind = when (hint) {
+        ActionHint.EATING -> FxKind.EATING
+        ActionHint.EXCITED -> FxKind.EXCITED
+        ActionHint.AFFECTION -> FxKind.AFFECTION
+        ActionHint.TREATED -> FxKind.TREATED
+    }
+    val bubble = when (hint) {
+        ActionHint.EATING -> if (note != null) "吃到了$note！" else "吃得真香！"
+        ActionHint.EXCITED -> "开心得蹦起来！"
+        ActionHint.AFFECTION -> "亲昵地蹭蹭你！"
+        ActionHint.TREATED -> "病好起来啦！"
+    }
+    // 属性浮字：正值在前、负值（如喂食附带的清洁 −4）随后；四舍五入为整数展示
+    val floats = AttributeRegistry.all
+        .mapNotNull { meta ->
+            val d = delta[meta.id]
+            if (abs(d) < 0.5f) null else meta.id to d
+        }
+        .sortedBy { if (it.second > 0) 0 else 1 }
+        .map { (id, d) ->
+            val sign = if (d > 0) "+" else "-"
+            FxFloat(text = "$sign${abs(d).roundToInt()} ${id.label}", color = attributeColor(id))
+        }
+    return PetFx(nonce = nonce, kind = kind, bubble = bubble, floats = floats)
 }
 
 /** 功能面板（右）：对侧（左缘）固定竖收起条 + 右侧滚动列表，列表滚动不影响收起条。 */

@@ -8,17 +8,22 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lollipop.tamagotchi.core.behavior.PetState
 import com.lollipop.tamagotchi.core.motion.NormalizedPos
@@ -29,6 +34,7 @@ import com.lollipop.tamagotchi.domain.model.PetProfile
 import com.lollipop.tamagotchi.presentation.theme.ColorToken
 import kotlinx.coroutines.delay
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -71,6 +77,42 @@ object PetRenderer {
 
     /** 睡眠暗罩（近似闭眼）不透明度（底色 [ColorToken.bg]，叠模型上变暗）。 */
     const val SLEEP_DIM_ALPHA = 0.45f
+
+    /** 动作短演出时长 tick 数（250ms×10 = 2.5s，doc/02 §1.1 短状态 2~3s）。 */
+    const val FX_TICKS = 10L
+}
+
+/** 动作短演出类别（doc/02 §1.1：短动作态 EATING/EXCITED 不落持久快照，表现层临时演出）。 */
+enum class FxKind { EATING, EXCITED, AFFECTION, TREATED }
+
+/** 浮字条目：属性变化反馈（如「+12 饱腹」），颜色随属性语义色。 */
+data class FxFloat(
+    val text: String,
+    val color: Color,
+)
+
+/**
+ * 一次动作短演出指令（由上层动作事件构建后喂给 [PetLivingSprite]）。
+ * [nonce] 为上层动作事件自增号：同内容连续演出也能可靠重启。
+ * [floats] 自下而上依次上浮（如 饱腹 +、心情 +、清洁 −）。
+ */
+data class PetFx(
+    val nonce: Long,
+    val kind: FxKind,
+    val bubble: String,
+    val floats: List<FxFloat> = emptyList(),
+)
+
+/** 短演出运行记录：仅内存，随 tick 相位推进（running 停时不动）。 */
+private data class FxRun(
+    val fx: PetFx,
+    val startTick: Long,
+) {
+    /** 相位 0..1（含），结束返回 NaN。 */
+    fun progress(tick: Long): Float {
+        val d = tick - startTick
+        return if (d in 0 until PetRenderer.FX_TICKS) (d + 1f) / PetRenderer.FX_TICKS else Float.NaN
+    }
 }
 
 /** 一次渲染帧的状态：FSM 结果 + tick 相位号（呼吸/Zzz 低帧推进源）。 */
@@ -111,6 +153,7 @@ fun PetLivingSprite(
     sheet: ImageBitmap?,
     running: Boolean,
     modifier: Modifier = Modifier,
+    fx: PetFx? = null,
 ) {
     val seed = profile.personality.seed
     val fsm = remember(seed) { BehaviorFSM(seed = seed) }
@@ -120,6 +163,8 @@ fun PetLivingSprite(
     var work by remember { mutableStateOf(profile) }
     // 当前渲染帧（每 tick 写一次；组合期订阅 → 低帧重组重绘，UI 树其它节点不动）
     var living by remember { mutableStateOf(restingPose(profile)) }
+    // 动作短演出运行记录（内存态，不落盘；随 tick 相位推进，面板覆盖暂停）
+    var fxRun by remember { mutableStateOf<FxRun?>(null) }
 
     // profile 变化：同 petId = settle apply/建档快照刷新 → 软合并（跑动坐标/行走进度延续）；
     // 异 petId = 换宠/重开档 → 整档对齐。
@@ -138,22 +183,41 @@ fun PetLivingSprite(
         }
     }
 
+    // fx 新指令（nonce 变化即重启）：running 中从当前 tick 起记一次演出；running=false
+    // （面板覆盖/后台）时不启动，恢复后由 running 键变化重入本效应再启动。
+    LaunchedEffect(fx, running) {
+        if (fx != null && running) {
+            fxRun = FxRun(fx, startTick = living.tick)
+        }
+    }
+
     LaunchedEffect(fsm, running, profile) {
         if (!running) return@LaunchedEffect
         while (true) {
             val now = System.currentTimeMillis()
-            val r = fsm.step(now, work)
-            living = LivingPose(tick = living.tick + 1, pose = r)
-            work = work.copy(
-                position = PetPosition(
-                    x = r.position.x,
-                    y = r.position.y,
-                    dir = r.dir,
-                    frame = r.frame,
-                ),
-                fsmState = r.state,
-                isAsleep = r.state == PetState.SLEEPING,
-            )
+            val run = fxRun
+            if (run != null && !run.progress(living.tick).isNaN()) {
+                // 短演出：冻结 FSM（行为不推进、不移动），沿当前坐标原地演出；
+                // tick 照常递增（相位驱动呼吸/蹦跳/气泡/浮字）。
+                living = LivingPose(
+                    tick = living.tick + 1,
+                    pose = living.pose.copy(state = PetState.IDLE, frame = 0),
+                )
+            } else {
+                if (run != null) fxRun = null
+                val r = fsm.step(now, work)
+                living = LivingPose(tick = living.tick + 1, pose = r)
+                work = work.copy(
+                    position = PetPosition(
+                        x = r.position.x,
+                        y = r.position.y,
+                        dir = r.dir,
+                        frame = r.frame,
+                    ),
+                    fsmState = r.state,
+                    isAsleep = r.state == PetState.SLEEPING,
+                )
+            }
             delay(BehaviorFSM.DEFAULT_TICK_MS)
         }
     }
@@ -171,28 +235,52 @@ fun PetLivingSprite(
         val reach = s / 2f - dstSide / 2f - PetRenderer.IDLE_AMP_PX
         val cx = size.width / 2f + pose.position.x * reach
         val cy = size.height / 2f + pose.position.y * reach
-        val sleeping = pose.state == PetState.SLEEPING
+        // 动作短演出：相位 0..1；NaN = 无演出
+        val activeFx = fxRun
+        val fxPhase = activeFx?.progress(frame.tick) ?: Float.NaN
+        val inFx = !fxPhase.isNaN()
+        val sleeping = !inFx && pose.state == PetState.SLEEPING
         // 呼吸（2s 往返，tick 相位 8 步）；行走帧自带步态、睡眠冻结
         val breath = if (sleeping || pose.state == PetState.WALKING) {
             0f
         } else {
             cos(2.0 * PI * frame.tick / (PetRenderer.BREATH_TICKS_HALF * 2)).toFloat()
         }
-        val yOff = breath * PetRenderer.IDLE_AMP_PX
+        // 短演出姿态叠加：EXCITED=蹦跳、EATING=低头小幅度快伏（进食近似）、
+        // AFFECTION/TREATED=轻微摇摆（歪头/放松，素材无亲昵帧，M10 复核）；均叠加在呼吸之上。
+        var extraY = 0f
+        var sway = 0f
+        if (inFx) {
+            when (activeFx!!.fx.kind) {
+                FxKind.EXCITED -> extraY = -abs(sin(fxPhase * 2.0 * PI)).toFloat() * dstSide * 0.16f
+                FxKind.EATING -> extraY = sin(fxPhase * 4.0 * PI).toFloat() * dstSide * 0.03f
+                FxKind.AFFECTION -> sway = sin(fxPhase * 2.0 * PI).toFloat() * 4f
+                FxKind.TREATED -> sway = sin(fxPhase * 2.0 * PI).toFloat() * 2.5f
+            }
+        }
+        val yOff = breath * PetRenderer.IDLE_AMP_PX + extraY
         val dst = Rect(
             left = cx - dstSide / 2f,
             top = cy - dstSide / 2f + yOff,
             right = cx + dstSide / 2f,
             bottom = cy + dstSide / 2f + yOff,
         )
-        // 层1 帧用法（doc/07 §4）：WALKING 用 FSM 帧循环，其余基底用帧 0
-        val dir = if (sleeping) SpriteSheetDecoder.Dir.Down else SpriteSheetDecoder.Dir.of(pose.dir.ordinal)
-        val srcCol = if (pose.state == PetState.WALKING) pose.frame else 0
-        drawPetFrame(
-            image = sheet,
-            src = SpriteSheetDecoder.frameRect(dir, srcCol),
-            dst = dst,
-        )
+        // 层1 帧用法（doc/07 §4）：WALKING 用 FSM 帧循环，其余基底用帧 0；演出沿用静止基底帧
+        val dir = if (sleeping || inFx) {
+            SpriteSheetDecoder.Dir.Down
+        } else {
+            SpriteSheetDecoder.Dir.of(pose.dir.ordinal)
+        }
+        val srcCol = if (!inFx && pose.state == PetState.WALKING) pose.frame else 0
+        val frameSrc = SpriteSheetDecoder.frameRect(dir, srcCol)
+        if (abs(sway) > 0.01f) {
+            // 亲昵/治愈摇摆：绕模型中心小幅旋转
+            rotate(degrees = sway, pivot = Offset(cx, cy + yOff / 2f)) {
+                drawPetFrame(image = sheet, src = frameSrc, dst = dst)
+            }
+        } else {
+            drawPetFrame(image = sheet, src = frameSrc, dst = dst)
+        }
         if (sleeping) {
             // 近似「闭眼」的暗罩（素材无睡姿帧；rotate 躺姿留 M10 真机复核）
             drawCircle(
@@ -206,6 +294,16 @@ fun PetLivingSprite(
                 baseX = cx,
                 baseY = cy - dstSide / 2f,
                 side = dstSide,
+            )
+        }
+        if (inFx) {
+            // 气泡 + 数值浮字（随宠物走，doc/06 §7/§8；文字不透明 ≥11sp）
+            drawActionFx(
+                textMeasurer = textMeasurer,
+                fx = activeFx!!.fx,
+                progress = fxPhase,
+                cx = cx,
+                dst = dst,
             )
         }
     }
@@ -236,6 +334,65 @@ private fun DrawScope.drawSleepZzz(
         val x = baseX + sin(zi * 2.0 * PI).toFloat() * side * 0.08f
         val y = baseY - zi * rise - layout.size.height
         drawText(layout, topLeft = Offset(x - layout.size.width / 2f, y))
+    }
+}
+
+/**
+ * 动作短演出反馈（doc/06 §7 气泡 + §8.1 数值浮字）：
+ * 气泡 = 不透明黑底圆角胶囊 + Accent 字（文字 ≥12sp、不透明，不做透明度渐变）；
+ * 浮字 = 属性语义色加粗字（11sp 起步），自气泡上方逐条竖直排列、随相位整体上浮，
+ * 用位移表达动效、不用字面低 alpha（doc/06 §8 最小字号/不透明约束）。气泡悬在宠物上方，
+ * 顶部空间不足时翻到下方，避免越出圆屏被裁。
+ */
+private fun DrawScope.drawActionFx(
+    textMeasurer: androidx.compose.ui.text.TextMeasurer,
+    fx: PetFx,
+    progress: Float,
+    cx: Float,
+    dst: Rect,
+) {
+    val bubbleStyle = TextStyle(
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = ColorToken.Accent,
+    )
+    val bubble = textMeasurer.measure(fx.bubble, bubbleStyle)
+    val padX = 8.dp.toPx()
+    val padY = 4.dp.toPx()
+    val bw = bubble.size.width + padX * 2f
+    val bh = bubble.size.height + padY * 2f
+    val gap = 4.dp.toPx()
+    val placeAbove = dst.top - gap - bh >= 8f
+    val bubbleTop = if (placeAbove) dst.top - gap - bh else dst.bottom + gap
+    val left = (cx - bw / 2f).coerceIn(4f, (size.width - bw - 4f).coerceAtLeast(4f))
+    drawRoundRect(
+        color = ColorToken.bg.copy(alpha = 0.92f),
+        topLeft = Offset(left, bubbleTop),
+        size = Size(bw, bh),
+        cornerRadius = CornerRadius(bh / 2f, bh / 2f),
+    )
+    drawText(bubble, topLeft = Offset(left + padX, bubbleTop + padY))
+
+    if (fx.floats.isEmpty()) return
+    // 浮字：气泡上方自下而上堆叠、随相位整体上浮
+    val rise = progress * 22.dp.toPx()
+    var accH = 0f
+    fx.floats.forEach { f ->
+        val style = TextStyle(
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = f.color,
+        )
+        val layout = textMeasurer.measure(f.text, style)
+        accH += layout.size.height + 3.dp.toPx()
+        val y = bubbleTop - accH - rise
+        if (y >= 2f) {
+            val x = (cx - layout.size.width / 2f).coerceIn(
+                2f,
+                (size.width - layout.size.width - 2f).coerceAtLeast(2f),
+            )
+            drawText(layout, topLeft = Offset(x, y))
+        }
     }
 }
 
