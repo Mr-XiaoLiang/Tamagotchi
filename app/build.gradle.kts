@@ -48,6 +48,8 @@ dependencies {
     implementation(libs.ui.tooling.preview)
     implementation(libs.wear.tooling.preview)
     androidTestImplementation(libs.ui.test.junit4)
+    testImplementation(libs.junit)
+    testImplementation(libs.orgjson)
     debugImplementation(libs.ui.test.manifest)
     debugImplementation(libs.ui.tooling)
 }
