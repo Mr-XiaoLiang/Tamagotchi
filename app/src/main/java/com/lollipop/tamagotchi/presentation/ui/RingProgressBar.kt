@@ -115,6 +115,47 @@ fun RingProgressBar(
     }
 }
 
+/**
+ * 行内迷你进度环（doc/06 §3.2 状态行「迷你进度条」——用户拍板用环形、置于行尾）：
+ * 底轨 = 全圆低透明槽道，前景按 value/100 从 12 点起顺时针覆盖，圆头端帽；
+ * 属性行随值直观显示余量；数值仍由行文本承载（环内不放字，规避圆形内小字裁切，
+ * 见 doc/06 §8 最小字号约束）。低值警示由调用方换色（M6.S2 预警呼吸阶段接入）。
+ */
+@Composable
+fun MiniProgressRing(
+    value: Float,
+    color: Color,
+    modifier: Modifier = Modifier,
+    size: Dp = 24.dp,
+    strokeWidth: Dp = 3.5.dp,
+) {
+    val frac = (value / 100f).coerceIn(0f, 1f)
+    Canvas(modifier.size(size)) {
+        val strokePx = strokeWidth.toPx()
+        val radius = (this.size.width - strokePx) / 2f
+        val center = Offset(this.size.width / 2f, this.size.height / 2f)
+        // 底轨：全圆低透明槽道
+        drawCircle(
+            color = color.copy(alpha = 0.16f),
+            radius = radius,
+            center = center,
+            style = Stroke(width = strokePx),
+        )
+        // 前景：自 12 点按 frac 覆盖
+        if (frac > 0f) {
+            drawArc(
+                color = color,
+                startAngle = -90f,
+                sweepAngle = 360f * frac,
+                useCenter = false,
+                topLeft = Offset(center.x - radius, center.y - radius),
+                size = Size(radius * 2f, radius * 2f),
+                style = Stroke(width = strokePx, cap = StrokeCap.Round),
+            )
+        }
+    }
+}
+
 /** 段起点小图标（碗 / 气球 / 十字），极简几何占位，M3+ 换规范图标素材。 */
 private fun DrawScope.drawMiniGlyph(index: Int, center: Offset, tint: Color, side: Float) {
     val left = center.x - side / 2f

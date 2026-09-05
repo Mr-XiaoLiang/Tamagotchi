@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,7 +30,9 @@ import com.lollipop.tamagotchi.presentation.theme.ColorToken
  * 胶囊条目（doc/06 §8.3）：
  *  - 实心 = 可执行动作（可点击）；空心 = 只读信息位 / 锁定（不可点击）；
  *  - [color] 可覆写（属性/状态/类别色）：实心换填充色、空心换描边与文字色；
- *  - [icon] 前置小图标（形状自行着色，不受胶囊文字色限制）。
+ *  - [icon] 前置小图标（形状自行着色，不受胶囊文字色限制）；
+ *  - [trailing] 尾随位（文字后、行右 padding 内）；[contentPadding] 可覆写内边距
+ *    （默认两端 18dp；状态行传非对称值把行尾环右移至与胶囊端半圆同心）。
  */
 @Composable
 fun PillItem(
@@ -38,6 +41,8 @@ fun PillItem(
     filled: Boolean = false,
     color: Color? = null,
     icon: (@Composable () -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 18.dp),
     textAlign: TextAlign = TextAlign.Start,
     onClick: (() -> Unit)? = null,
 ) {
@@ -52,9 +57,9 @@ fun PillItem(
             .height(46.dp)
             .clip(shape)
             .background(bg)
-            .border(if (filled) 0.dp else 1.dp, borderColor, shape)
+            .border(if (filled) 0.dp else 2.dp, borderColor, shape)
             .clickable(enabled = onClick != null, onClick = { onClick?.invoke() })
-            .padding(horizontal = 18.dp),
+            .padding(contentPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
@@ -71,6 +76,10 @@ fun PillItem(
             textAlign = textAlign,
             modifier = Modifier.weight(1f),
         )
+        if (trailing != null) {
+            Spacer(Modifier.width(10.dp))
+            trailing()
+        }
     }
 }
 

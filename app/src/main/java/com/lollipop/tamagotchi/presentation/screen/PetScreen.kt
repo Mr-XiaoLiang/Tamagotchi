@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -84,6 +85,7 @@ import com.lollipop.tamagotchi.presentation.component.SheetEdge
 import com.lollipop.tamagotchi.presentation.theme.BlackGlowBackground
 import com.lollipop.tamagotchi.presentation.theme.ColorToken
 import com.lollipop.tamagotchi.presentation.screen.debug.DebugSpeciesGridScreen
+import com.lollipop.tamagotchi.presentation.ui.MiniProgressRing
 import com.lollipop.tamagotchi.presentation.ui.RingProgressBar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -95,6 +97,12 @@ private enum class Panel { Status, Action, Quick }
 
 /** 三向把手自动隐藏时长：从箭头自身显现时刻起计，到时淡出（doc/06 §1，避免常驻观感）。 */
 private const val HANDLE_HINT_MS = 10_000L
+
+/**
+ * 三向「边缘热区带」带深：贴屏缘的常驻不可见窄带，同时是「点按展开」与「跟手拖拽」的
+ * 起点判定区（见 [sheetDragZone]）。带深不过大，避免侵占中央宠物活动区（doc/06 §1/§5）。
+ */
+private val EdgeBand = 32.dp
 
 /**
  * 主屏四区 + 三 overlay 路由（doc/06 §1/§2/§5，Task.md M1.S2）。
@@ -150,7 +158,7 @@ fun PetScreen(
         }
     }
 
-    /** 打开抽屉（箭头点击）。点击打开带滑入动画（拖拽落位已由手势直接写满）。 */
+    /** 打开抽屉（边缘热区带点按 / 收起后返回）。点按开带滑入动画（拖拽落位已由手势直接写满）。 */
     fun openSheet(p: Panel) {
         if (panel != p) panel = p
         animateRevealTo(1f, 240)
@@ -184,17 +192,25 @@ fun PetScreen(
                         // 松手过半保留、不到一半弹回收起。
                         Modifier.pointerInput(Unit) {
                             val minSidePx = minOf(size.width, size.height).toFloat()
+                            val edgePx = EdgeBand.toPx()
                             awaitEachGesture {
-                                // requireUnconsumed=false：内层可点控件（debug 长按/EdgeHint）会消费 down
+                                // requireUnconsumed=false：内层可点控件（debug 长按）会消费 down。
+                                // 三向开合不设独立可点控件：本手势统一承担「点按展开」与「跟手拖开」。
                                 val down = awaitFirstDown(requireUnconsumed = false)
                                 val start = down.position
-                                // 抽屉已开时不通过本手势再开新抽屉（收回交给箭头/点外部/返回键）
+                                // 抽屉已开时不通过本手势再开新抽屉（收回交给收起钮/点外部/返回键）
                                 if (panel != null) return@awaitEachGesture
+                                // 起点必须落在三向「边缘热区带」（贴屏缘常驻窄带，见 sheetDragZone）：
+                                // 带内起手可点开、也可作拖拽起点；带外（中央宠物区）一律不响应，
+                                // 避免大面积可拖带干扰宠物交互。
+                                val startZone = sheetDragZone(start, size, edgePx)
+                                if (startZone == null) return@awaitEachGesture
                                 var last = start
                                 var acc = Offset.Zero
                                 var zone: Panel? = null
                                 val engagePx = 14.dp.toPx()
                                 val abandonPx = 28.dp.toPx()
+                                val tapSlopPx = 10.dp.toPx()
                                 while (true) {
                                     val event = awaitPointerEvent()
                                     val change = event.changes.firstOrNull { it.id == down.id } ?: break
@@ -202,7 +218,10 @@ fun PetScreen(
                                     acc += moved
                                     last = change.position
                                     if (!event.changes.any { it.pressed }) {
-                                        // 松手：过半保留，否则弹回收起。
+                                        // 松手：
+                                        //  - 已进入拖拽（zone!=null）：过半保留，否则弹回收起。
+                                        //  - 原地点按（累计位移 ≤ tapSlop）：= 点击边缘热区 → 动画展开。
+                                        //  - 意图明确的短拉（同轴正向、位移未过 engage）：死区救援，也展开。
                                         // 手势的 await 块是受限作用域，不能直接调 suspend，动画放到组合作用域。
                                         if (zone != null) {
                                             if (reveal >= 0.5f) {
@@ -217,19 +236,28 @@ fun PetScreen(
                                                     panel = null
                                                 }
                                             }
+                                        } else if (!debugGrid && acc.getDistance() <= tapSlopPx) {
+                                            openSheet(startZone)
+                                        } else if (!debugGrid &&
+                                            sheetDragDominant(startZone, acc)
+                                        ) {
+                                            val travel = sheetDragTravel(startZone, acc)
+                                            if (travel >= 0f && travel < engagePx) {
+                                                openSheet(startZone)
+                                            }
                                         }
                                         break
                                     }
                                     if (zone == null) {
-                                        val cand = sheetDragZone(start, size)
-                                        if (cand != null && sheetDragDominant(cand, acc) &&
-                                            sheetDragTravel(cand, acc) >= engagePx
+                                        // 同轴拖动过 engage → 进入跟手模式（面板先挂载全收起、随指逐帧展开）
+                                        if (sheetDragDominant(startZone, acc) &&
+                                            sheetDragTravel(startZone, acc) >= engagePx
                                         ) {
-                                            zone = cand
-                                            panel = cand // 先挂载（此刻全收起），随后跟手指逐帧展开
+                                            zone = startZone
+                                            panel = startZone // 先挂载（此刻全收起），随后跟手指逐帧展开
                                             reveal = 0f
                                         } else if (acc.getDistance() > abandonPx) {
-                                            break // 起点方向不符 / 不在三向带：非抽屉手势
+                                            break // 起点在带内但方向不符 / 幅度大：非抽屉手势，放弃
                                         }
                                         continue
                                     }
@@ -376,22 +404,20 @@ fun PetScreen(
                 )
             }
 
-            // ── 三向手势把手（白色半透明小箭头，overlay 置顶层、贴主环内沿）──
+            // ── 三向视觉把手（白色半透明小箭头，overlay 置顶层、贴主环内沿，纯装饰）──
             // 顶▼（下拉=状态）/ 底▲（上滑=操作）/ 右◀（左滑=快捷），r≈0.77 屏半径
-            // 各自从所属层显现起计 10s 后自动淡出（见上 hintHidden*）；淡出后不可见（不可点），
-            // 打开面板等操作通过边缘滑动手势/面板内收起钮完成，不再依赖把手复现。
-            // （宠物在最底层移动，可从把手下方经过；把手可点热区 ≥30dp，本容器透明不挡宠物 hit）
+            // 箭头不承载点击（无 pointerInput，事件穿透下层）：开合统一由根手势的三向
+            // 「边缘热区带」承担（点按展开 / 跟手拖开，见 sheetDragZone）。
+            // 各自从所属层显现起计 10s 后随 alpha 淡出（见上 hintHidden*）——提示已到位
+            // 不需一直强调；淡出仅视觉，热区带常驻不失效。
+            // （宠物在最底层移动，可从把手下方经过；容器透明不挡宠物 hit）
             Box(
                 Modifier
                     .align(Alignment.Center)
                     .offset(y = -handleR)
                     .alpha(topHintAlpha),
             ) {
-                EdgeHint(
-                    dir = ChevronDir.Down,
-                    enabled = !hintHiddenTop,
-                    onClick = { openSheet(Panel.Status) },
-                )
+                EdgeHint(ChevronDir.Down)
             }
             Box(
                 Modifier
@@ -399,11 +425,7 @@ fun PetScreen(
                     .offset(y = handleR)
                     .alpha(bottomAlpha),
             ) {
-                EdgeHint(
-                    dir = ChevronDir.Up,
-                    enabled = !hintHiddenBottom,
-                    onClick = { openSheet(Panel.Action) },
-                )
+                EdgeHint(ChevronDir.Up)
             }
             Box(
                 Modifier
@@ -411,11 +433,7 @@ fun PetScreen(
                     .offset(x = handleR)
                     .alpha(quickAlpha),
             ) {
-                EdgeHint(
-                    dir = ChevronDir.Left,
-                    enabled = !hintHiddenQuick,
-                    onClick = { openSheet(Panel.Quick) },
-                )
+                EdgeHint(ChevronDir.Left)
             }
 
             // ── Overlay 层（置顶，互斥）────────────────────────
@@ -596,10 +614,18 @@ private fun ColumnScope.StatusPanelBody(profile: PetProfile, onDismiss: () -> Un
             PanelTitle("状态 · ${profile.petName}")
             AttributeRegistry.all.forEachIndexed { index, meta ->
                 if (index > 0) RoundListSpacer()
+                val color = attributeColor(meta.id)
+                val value = profile.attributes[meta.id]
                 PillItem(
-                    "${meta.id.label}  ${profile.attributes[meta.id].roundToInt()}",
+                    "${meta.id.label}  ${value.roundToInt()}",
                     filled = false,
-                    icon = { ColorDot(attributeColor(meta.id)) },
+                    // 右留白 11dp = 环外缘到行上下边距（46 行高 − 24 环径）/ 2，
+                    // 使环与胶囊右端半圆同圆心（同心内嵌观感）。
+                    contentPadding = PaddingValues(start = 18.dp, end = 11.dp),
+                    icon = { ColorDot(color) },
+                    trailing = {
+                        MiniProgressRing(value = value, color = color)
+                    },
                     onClick = null,
                 )
             }
@@ -827,17 +853,16 @@ internal fun MiniChevron(
 }
 
 /**
- * 手势把手：白色半透明单箭头（无底色/描边/标签），提示该方向边缘可滑入面板；点击热区透明但足够大。
- * @param enabled false = 自动隐藏期（淡出中/已隐藏）：箭头透明、点击穿透下层（不吞手势），
- *   不留下「看不见却能点开面板」的区域；alpha 由外层 Box 统一驱动。
+ * 三向视觉把手（纯装饰，doc/06 §1）：白色半透明单箭头（无底色/描边/标签），只作
+ * 「该方向边缘可开面板」的提示。**不承载点击、无 pointerInput、事件穿透下层**——
+ * 点按展开与跟手拖开统一走常驻不可见的「边缘热区带」手势（根手势 + [sheetDragZone]），
+ * 不留下「看得见才点得动 / 看不见就失效」的区域依赖；alpha 由外层 Box 统一驱动
+ * （超时淡出仅隐藏视觉提示，热区依旧常驻可开）。
  */
 @Composable
-private fun EdgeHint(dir: ChevronDir, enabled: Boolean, onClick: () -> Unit) {
+private fun EdgeHint(dir: ChevronDir) {
     Box(
-        modifier = Modifier
-            .size(40.dp)
-            .clip(CircleShape)
-            .clickable(enabled = enabled, onClick = onClick),
+        modifier = Modifier.size(40.dp),
         contentAlignment = Alignment.Center,
     ) {
         MiniChevron(
@@ -850,11 +875,16 @@ private fun EdgeHint(dir: ChevronDir, enabled: Boolean, onClick: () -> Unit) {
 
 // ─────────────────────── 抽屉跟手手势路由 ───────────────────────
 
-/** 起点所在的三向开启带（顶缘下拉=状态 / 下缘上滑=操作 / 右缘左滑=功能）。 */
-private fun sheetDragZone(start: Offset, scope: IntSize): Panel? = when {
-    start.y < scope.height * 0.40f -> Panel.Status
-    start.y > scope.height * 0.60f -> Panel.Action
-    start.x > scope.width * 0.55f -> Panel.Quick
+/**
+ * 起点所在的三向「边缘热区带」（doc/06 §1/§5）：贴屏缘的常驻不可见窄带，带深 [EdgeBand]
+ * （≈32dp，≥30dp 触控下界）。该带同时是「点按展开」与「跟手拖拽」的起点判定——带内起手点按 = 点击展开、
+ * 带内向屏内同轴拖动 = 跟手拉开；带外（中央宠物活动区）一律不响应，避免大面积可拖带干扰
+ * 宠物交互。顶/底带优先于右带（上/下四角归顶/底带），右带只留中段；无左带（规避系统返回）。
+ */
+private fun sheetDragZone(start: Offset, scope: IntSize, edgePx: Float): Panel? = when {
+    start.y < edgePx -> Panel.Status
+    start.y > scope.height.toFloat() - edgePx -> Panel.Action
+    start.x > scope.width.toFloat() - edgePx -> Panel.Quick
     else -> null
 }
 
