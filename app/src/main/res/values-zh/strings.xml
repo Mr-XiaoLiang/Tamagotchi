@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 应用名（Launcher 标签；原 values/strings.xml 唯一键，被 i18n 改造合并保留） -->
+    <!-- 应用名（Launcher 标签） -->
     <string name="app_name">Tamagotchi</string>
 
-    <!-- 状态面板 -->
+    <!-- 中文显式覆盖（与默认 values/ 一致；设备 zh 区域走此处） -->
     <string name="status_title">状态 · %1$s</string>
     <string name="status_snapshot_note">建档快照实时值 · 衰减/冷却随结算推进（M5/M6）</string>
     <string name="status_icon_hungry">饥饿</string>
@@ -12,7 +12,6 @@
     <string name="status_icon_sick">生病</string>
     <string name="status_icon_cd">%1$s（点按查看状态）</string>
 
-    <!-- 操作面板 -->
     <string name="actions_title">操作</string>
     <string name="action_status">状态</string>
     <string name="action_sleeping">呼噜中… 醒来后再来照顾</string>
@@ -22,12 +21,10 @@
     <string name="action_heal">治疗</string>
     <string name="actions_note">冷却 / 属性满自动只读 · 喂食需选口味（契合 +10%）</string>
 
-    <!-- 投喂子页 -->
     <string name="feed_title">选择食物 · %1$s</string>
     <string name="feed_match">契合</string>
     <string name="feed_note">契合口味（性格档案）额外 +10% 收益</string>
 
-    <!-- 食物 / 口味 -->
     <string name="food_berries">树果餐</string>
     <string name="food_meal">能量餐</string>
     <string name="food_nutrition">营养餐</string>
@@ -39,40 +36,34 @@
     <string name="flavor_sweet">甜口</string>
     <string name="flavor_novel">新奇</string>
 
-    <!-- 属性名（主环 / 状态面板） -->
     <string name="attr_satiation">饱腹度</string>
     <string name="attr_mood">心情度</string>
     <string name="attr_health">健康度</string>
     <string name="attr_intelligence">智力</string>
     <string name="attr_hygiene">清洁度</string>
 
-    <!-- 动作拒绝原因 -->
     <string name="deny_cooldown">冷却 %1$s</string>
     <string name="deny_full_satiation">已经吃饱啦</string>
     <string name="deny_full_mood">心情很好啦</string>
     <string name="deny_not_sick">没有生病</string>
 
-    <!-- 动作短演出气泡 -->
     <string name="fx_eat_note">吃到了%1$s！</string>
     <string name="fx_eat">吃得真香！</string>
     <string name="fx_excited">开心得蹦起来！</string>
     <string name="fx_affection">亲昵地蹭蹭你！</string>
     <string name="fx_treated">病好起来啦！</string>
 
-    <!-- 快捷功能面板 -->
     <string name="quick_title">功能 · 占位</string>
     <string name="quick_comm">通讯呼叫 · M8</string>
     <string name="quick_game">休闲小游戏 · M16</string>
     <string name="quick_native_title">原生功能清单（doc/05）</string>
     <string name="quick_restart">重开档 · Debug</string>
 
-    <!-- 建档屏 -->
     <string name="setup_title">档案 · 选择伙伴</string>
     <string name="setup_subtitle">初次启动：挑一只开始养育（共 %1$d 只）</string>
     <string name="setup_confirm">确定领养 · 建档开始</string>
     <string name="flavor_pref">口味偏好 %1$s · seed %2$d</string>
 
-    <!-- 建档六维 trait 名（顺序与 Traits.orderedValues 一致） -->
     <string name="trait_activity">好动</string>
     <string name="trait_affinity">粘人</string>
     <string name="trait_appetite">贪吃</string>

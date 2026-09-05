@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App name (Launcher label) -->
+    <string name="app_name">Tamagotchi</string>
+
+    <!-- English (M7 i18n scaffold; primary copy is zh in values/). -->
+    <string name="status_title">Status · %1$s</string>
+    <string name="status_snapshot_note">Live snapshot · decays/cooldowns advance with settle (M5/M6)</string>
+    <string name="status_icon_hungry">Hungry</string>
+    <string name="status_icon_sad">Unhappy</string>
+    <string name="status_icon_dirty">Dirty</string>
+    <string name="status_icon_sick">Sick</string>
+    <string name="status_icon_cd">%1$s (tap to view status)</string>
+
+    <string name="actions_title">Actions</string>
+    <string name="action_status">Status</string>
+    <string name="action_sleeping">Zzz… wake up to care</string>
+    <string name="action_feed">Feed</string>
+    <string name="action_play">Play</string>
+    <string name="action_pet">Pet</string>
+    <string name="action_heal">Heal</string>
+    <string name="actions_note">Cooldown / full attr → read-only · feeding needs a flavor (match +10%)</string>
+
+    <string name="feed_title">Pick food · %1$s</string>
+    <string name="feed_match">Match</string>
+    <string name="feed_note">Matching flavor (personality) gives +10% bonus</string>
+
+    <string name="food_berries">Berries</string>
+    <string name="food_meal">Hearty meal</string>
+    <string name="food_nutrition">Nutrition</string>
+    <string name="food_snack">Snack</string>
+    <string name="food_porridge">Special porridge</string>
+    <string name="flavor_balanced">Balanced</string>
+    <string name="flavor_hearty">Hearty</string>
+    <string name="flavor_light">Light</string>
+    <string name="flavor_sweet">Sweet</string>
+    <string name="flavor_novel">Novel</string>
+
+    <string name="attr_satiation">Satiation</string>
+    <string name="attr_mood">Mood</string>
+    <string name="attr_health">Health</string>
+    <string name="attr_intelligence">Intelligence</string>
+    <string name="attr_hygiene">Hygiene</string>
+
+    <string name="deny_cooldown">Cooldown %1$s</string>
+    <string name="deny_full_satiation">Already full</string>
+    <string name="deny_full_mood">Already happy</string>
+    <string name="deny_not_sick">Not sick</string>
+
+    <string name="fx_eat_note">Tasted %1$s!</string>
+    <string name="fx_eat">Yum!</string>
+    <string name="fx_excited">So happy!</string>
+    <string name="fx_affection">Snuggles you!</string>
+    <string name="fx_treated">Feeling better!</string>
+
+    <string name="quick_title">Features · placeholder</string>
+    <string name="quick_comm">Comms call · M8</string>
+    <string name="quick_game">Mini-game · M16</string>
+    <string name="quick_native_title">Native feature list (doc/05)</string>
+    <string name="quick_restart">Reset profile · Debug</string>
+
+    <string name="setup_title">Profile · choose partner</string>
+    <string name="setup_subtitle">First launch: pick one to raise (%1$d total)</string>
+    <string name="setup_confirm">Confirm adoption · start</string>
+    <string name="flavor_pref">Flavor pref %1$s · seed %2$d</string>
+
+    <string name="trait_activity">Active</string>
+    <string name="trait_affinity">Affectionate</string>
+    <string name="trait_appetite">Appetite</string>
+    <string name="trait_curiosity">Curious</string>
+    <string name="trait_temper">Calm</string>
+    <string name="trait_learner">Smart</string>
+</resources>

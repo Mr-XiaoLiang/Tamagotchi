@@ -38,6 +38,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -46,6 +47,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.lollipop.tamagotchi.R
 import com.lollipop.tamagotchi.core.attribute.FoodFlavor
 import com.lollipop.tamagotchi.data.sprite.SpriteRepository
 import com.lollipop.tamagotchi.data.sprite.SpriteRepository.PetEntry
@@ -58,6 +60,8 @@ import com.lollipop.tamagotchi.presentation.component.roundEdgeFade
 import com.lollipop.tamagotchi.presentation.render.SpriteSheetDecoder
 import com.lollipop.tamagotchi.presentation.screen.ChevronDir
 import com.lollipop.tamagotchi.presentation.screen.MiniChevron
+import com.lollipop.tamagotchi.presentation.screen.TRAIT_NAMES_RES
+import com.lollipop.tamagotchi.presentation.screen.labelRes
 import com.lollipop.tamagotchi.presentation.theme.ColorToken
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
@@ -134,14 +138,14 @@ private fun PetListContent(
         item {
             Column {
                 Text(
-                    "档案 · 选择伙伴",
+                    stringResource(R.string.setup_title),
                     color = ColorToken.Accent,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "初次启动：挑一只开始养育（共 ${pets.size} 只）",
+                    stringResource(R.string.setup_subtitle, pets.size),
                     color = ColorToken.Text2,
                     fontSize = 11.sp,
                 )
@@ -233,7 +237,7 @@ private fun SetupDetailContent(
             textAlign = TextAlign.Center,
         )
         Text(
-            "口味偏好 ${personality.flavor.zh()} · seed ${personality.seed}",
+            stringResource(R.string.flavor_pref, stringResource(personality.flavor.labelRes), personality.seed),
             color = ColorToken.Text2,
             fontSize = 11.sp,
             textAlign = TextAlign.Center,
@@ -242,7 +246,7 @@ private fun SetupDetailContent(
         TraitBars(personality.traits)
         Spacer(Modifier.height(10.dp))
         PillItem(
-            text = "确定领养 · 建档开始",
+            text = stringResource(R.string.setup_confirm),
             filled = true,
             textAlign = TextAlign.Center,
             onClick = onConfirm,
@@ -280,13 +284,13 @@ private fun BackArrow(onBack: () -> Unit) {
 @Composable
 private fun TraitBars(traits: Traits) {
     Column(Modifier.fillMaxWidth()) {
-        Traits.NAMES.zip(traits.orderedValues).forEach { (name, value) ->
+        traits.orderedValues.zip(TRAIT_NAMES_RES).forEach { (value, nameRes) ->
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    name,
+                    stringResource(nameRes),
                     color = ColorToken.Text2,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
@@ -318,15 +322,6 @@ private fun TraitBars(traits: Traits) {
             }
         }
     }
-}
-
-/** FoodFlavor → 建档文案（仅 UI 层展示词；不进入 domain）。 */
-private fun FoodFlavor.zh(): String = when (this) {
-    FoodFlavor.BALANCED -> "均衡"
-    FoodFlavor.HEARTY -> "重口"
-    FoodFlavor.LIGHT -> "清淡"
-    FoodFlavor.SWEET -> "甜口"
-    FoodFlavor.NOVEL -> "新奇"
 }
 
 // ── LRU 缩略池（doc/07 §6） ─────────────────────────────────────────────

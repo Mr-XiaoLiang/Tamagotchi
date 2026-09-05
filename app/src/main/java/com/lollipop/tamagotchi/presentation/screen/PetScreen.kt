@@ -1,5 +1,6 @@
 package com.lollipop.tamagotchi.presentation.screen
 
+import android.content.Context
 import android.content.pm.ApplicationInfo
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -65,12 +66,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.lollipop.tamagotchi.R
 import com.lollipop.tamagotchi.core.attribute.AttributeId
 import com.lollipop.tamagotchi.core.attribute.AttributeRegistry
 import com.lollipop.tamagotchi.data.sprite.SpriteRepository
@@ -238,13 +241,14 @@ fun PetScreen(
     // ── M6.S2 动作执行事件：成功 → 收面板 + 构建短演出（气泡/浮字/宠物表现）──
     var seenActionId by remember { mutableStateOf(-1L) }
     var currentFx by remember { mutableStateOf<PetFx?>(null) }
+    val ctx = LocalContext.current
     LaunchedEffect(actionEvent) {
         val ev = actionEvent ?: return@LaunchedEffect
         if (ev.id == seenActionId) return@LaunchedEffect
         seenActionId = ev.id
         // 先收面板（动作发生在面板内；收起后主屏可见宠物演出）
         closeSheet()
-        currentFx = ev.result.toPetFx(ev.id)
+        currentFx = ev.result.toPetFx(ev.id, ctx)
     }
 
     LaunchedEffect(Unit) {
@@ -738,7 +742,7 @@ private fun ColumnScope.StatusPanelBody(profile: PetProfile, onDismiss: () -> Un
     ) {
         RoundList {
             RoundEdgeSpace(48.dp)
-            PanelTitle("状态 · ${profile.petName}")
+            PanelTitle(stringResource(R.string.status_title, profile.petName))
             AttributeRegistry.all.forEachIndexed { index, meta ->
                 if (index > 0) RoundListSpacer()
                 val color = attributeColor(meta.id)
@@ -760,7 +764,7 @@ private fun ColumnScope.StatusPanelBody(profile: PetProfile, onDismiss: () -> Un
             }
             RoundListSpacer()
             Text(
-                "建档快照实时值 · 衰减/冷却随结算推进（M5/M6）",
+                stringResource(R.string.status_snapshot_note),
                 color = ColorToken.Text2,
                 fontSize = 11.sp,
                 modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
@@ -793,17 +797,18 @@ private fun StatusIconButton(kind: StatusIconKind, onClick: () -> Unit) {
         StatusIconKind.SICK -> ColorToken.Health
     }
     val description = when (kind) {
-        StatusIconKind.HUNGRY -> "饥饿"
-        StatusIconKind.SAD -> "不开心"
-        StatusIconKind.DIRTY -> "脏"
-        StatusIconKind.SICK -> "生病"
+        StatusIconKind.HUNGRY -> stringResource(R.string.status_icon_hungry)
+        StatusIconKind.SAD -> stringResource(R.string.status_icon_sad)
+        StatusIconKind.DIRTY -> stringResource(R.string.status_icon_dirty)
+        StatusIconKind.SICK -> stringResource(R.string.status_icon_sick)
     }
+    val cd = stringResource(R.string.status_icon_cd, description)
     Box(
         modifier = Modifier
             .size(30.dp)
             .clip(CircleShape)
             .clickable(onClick = onClick)
-            .semantics { contentDescription = "$description（点按查看状态）" },
+            .semantics { contentDescription = cd },
         contentAlignment = Alignment.Center,
     ) {
         Canvas(Modifier.size(22.dp)) {
@@ -930,13 +935,13 @@ private fun ActionListPage(
 ) {
     RoundList {
         RoundEdgeSpace(48.dp)
-        PanelTitle("操作")
+        PanelTitle(stringResource(R.string.actions_title))
         // 状态：三入口合一的「收起下、展开上」（doc/06 §3.2）
-        PillItem("状态", filled = true, onClick = onShowStatus)
+        PillItem(stringResource(R.string.action_status), filled = true, onClick = onShowStatus)
         RoundListSpacer()
         if (profile.fsmState == PetState.SLEEPING) {
             // 熟睡中：深夜互动收益 = 0，动作不占位（doc/06 §6 睡眠窗口不互动）
-            PillItem("呼噜中… 醒来后再来照顾", filled = false)
+            PillItem(stringResource(R.string.action_sleeping), filled = false)
         } else {
             val mood = profile.attributes[AttributeId.MOOD]
             val feedDenied = ActionRule.feedDenied(profile, nowMs)
@@ -944,21 +949,21 @@ private fun ActionListPage(
             val petDenied = ActionRule.petDenied(profile, nowMs)
             // 投喂（可执行 → 进入食物子页；冷却/吃饱 → 空心只读）
             ActionRow(
-                title = "投喂",
+                title = stringResource(R.string.action_feed),
                 denied = feedDenied,
                 dotColor = ColorToken.Satiation,
                 onClick = onOpenFeed,
             )
             RoundListSpacer()
             ActionRow(
-                title = "玩耍",
+                title = stringResource(R.string.action_play),
                 denied = playDenied,
                 dotColor = ColorToken.Mood,
                 onClick = { onAction(ActionType.PLAY, null) },
             )
             RoundListSpacer()
             ActionRow(
-                title = "抚摸",
+                title = stringResource(R.string.action_pet),
                 denied = petDenied,
                 dotColor = ColorToken.Health,
                 onClick = { onAction(ActionType.PET, null) },
@@ -966,12 +971,12 @@ private fun ActionListPage(
             // 治疗：仅 SICK 才出现（不 SICK 不占位，引擎同条件拦截）
             if (profile.fsmState == PetState.SICK) {
                 RoundListSpacer()
-                PillItem("治疗", filled = true, onClick = { onAction(ActionType.HEAL, null) })
+                PillItem(stringResource(R.string.action_heal), filled = true, onClick = { onAction(ActionType.HEAL, null) })
             }
         }
         RoundListSpacer()
         Text(
-            "冷却 / 属性满自动只读 · 喂食需选口味（契合 +10%）",
+            stringResource(R.string.actions_note),
             color = ColorToken.Text2,
             fontSize = 11.sp,
             modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
@@ -1004,7 +1009,7 @@ private fun FeedPage(
                 MiniChevron(dir = ChevronDir.Left, tint = ColorToken.Accent, size = 20.dp)
             }
             Text(
-                "选择食物 · ${profile.petName}",
+                stringResource(R.string.feed_title, profile.petName),
                 color = ColorToken.Accent,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -1017,9 +1022,9 @@ private fun FeedPage(
         FoodType.entries.forEachIndexed { index, food ->
             if (index > 0) RoundListSpacer()
             val matched = food.flavor == profile.personality.flavor
-            val suffix = if (matched) "契合" else food.flavor.label
+            val suffix = if (matched) stringResource(R.string.feed_match) else stringResource(food.flavor.labelRes)
             PillItem(
-                text = "${food.icon} ${food.label} · $suffix",
+                text = "${food.icon} ${stringResource(food.labelRes)} · $suffix",
                 filled = true,
                 color = foodTint(food.flavor),
                 onClick = { onPick(food) },
@@ -1027,7 +1032,7 @@ private fun FeedPage(
         }
         RoundListSpacer()
         Text(
-            "契合口味（性格档案）额外 +10% 收益",
+            stringResource(R.string.feed_note),
             color = ColorToken.Text2,
             fontSize = 11.sp,
             modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
@@ -1047,6 +1052,7 @@ private fun ColumnScope.ActionRow(
     dotColor: Color,
     onClick: () -> Unit,
 ) {
+    val ctx = LocalContext.current
     if (denied == null) {
         PillItem(
             text = title,
@@ -1056,7 +1062,7 @@ private fun ColumnScope.ActionRow(
         )
     } else {
         PillItem(
-            text = "$title · ${denied.reasonText()}",
+            text = "$title · ${denied.reasonText(ctx)}",
             filled = false,
             icon = { ColorDot(dotColor) },
             onClick = null,
@@ -1065,13 +1071,13 @@ private fun ColumnScope.ActionRow(
 }
 
 /** 不可执行原因 → 只读行内说明（空心胶囊文案，doc/06 §8.3）。 */
-private fun ActionDenied.reasonText(): String = when (this) {
-    is ActionDenied.Cooldown -> "冷却 ${fmtRemain(remainMs)}"
+private fun ActionDenied.reasonText(ctx: Context): String = when (this) {
+    is ActionDenied.Cooldown -> ctx.getString(R.string.deny_cooldown, fmtRemain(remainMs))
     is ActionDenied.AttributeCeiling -> when (id) {
-        AttributeId.SATIATION -> "已经吃饱啦"
-        else -> "心情很好啦"
+        AttributeId.SATIATION -> ctx.getString(R.string.deny_full_satiation)
+        else -> ctx.getString(R.string.deny_full_mood)
     }
-    ActionDenied.NotSick -> "没有生病"
+    ActionDenied.NotSick -> ctx.getString(R.string.deny_not_sick)
 }
 
 /** 剩余时长 → mm:ss / h:mm:ss。 */
@@ -1094,7 +1100,7 @@ private fun foodTint(flavor: FoodFlavor): Color = when (flavor) {
 }
 
 /** ActionResult → 表现层短演出指令（气泡文案 + 属性浮字；nonce = 动作事件自增号）。 */
-private fun ActionResult.toPetFx(nonce: Long): PetFx {
+private fun ActionResult.toPetFx(nonce: Long, ctx: Context): PetFx {
     val kind = when (hint) {
         ActionHint.EATING -> FxKind.EATING
         ActionHint.EXCITED -> FxKind.EXCITED
@@ -1102,10 +1108,10 @@ private fun ActionResult.toPetFx(nonce: Long): PetFx {
         ActionHint.TREATED -> FxKind.TREATED
     }
     val bubble = when (hint) {
-        ActionHint.EATING -> if (note != null) "吃到了$note！" else "吃得真香！"
-        ActionHint.EXCITED -> "开心得蹦起来！"
-        ActionHint.AFFECTION -> "亲昵地蹭蹭你！"
-        ActionHint.TREATED -> "病好起来啦！"
+        ActionHint.EATING -> if (note != null) ctx.getString(R.string.fx_eat_note, note) else ctx.getString(R.string.fx_eat)
+        ActionHint.EXCITED -> ctx.getString(R.string.fx_excited)
+        ActionHint.AFFECTION -> ctx.getString(R.string.fx_affection)
+        ActionHint.TREATED -> ctx.getString(R.string.fx_treated)
     }
     // 属性浮字：正值在前、负值（如喂食附带的清洁 −4）随后；四舍五入为整数展示
     val floats = AttributeRegistry.all
@@ -1116,7 +1122,7 @@ private fun ActionResult.toPetFx(nonce: Long): PetFx {
         .sortedBy { if (it.second > 0) 0 else 1 }
         .map { (id, d) ->
             val sign = if (d > 0) "+" else "-"
-            FxFloat(text = "$sign${abs(d).roundToInt()} ${id.label}", color = attributeColor(id))
+            FxFloat(text = "$sign${abs(d).roundToInt()} ${ctx.getString(id.labelRes)}", color = attributeColor(id))
         }
     return PetFx(nonce = nonce, kind = kind, bubble = bubble, floats = floats)
 }
@@ -1140,13 +1146,13 @@ private fun ColumnScope.QuickPanelBody(
         ) {
             RoundList {
                 RoundEdgeSpace()
-                PanelTitle("功能 · 占位")
-                PillItem("通讯呼叫 · M8", filled = false, onClick = null)
+                PanelTitle(stringResource(R.string.quick_title))
+                PillItem(stringResource(R.string.quick_comm), filled = false, onClick = null)
                 RoundListSpacer()
-                PillItem("休闲小游戏 · M16", filled = false, onClick = null)
+                PillItem(stringResource(R.string.quick_game), filled = false, onClick = null)
                 RoundListSpacer()
                 Text(
-                    "原生功能清单（doc/05）",
+                    stringResource(R.string.quick_native_title),
                     color = ColorToken.Text2,
                     fontSize = 11.sp,
                     modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
@@ -1154,7 +1160,7 @@ private fun ColumnScope.QuickPanelBody(
                 if (onResetProfile != null) {
                     RoundListSpacer()
                     PillItem(
-                        "重开档 · Debug",
+                        stringResource(R.string.quick_restart),
                         filled = false,
                         color = ColorToken.Warn,
                         onClick = {

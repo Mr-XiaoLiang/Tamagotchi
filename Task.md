@@ -297,15 +297,15 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 #### M6.S2 操作/状态面板闭环（P0）
 
 **任务**
-- [ ] 操作面板 v1（doc/06 §6 / 09 §3）：状态 / 投喂（→食物子页，类别色覆写胶囊）/ 玩耍 / 抚摸；可执行 = **实心胶囊**，冷却中 / 属性满 / 锁定 = **空心胶囊**（只读信息，显示剩余冷却）。
-- [ ] 状态面板（doc/06 §3.2）：属性「列表 + 进度条 + 颜色 + 图标」；三入口合一（下拉 / 屏顶图标 / 下面板「状态」= 收起下、展开上）；三主属性 + 隐藏智力/清洁只读行；低值预警 < 30 呼吸。
-- [ ] 状态图标区（doc/06 §3.1）：饥饿 / 不开心 / 脏 / 病按阈值亮位。
-- [ ] 执行链：点胶囊 → domain 动作 → FSM 状态切换（EATING 咀嚼 / EXCITED 蹦跳最简 / 亲昵歪头）→ 属性浮字 + 气泡 → `PetStore.save`。
-- [ ] 治疗仅 SICK 出现；SICK 由 M5 状态推进触发（可经时间旅行制造）。
+- [x] 操作面板 v1（doc/06 §6 / 09 §3）：状态 / 投喂（→食物子页，类别色覆写胶囊）/ 玩耍 / 抚摸；可执行 = **实心胶囊**，冷却中 / 属性满 / 锁定 = **空心胶囊**（只读信息，显示剩余冷却）。
+- [x] 状态面板（doc/06 §3.2）：属性「列表 + 进度条 + 颜色 + 图标」；三入口合一（下拉 / 屏顶图标 / 下面板「状态」= 收起下、展开上）；三主属性 + 隐藏智力/清洁只读行；低值预警 < 30 呼吸。
+- [x] 状态图标区（doc/06 §3.1）：饥饿 / 不开心 / 脏 / 病按阈值亮位。
+- [x] 执行链：点胶囊 → domain 动作 → FSM 状态切换（EATING 咀嚼 / EXCITED 蹦跳最简 / 亲昵歪头）→ 属性浮字 + 气泡 → `PetStore.save`。
+- [x] 治疗仅 SICK 出现；SICK 由 M5 状态推进触发（可经时间旅行制造）。
 
 **产出**：`presentation/screen/` 操作面板 + 状态面板 v1、动作执行链。
 
-**验收（P0）**：喂食（选食物类型）→ 转向进食 + 数值按口味/契合 ↑；玩耍 → EXCITED 蹦跳 + mood ↑；抚摸 → 亲昵气泡 + 轻 mood；冷却中空心显示倒计时、到点恢复实心；时间旅行 24h 制造低状态 → 状态面板/图标联动、治疗随 SICK 出现并治愈；杀进程重开冷却与数值保持、`stats` 累积。
+**验收（P0）**：喂食（选食物类型）→ 转向进食 + 数值按口味/契合 ↑；玩耍 → EXCITED 蹦跳 + mood ↑；抚摸 → 亲昵气泡 + 轻 mood；冷却中空心显示倒计时、到点恢复实心；时间旅行 24h 制造低状态 → 状态面板/图标联动、治疗随 SICK 出现并治愈；杀进程重开冷却与数值保持、`stats` 累积。（**代码收盘：编译绿 + 全套单测绿；真机手测与 M1–M5 一并批量补验**）
 
 ---
 
@@ -637,7 +637,7 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 | M3 建档与数据闭环 | 建档 → 快照 → 重开保持 | ☑ | S1 收盘：值对象族 + 注册表（建档初值 sat/mood 80、health 100、int 0、hyg 100，回写 doc/01 §11）+ PersonalityGenerator，`testDebugUnitTest` 5 例全绿。S2 收盘：PetProfile v2 值对象族（pos/sleep/cooldowns/stats/personality/plugins）+ PetProfileCodec（org.json 单键、容错补默认，JVM 依赖 org.json:json）+ PetStore（SP 薄壳）；建档屏（主名聚合列表 LRU≤12 缩略 + 性格预览六维条 + 确认）+ PetActivity 有档/无档路由 + 主屏真实快照（建档宠 / 主环 / 状态面板全属性）+ debug 重开档入口；codec round-trip 6 例全绿，双变体编译绿。真机手测（浏览流畅、杀进程重开恢复、换宠覆盖写）留后续批量补验 |
 | M4 宠物活起来 | 自主走/停/睡 | ☑ | S1 收盘：BehaviorFSM 纯函数 + FSMResult 契约（SICK>睡眠>SAD>IDLE/WALKING、22:00~07:00 入睡、防穿模 clamp+随机换向、行走帧 0→3、seed 可复现），单测 10 例全绿。S2 收盘：PetLivingSprite 主循环（250ms tick、生命周期闸 onPause/onStop 停=0 后台 CPU、面板覆盖亦停）+ PetRenderer v1（WALKING dir×帧循环 / IDLE 呼吸 tick 相位 / SLEEPING 暗罩+Zzz / 归一化坐标→活动区映射），主环真实快照；doc/07 §9 增「睡眠帧缺失」风险行。编译与 testDebugUnitTest 全绿；真机手测（走/停/睡观感、帧序反向复核 M2 朝向、22:00 入睡、后台 0 CPU）与 M1–M3 一并批量补验。**M4.S2 布局修订：宠物活动范围=全屏叠层（环形把手为 overlay、可重叠、恒不出屏），doc/00 T-21 记录** |
 | M5 时间流逝 settle v1 | 时间旅行拨回数值推进 | ☑ | S1 收盘：SettleEngine 快速积分兜底全程（幂等 noOp、白昼/夜间睡眠/SICK 三速率档 × trait 系数、饥饿/脏心情修正、SAD 累计 4h 推进与健康下滑、clamp 归零、sickTotal 只增一次、状态推进只写 SICK/SAD/IDLE），SettlementSummary + 时间线占位类型 + AttributeDelta + Clock(SystemClock) + settle 作息/系数注记回写 doc/01 §11。S2 收盘：结算编排入 PetActivity.EntryFlow（冷启动五阶 reveal 完成 force 结算 → SettleEngine+save @Default → 主线程一次 apply=profile state 更新；热恢复 Lifecycle observer 距上次 ≥5s 节流；时间旅行 Debug——长按主屏精灵核对屏内置「结算 Debug」拨回 1h/6h/24h/72h 后立即结算，幂等可反复点）；PetLivingSprite 档案刷新软合并（同宠保留跑动坐标，避免结算瞬移）；BaseActivity.bootSettle 职责移交 EntryFlow 并移除，doc/08 §2/§3 口径回写。单测 15 例全绿 + 编译绿。真机手测（时间旅行拨 24h→重启/立即结算按扣减刷新、health 触底 SICK 表现、夜间回血耗率低、首帧 Logo→状态环先现快照→apply 后平滑跳变且全程可交互、settle 不阻塞）与 M1–M4 一并批量补验 |
-| M6 照顾闭环 | 喂/玩/抚/治面板闭环 | ☐ | S1 收盘：`domain/engine/Actions.kt`——ActionRule（doc/01 §6.3/§7/§10：冷却 2h/1h/10min 写 next-until、上限喂 sat<95/玩 mood<90、边际收益递减 sat/mood/int、health 不走递减、口味契合 food.flavor==personality.flavor 该餐 sat/mood ×1.1）+ PetActions.onFeed/onPlay/onPet/onHeal 纯函数（heal 仅 SICK +40 治愈、SAD 动作后 mood≥40 即时解除、EATING/EXCITED 短态不落持久快照）；`domain/log/SessionLog.kt` 骨架（append ts 升序 / liveCount / entries / liveLogsSince，动作成功即 append ACTION_*，openWith M7）；M6.S1 落地注记回写 doc/01 §11 + doc/02 §5；单测 22 例全绿（Actions 18 / SessionLog 4，全套 58 例 testDebugUnitTest 通过）。S2 接操作/状态面板闭环 |
+| M6 照顾闭环 | 喂/玩/抚/治面板闭环 | ☑ | S1 收盘：`domain/engine/Actions.kt`——ActionRule（doc/01 §6.3/§7/§10：冷却 2h/1h/10min 写 next-until、上限喂 sat<95/玩 mood<90、边际收益递减 sat/mood/int、health 不走递减、口味契合 food.flavor==personality.flavor 该餐 sat/mood ×1.1）+ PetActions.onFeed/onPlay/onPet/onHeal 纯函数（heal 仅 SICK +40 治愈、SAD 动作后 mood≥40 即时解除、EATING/EXCITED 短态不落持久快照）；`domain/log/SessionLog.kt` 骨架（append ts 升序 / liveCount / entries / liveLogsSince，动作成功即 append ACTION_*，openWith M7）；M6.S1 落地注记回写 doc/01 §11 + doc/02 §5；单测 22 例全绿（Actions 18 / SessionLog 4，全套 58 例 testDebugUnitTest 通过）。S2 收盘（面板闭环）：操作面板真实动作列表（「状态」首项 + 投喂/玩耍/抚摸 + SICK 治疗；冷却/属性满 → 空心胶囊行内倒计时，面板开启每秒刷新、到点自动恢复实心；SLEEPING 熟睡动作收为空心提示）；投喂 → 食物子页（返回 chevron 行内首元素 + 口味类别色覆写实心胶囊 + 契合标注）；状态面板环形进度 + 主环配色 + 行尾环低值预警 `<30`（告警色 2Hz 呼吸、行首圆点转告警色）；三入口合一（顶缘下拉 / 屏顶状态图标 / 下面板「状态」= 收起下展开上）；屏顶状态图标区（饿碗/闷云/脏滴/病十字，异常才亮、随语义色、点击即状态面板）；执行链 = EntryFlow.performAction（domain 纯函数 + Default 存档 → 主线程 apply profile → 上抛 ActionEvent → PetScreen 收面板 + PetFx 短演出：EATING 咀嚼 / EXCITED 蹦跳 / AFFECTION 亲昵摇摆 / TREATED 治愈 + 气泡 + 属性浮字；`ui/MiniProgressRing` 增 warn 预警呼吸，`ColorToken` 增 FoodBalanced…FoodNovel 口味类别色）；doc/06 §3.1/§3.2/§4.1/§6 落地注记回写。编译绿 + 全套单测绿（58 例）。真机手测（喂/玩/抚/治表现、冷却实时、低值图标联动、SICK 治疗闭环、杀进程冷却/stats 保持）与 M1–M5 一并批量补验 |
 | M7 离线叙事回放 | 迎接语气 + 回放时间线 | ☐ | |
 | M8 右滑插件清单 | 实心/空心 + 容错 + 编辑 | ☐ | |
 | M9 在线惊喜 + 回顾 | 随机事件 + 本次小结 | ☐ | |
@@ -650,3 +650,15 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 | M16 休闲小游戏 | 右滑进游戏一局有始有终 | ☐ | |
 
 > 里程碑建议顺序：主链 M1→…→M10（M8 可与 M9/M10 并行，仅依赖 M1）；扩展 M11→…→M16（编号连续、不叫 V2，M16 仅依赖 M8、可与 M11–M15 并行）。每里程碑收盘把「验证记录 / 例外」填入上表并同步更新 README §9 阶段指引。
+
+---
+
+## 7. 多语言（i18n）基建（M7 起贯穿）
+
+> 现状：此前 UI / 枚举中文全部硬编码。M6.S2 收盘前补齐「配置支持 + 文件」，后续里程碑文案一律走资源。
+
+- **资源文件**：`app/src/main/res/values/strings.xml`（默认 = 中文）、`values-zh/strings.xml`（显式中文）、`values-en/strings.xml`（英文）三套，键名一致；新增文案 = 三处各加一条。
+- **枚举 → 资源映射**：`presentation/screen/I18n.kt` 承载 `AttributeId / FoodType / FoodFlavor.labelRes` 与 `TRAIT_NAMES_RES`，**放在 presentation 层**（core 枚举保持纯值对象、不引 Android 资源，见 core/attribute/Attribute.kt 注释）。
+- **取词**：Composable 内用 `stringResource(R.string.x)`；非 Composable（拒绝原因 `reasonText`、动作短演出 `toPetFx`、枚举遍历）用 `Context.getString(R.string.x)`；`semantics { }` lambda 非 Composable，contentDescription 须提前在 Composable 上下文求值。
+- **范围**：已接 `PetScreen` + `SetupProfileScreen` + 枚举 / trait 名；`PetActivity` 启动日志、`DebugSpeciesGridScreen` 仍硬编码（诊断 / 开发用途，暂不在 i18n 范围）。
+- 新增语言 = 复制 `values-en/` 改目录名 `values-xx/`。
