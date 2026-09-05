@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import com.lollipop.tamagotchi.presentation.icon.tune
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -73,7 +74,30 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.compose.foundation.combinedClickable
+import kotlinx.coroutines.delay
+import com.lollipop.tamagotchi.domain.plugin.PluginExecutor
+import com.lollipop.tamagotchi.domain.plugin.PluginNotifier
+import com.lollipop.tamagotchi.domain.plugin.PluginPrefs
+import com.lollipop.tamagotchi.domain.plugin.PluginSpec
+import com.lollipop.tamagotchi.domain.plugin.PluginTriggerType
+import com.lollipop.tamagotchi.data.plugin.AndroidLocalActionRunner
+import com.lollipop.tamagotchi.data.plugin.AndroidPluginResolver
+import com.lollipop.tamagotchi.data.plugin.PluginPrefsStore
 import com.lollipop.tamagotchi.R
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.platform.LocalConfiguration
+import android.content.Intent
+import com.lollipop.tamagotchi.presentation.component.AppIcon
+import com.lollipop.tamagotchi.presentation.component.toImageBitmap
+import com.lollipop.tamagotchi.domain.plugin.AppEntry
+import com.lollipop.tamagotchi.data.plugin.AppLister
+import kotlin.math.max
 import com.lollipop.tamagotchi.core.attribute.AttributeId
 import com.lollipop.tamagotchi.core.attribute.AttributeRegistry
 import com.lollipop.tamagotchi.data.sprite.SpriteRepository
@@ -83,10 +107,14 @@ import com.lollipop.tamagotchi.presentation.boot.ShellBridge
 import com.lollipop.tamagotchi.presentation.render.PetLivingSprite
 import com.lollipop.tamagotchi.presentation.component.ColorDot
 import com.lollipop.tamagotchi.presentation.component.PillItem
+import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.text.style.TextAlign
 import com.lollipop.tamagotchi.presentation.component.RoundEdgeSpace
 import com.lollipop.tamagotchi.presentation.component.RoundList
 import com.lollipop.tamagotchi.presentation.component.RoundListSpacer
 import com.lollipop.tamagotchi.presentation.component.RoundSheet
+import com.lollipop.tamagotchi.presentation.component.roundEdgeFade
+import com.lollipop.tamagotchi.presentation.component.roundSafeInset
 import com.lollipop.tamagotchi.presentation.component.SheetEdge
 import com.lollipop.tamagotchi.presentation.theme.BlackGlowBackground
 import com.lollipop.tamagotchi.presentation.theme.ColorToken
@@ -799,7 +827,6 @@ private fun ColumnScope.StatusPanelBody(
     ) {
         RoundList {
             RoundEdgeSpace(48.dp)
-            PanelTitle(stringResource(R.string.status_title, profile.petName))
             AttributeRegistry.all.forEachIndexed { index, meta ->
                 if (index > 0) RoundListSpacer()
                 val color = attributeColor(meta.id)
@@ -819,13 +846,6 @@ private fun ColumnScope.StatusPanelBody(
                     onClick = null,
                 )
             }
-            RoundListSpacer()
-            Text(
-                stringResource(R.string.status_snapshot_note),
-                color = ColorToken.Text2,
-                fontSize = 11.sp,
-                modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
-            )
             // M7.S2 离线回放：把本次离线时间线铺进状态面板底部（圆表友好滚动）
             if (settleTimeline != null && settleTimeline.isNotEmpty()) {
                 RoundListSpacer()
@@ -1008,7 +1028,6 @@ private fun ActionListPage(
 ) {
     RoundList {
         RoundEdgeSpace(48.dp)
-        PanelTitle(stringResource(R.string.actions_title))
         // 状态：三入口合一的「收起下、展开上」（doc/06 §3.2）
         PillItem(stringResource(R.string.action_status), filled = true, onClick = onShowStatus)
         RoundListSpacer()
@@ -1200,12 +1219,76 @@ private fun ActionResult.toPetFx(nonce: Long, ctx: Context): PetFx {
     return PetFx(nonce = nonce, kind = kind, bubble = bubble, floats = floats)
 }
 
-/** 功能面板（右）：对侧（左缘）固定竖收起条 + 右侧滚动列表，列表滚动不影响收起条。 */
+/**
+ * 功能面板（右）：动态读取系统 App 的双列图标网格（doc/05 §4 / M8 重构）。
+ * - 不预设任何快捷方式：App 经由 PackageManager 动态发现（见 [AppLister]）。
+ * - 普通态：双列图标，点击拉起 App，长按进入编辑。
+ * - 编辑态：↑↓ 排序 / × 移除 / ＋ 从系统可读到的全部 App 中添加；选择写回 SP。
+ * - 非 App 功能（Wi-Fi/手电筒/勿扰…）的接口保留在 domain.plugin（PluginSpec/PluginExecutor…），留待后续接入。
+ */
 @Composable
 private fun ColumnScope.QuickPanelBody(
     onDismiss: () -> Unit,
     onResetProfile: (() -> Unit)?,
 ) {
+    val context = LocalContext.current
+    val resolver = remember(context) { AndroidPluginResolver(context) }
+    val runner = remember(context) { AndroidLocalActionRunner(context) }
+    val store = remember(context) { PluginPrefsStore(context) }
+    val lister = remember(context) { AppLister(context) }
+
+    // 功能清单只读本都保存的包名序列；按需取图标/名称（不走 launchableApps 全量枚举 IPC）。
+    // 默认 selected 为空 → 不显示任何 App，编辑在独立 Activity 中进行（见 QuickPanelEditActivity）。
+    var prefs by remember { mutableStateOf(store.load()) }
+    val selectedApps = remember(prefs) { prefs.selected.mapNotNull { lister.entryOf(it) } }
+    val icons = remember(prefs) {
+        prefs.selected.associateWith { lister.loadIcon(it)?.toImageBitmap() }
+    }
+    val labels = remember(selectedApps) { selectedApps.associate { it.packageName to it.label } }
+
+    // 从编辑 Activity 返回（onResume）重新读盘，使功能清单刷新为最新选择
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val obs = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) prefs = store.load()
+        }
+        lifecycleOwner.lifecycle.addObserver(obs)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(obs) }
+    }
+
+    val toastState = remember { mutableStateOf<String?>(null) }
+    val notifier = remember(labels) {
+        object : PluginNotifier {
+            override fun onNotFound(spec: PluginSpec) {
+                val pkg = spec.expectedPackages.firstOrNull()
+                val name = if (pkg != null) (labels[pkg] ?: pkg) else context.getString(R.string.app_name)
+                toastState.value = "未找到：$name"
+            }
+        }
+    }
+
+    // 触发反馈气泡自动消失（doc/05 §4：失败 Bubble 不弹系统错误）
+    LaunchedEffect(toastState.value) {
+        toastState.value?.let {
+            delay(1600)
+            toastState.value = null
+        }
+    }
+
+    fun launchApp(pkg: String) {
+        val spec = PluginSpec(
+            id = "app:$pkg", nameKey = "", iconKey = "",
+            type = PluginTriggerType.LAUNCH_APP, expectedPackages = listOf(pkg),
+        )
+        if (PluginExecutor.execute(spec, resolver, runner, notifier)) onDismiss()
+    }
+
+    // 进入独立编辑页（全屏 Activity，承载全量枚举 IPC 与编辑交互）
+    fun openEdit() {
+        context.startActivity(Intent(context, QuickPanelEditActivity::class.java))
+        onDismiss()
+    }
+
     Row(
         Modifier
             .fillMaxWidth()
@@ -1217,36 +1300,153 @@ private fun ColumnScope.QuickPanelBody(
                 .fillMaxHeight()
                 .weight(1f),
         ) {
-            RoundList {
-                RoundEdgeSpace()
-                PanelTitle(stringResource(R.string.quick_title))
-                PillItem(stringResource(R.string.quick_comm), filled = false, onClick = null)
-                RoundListSpacer()
-                PillItem(stringResource(R.string.quick_game), filled = false, onClick = null)
-                RoundListSpacer()
-                Text(
-                    stringResource(R.string.quick_native_title),
-                    color = ColorToken.Text2,
-                    fontSize = 11.sp,
-                    modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
-                )
-                if (onResetProfile != null) {
-                    RoundListSpacer()
-                    PillItem(
-                        stringResource(R.string.quick_restart),
-                        filled = false,
-                        color = ColorToken.Warn,
-                        onClick = {
-                            onDismiss()
-                            onResetProfile()
-                        },
-                    )
+            AppGridContent(
+                apps = selectedApps,
+                icons = icons,
+                onEdit = { openEdit() },
+                onLaunch = { launchApp(it) },
+                onLongPress = { openEdit() },
+            )
+
+            // 触发失败 Bubble（doc/05 §4）
+            toastState.value?.let { msg ->
+                Box(
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 24.dp)
+                        .clip(CircleShape)
+                        .background(ColorToken.bg.copy(alpha = 0.92f))
+                        .border(1.dp, ColorToken.Text2, CircleShape)
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                ) {
+                    Text(msg, color = ColorToken.Accent, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                 }
-                RoundEdgeSpace()
             }
         }
     }
 }
+
+/**
+ * 双列 App 图标网格（普通态）：真实 App 图标（PackageManager 加载）+ 名称。
+ * 标题作为滚动首元素（GridItemSpan(2)），打开时借 contentPadding 顶部留白实现竖直居中（doc/06 §8.1）。
+ */
+@Composable
+private fun AppGridContent(
+    apps: List<AppEntry>,
+    icons: Map<String, ImageBitmap?>,
+    onEdit: () -> Unit,
+    onLaunch: (String) -> Unit,
+    onLongPress: (String) -> Unit,
+) {
+    val config = LocalConfiguration.current
+    val longSide = max(config.screenWidthDp, config.screenHeightDp).dp
+    val topPad = longSide * 0.5f - 24.dp
+    val bottomPad = longSide * 0.5f
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = Modifier
+            .fillMaxSize()
+            .roundEdgeFade(),
+        contentPadding = PaddingValues(
+            top = topPad,
+            bottom = bottomPad,
+            start = roundSafeInset(),
+            end = roundSafeInset(),
+        ),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        if (apps.isEmpty()) {
+            item(span = { GridItemSpan(2) }) {
+                Text(
+                    stringResource(R.string.quick_empty),
+                    color = ColorToken.Text2,
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(8.dp),
+                )
+            }
+        }
+        items(apps, key = { it.packageName }, contentType = { 0 }) { app ->
+            AppGridCell(app = app, icons = icons, onLaunch = onLaunch, onLongPress = onLongPress)
+        }
+        // 编辑入口固定为最后一个网格单元，样式与 App 图标一致（tune 图标）
+        item(key = "quick_edit") {
+            EditGridCell(onEdit = onEdit)
+        }
+    }
+}
+
+/** 网格单元：App 图标（真实图标或占位圆）+ 名称（11sp，不透明，doc/06 §8 约束）。 */
+@Composable
+private fun AppGridCell(
+    app: AppEntry,
+    icons: Map<String, ImageBitmap?>,
+    onLaunch: (String) -> Unit,
+    onLongPress: (String) -> Unit,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = { onLaunch(app.packageName) },
+                onLongClick = { onLongPress(app.packageName) },
+            )
+            .padding(6.dp),
+    ) {
+        AppIcon(app.packageName, icons)
+        Spacer(Modifier.height(4.dp))
+        Text(
+            app.label,
+            color = ColorToken.Accent,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/** 编辑入口网格单元：与 App 图标同款样式，固定为网格最后一个（tune 图标）。 */
+@Composable
+private fun EditGridCell(onEdit: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(onClick = onEdit)
+            .padding(6.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(46.dp)
+                .clip(CircleShape)
+                .background(ColorToken.Text2.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                tune,
+                contentDescription = null,
+                tint = ColorToken.Accent,
+                modifier = Modifier.size(24.dp),
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            stringResource(R.string.quick_edit),
+            color = ColorToken.Accent,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+
 
 /**
  * 面板标题：滚动流首元素（随列表滚动，doc/06 §8.1）——

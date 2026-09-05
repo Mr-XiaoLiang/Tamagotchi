@@ -15,8 +15,8 @@ object PluginExecutor {
         notifier: PluginNotifier,
     ): Boolean = when (spec.type) {
         PluginTriggerType.LAUNCH_APP -> {
-            val pkg = resolver.resolveLaunch(spec.expectedPackages)
-            if (pkg != null) true else { notifier.onNotFound(spec); false }
+            if (resolver.launch(spec.expectedPackages)) true
+            else { notifier.onNotFound(spec); false }
         }
         PluginTriggerType.OPEN_SETTINGS -> {
             val target = spec.settingsTarget

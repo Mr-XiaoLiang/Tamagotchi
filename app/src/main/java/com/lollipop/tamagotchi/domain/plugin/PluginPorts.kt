@@ -5,8 +5,8 @@ package com.lollipop.tamagotchi.domain.plugin
  * 此处仅纯接口，便于 [PluginExecutor] 单测时注入假实现。
  */
 interface PluginResolver {
-    /** 返回第一个已安装可拉起的包名；全部未安装返回 null。 */
-    fun resolveLaunch(packages: List<String>): String?
+    /** 探测并直接拉起 [packages] 中第一个已安装的 App；成功返回 true，全部不可拉起返回 false。 */
+    fun launch(packages: List<String>): Boolean
 
     /** 打开系统设置页，返回是否成功拉起。 */
     fun openSettings(target: SettingsTarget): Boolean

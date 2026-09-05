@@ -5,7 +5,6 @@
 
     <!-- 中文显式覆盖（与默认 values/ 一致；设备 zh 区域走此处） -->
     <string name="status_title">状态 · %1$s</string>
-    <string name="status_snapshot_note">建档快照实时值 · 衰减/冷却随结算推进（M5/M6）</string>
     <string name="status_icon_hungry">饥饿</string>
     <string name="status_icon_sad">不开心</string>
     <string name="status_icon_dirty">脏</string>
@@ -53,11 +52,13 @@
     <string name="fx_affection">亲昵地蹭蹭你！</string>
     <string name="fx_treated">病好起来啦！</string>
 
-    <string name="quick_title">功能 · 占位</string>
-    <string name="quick_comm">通讯呼叫 · M8</string>
-    <string name="quick_game">休闲小游戏 · M16</string>
-    <string name="quick_native_title">原生功能清单（doc/05）</string>
-    <string name="quick_restart">重开档 · Debug</string>
+
+    <string name="quick_edit">编辑</string>
+    <string name="quick_edit_title">功能清单</string>
+    <string name="quick_empty">暂无应用，点右上「编辑」添加</string>
+    <string name="quick_edit_added">已添加</string>
+    <string name="quick_edit_available">可添加</string>
+    <string name="quick_edit_empty">暂无已添加应用</string>
 
     <string name="setup_title">档案 · 选择伙伴</string>
     <string name="setup_subtitle">初次启动：挑一只开始养育（共 %1$d 只）</string>

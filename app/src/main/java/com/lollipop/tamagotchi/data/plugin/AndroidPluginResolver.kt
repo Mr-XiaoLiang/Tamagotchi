@@ -11,12 +11,18 @@ import com.lollipop.tamagotchi.domain.plugin.SettingsTarget
  * 失败一律返回 false，由 [com.lollipop.tamagotchi.domain.plugin.PluginExecutor] 走 notifier 提示，不抛异常。
  */
 class AndroidPluginResolver(private val context: Context) : PluginResolver {
-    override fun resolveLaunch(packages: List<String>): String? {
+    override fun launch(packages: List<String>): Boolean {
         val pm = context.packageManager
         for (pkg in packages) {
-            pm.getLaunchIntentForPackage(pkg)?.let { return pkg }
+            val intent = pm.getLaunchIntentForPackage(pkg) ?: continue
+            return try {
+                context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                true
+            } catch (_: Throwable) {
+                false
+            }
         }
-        return null
+        return false
     }
 
     override fun openSettings(target: SettingsTarget): Boolean {

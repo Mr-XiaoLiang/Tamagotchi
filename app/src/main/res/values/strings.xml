@@ -5,7 +5,6 @@
 
     <!-- 状态面板 -->
     <string name="status_title">状态 · %1$s</string>
-    <string name="status_snapshot_note">建档快照实时值 · 衰减/冷却随结算推进（M5/M6）</string>
     <string name="status_icon_hungry">饥饿</string>
     <string name="status_icon_sad">不开心</string>
     <string name="status_icon_dirty">脏</string>
@@ -59,12 +58,13 @@
     <string name="fx_affection">亲昵地蹭蹭你！</string>
     <string name="fx_treated">病好起来啦！</string>
 
-    <!-- 快捷功能面板 -->
-    <string name="quick_title">功能 · 占位</string>
-    <string name="quick_comm">通讯呼叫 · M8</string>
-    <string name="quick_game">休闲小游戏 · M16</string>
-    <string name="quick_native_title">原生功能清单（doc/05）</string>
-    <string name="quick_restart">重开档 · Debug</string>
+    <!-- 快捷功能面板（M8 右滑插件清单，doc/05） -->
+    <string name="quick_edit">编辑</string>
+    <string name="quick_edit_title">功能清单</string>
+    <string name="quick_empty">暂无应用，点右上「编辑」添加</string>
+    <string name="quick_edit_added">已添加</string>
+    <string name="quick_edit_available">可添加</string>
+    <string name="quick_edit_empty">暂无已添加应用</string>
 
     <!-- 建档屏 -->
     <string name="setup_title">档案 · 选择伙伴</string>

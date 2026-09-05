@@ -185,10 +185,14 @@ fun PetLivingSprite(
 
     // fx 新指令（nonce 变化即重启）：running 中从当前 tick 起记一次演出；running=false
     // （面板覆盖/后台）时不启动，恢复后由 running 键变化重入本效应再启动。
+    // 已播放的 nonce 记入 [lastFxNonce]：面板反复开合（running 反复 true）时，同一动作演出只播一次，
+    // 避免「喂一次 → 每次开关面板都重弹饱食/清洁浮字」的复播问题。
+    var lastFxNonce by remember { mutableStateOf(-1L) }
     LaunchedEffect(fx, running) {
-        if (fx != null && running) {
-            fxRun = FxRun(fx, startTick = living.tick)
-        }
+        if (fx == null || !running) return@LaunchedEffect
+        if (fx.nonce == lastFxNonce) return@LaunchedEffect
+        lastFxNonce = fx.nonce
+        fxRun = FxRun(fx, startTick = living.tick)
     }
 
     LaunchedEffect(fsm, running, profile) {

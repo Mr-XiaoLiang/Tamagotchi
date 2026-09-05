@@ -51,3 +51,9 @@ data class PluginSpec(
     val sort: Int = 0,
     val enabledByDefault: Boolean = true,
 )
+
+/**
+ * 一个可启动 App 的轻量描述（doc/05 §4 / M8 重构）：动态从 PackageManager 发现，不预设。
+ * 图标等 Android 资源由 data 层加载，此处仅持包名 + 展示名。
+ */
+data class AppEntry(val packageName: String, val label: String)
