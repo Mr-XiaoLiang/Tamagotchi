@@ -29,7 +29,7 @@
             android:name=".presentation.screen.PetActivity"
             android:exported="true"
             android:taskAffinity=""
-            android:theme="@style/TamagotchiTheme.Starting">
+            android:theme="@style/TamagotchiTheme.Main">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

@@ -63,7 +63,7 @@
 
     <string name="quick_edit">编辑</string>
     <string name="quick_edit_title">功能清单</string>
-    <string name="quick_empty">暂无应用，点右上「编辑」添加</string>
+    <string name="quick_empty">暂无应用，点「编辑」添加</string>
     <string name="quick_edit_added">已添加</string>
     <string name="quick_edit_available">可添加</string>
     <string name="quick_edit_empty">暂无已添加应用</string>

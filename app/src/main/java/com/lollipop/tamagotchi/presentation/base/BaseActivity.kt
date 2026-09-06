@@ -1,7 +1,6 @@
 package com.lollipop.tamagotchi.presentation.base
 
 import android.os.Bundle
-import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -23,7 +22,7 @@ import kotlinx.coroutines.withContext
  * Activity 基座（doc/08 §2）。
  *
  * 职责：
- *  - 纯黑根视图 + 首帧 Logo（原生 View，无 Compose —— 白名单例外）；
+ *  - 纯黑根视图 + 首帧品牌图（splash，原生 View，无 Compose —— 白名单例外）；
  *  - [injectContent]：数据（后台）就绪后注入 Compose 内容并淡入、移除 Logo 壳。
  *  - 离线结算（⑤）由持有档案事实源的组合层编排（PetActivity.EntryFlow，M5.S2 起），
  *    Activity 自身不再承担结算逻辑。
@@ -49,18 +48,22 @@ abstract class BaseActivity : ComponentActivity() {
     protected fun showShell() {
         val shell = FrameLayout(this).apply {
             setBackgroundColor(ColorToken.bg.toArgb())
-            val logo = ImageView(this@BaseActivity).apply {
-                setImageResource(R.drawable.logo_firstframe)
-                scaleType = ImageView.ScaleType.FIT_CENTER
-            }
-            val dp = resources.displayMetrics.density
-            val size = (120 * dp).toInt()
-            addView(logo, FrameLayout.LayoutParams(size, size, Gravity.CENTER))
+            addView(
+                ImageView(this@BaseActivity).apply {
+                    setImageResource(R.drawable.splash)
+                    scaleType = ImageView.ScaleType.FIT_CENTER
+                },
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
         }
         shellView = shell
         root.addView(
             shell,
-            FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT),
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            ),
         )
         BootLog.s(BootStage.Shell, "原生 Logo 壳已挂载")
     }
@@ -86,7 +89,13 @@ abstract class BaseActivity : ComponentActivity() {
                     TamagotchiTheme { content(data) }
                 }
             }
-            root.addView(cv, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+            root.addView(
+                cv,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+            )
             cv.animate()
                 .alpha(1f)
                 .setDuration(160)

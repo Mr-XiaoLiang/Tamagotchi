@@ -1,15 +1,13 @@
 <resources>
 
     <!-- 冷启 Splash（系统级，先于应用壳）：纯黑底 + 系统 splash 图标 -->
-    <style name="TamagotchiTheme.Starting" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@android:color/black</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
-        <item name="postSplashScreenTheme">@style/TamagotchiTheme.Full</item>
+    <style name="TamagotchiTheme.Main" parent="TamagotchiTheme.Full">
+        <item name="android:windowSwipeToDismiss">false</item>
     </style>
 
     <!-- 应用正式主题：无 ActionBar、纯黑窗底（杜绝切主题/首帧白闪） -->
     <style name="TamagotchiTheme.Full" parent="@android:style/Theme.DeviceDefault.NoActionBar">
-        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowBackground">@drawable/bg_window_background</item>
         <item name="android:windowSwipeToDismiss">true</item>
     </style>
 </resources>

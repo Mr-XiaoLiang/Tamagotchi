@@ -13,7 +13,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.lifecycleScope
 import com.lollipop.tamagotchi.core.attribute.FoodType
 import com.lollipop.tamagotchi.core.attribute.PlayType
 import com.lollipop.tamagotchi.core.attribute.ToyType
@@ -43,7 +42,7 @@ import kotlinx.coroutines.withContext
  * 主屏宠物 Activity（doc/00 §7 / Task.md M1.S2；M3.S2 建档闭环；M5.S2 settle 接入）。
  *
  * boot 流程：
- * 1. [showShell] Logo 壳停留一帧后注入 Compose；
+ * 1. [showShell] 挂载 Logo 壳后注入 Compose 主屏；
  * 2. 读档：有档 → [PetScreen]（真实快照）；无档/坏档 → [SetupProfileScreen] 建档；
  * 3. 建档确认 → PetProfile.new（注册表建档初值 + 随机性格）→ [PetStore.save] → 切主屏；
  * 4. debug 构建主屏长按 → 快捷面板「重开档」清档回到建档（release 不注入回调）；
@@ -60,15 +59,11 @@ class PetActivity : BaseActivity() {
         showShell()
         val store = PetStore(this)
         val isDebug = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
-        lifecycleScope.launch {
-            // 让 Logo 壳停留一个完整首帧，随后注入 Compose 主屏（M1 无真实加载）
-            delay(200)
-            injectContent(load = { Unit }) {
-                EntryFlow(
-                    store = store,
-                    debugTools = isDebug,
-                )
-            }
+        injectContent(load = { Unit }) {
+            EntryFlow(
+                store = store,
+                debugTools = isDebug,
+            )
         }
     }
 }

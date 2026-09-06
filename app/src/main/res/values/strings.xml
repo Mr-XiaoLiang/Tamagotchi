@@ -63,7 +63,7 @@
 
     <string name="quick_edit">Edit</string>
     <string name="quick_edit_title">Quick Panel</string>
-    <string name="quick_empty">No apps yet. Tap \"Edit\" top-right to add.</string>
+    <string name="quick_empty">No apps yet. Tap \"Edit\" to add.</string>
     <string name="quick_edit_added">Added</string>
     <string name="quick_edit_available">Available</string>
     <string name="quick_edit_empty">No apps added yet</string>
