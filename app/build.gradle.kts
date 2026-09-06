@@ -20,8 +20,17 @@ android {
 
     buildTypes {
         release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            // 本地试用：用 debug 签名给 release 包签名，便于 adb install。
+            // 正式发布请改为独立 release keystore（见下方 signingConfigs 说明）。
+            signingConfig = signingConfigs.getByName("debug")
             optimization {
-                enable = false
+                enable = true
             }
         }
     }

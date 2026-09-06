@@ -579,20 +579,20 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 #### M16.S1 小游戏骨架 + 插件注册（P1）
 
 **任务**
-- [ ] 选一款超轻量小游戏（如 30s 点泡泡计分），domain 纯函数（计时/计分/判定）可单测；全部 Compose 绘制、零新素材、零 Compose 外技术（00 T-19 / 07 §8）。
-- [ ] 注册进 LOCAL_ACTION 插件位（05 注册表，沿用 M8 的 实心/空心 胶囊）。
-- [ ] 单测：计分、限时结束、异常输入容错。
+- [x] 选一款超轻量小游戏（30s 点泡泡计分），`MiniGameEngine` domain 纯函数（计时/计分/泡泡生成，无 Android 依赖）可单测；全部 Compose 绘制、零新素材、零 Compose 外技术（00 T-19 / 07 §8）。
+- [x] 注册进右滑功能清单网格单元（与「设置」同款网格单元，沿用 M8 范式；注：未走空 `PluginRegistry`，与 M17「设置」入口一致直接挂网格，见未决项）。
+- [x] 单测：`MiniGameEngineTest` 6 例全绿（newGame 默认、tick 递减/归零/不越负/结束后幂等、pop 仅进行中计分、nextBubble 确定性+坐标边界）。
 
-**产出**：小游戏 domain + 插件注册 + 单测绿。
+**产出**：小游戏 domain + 网格入口 + 单测绿。
 
-**验收（P1）**：单测绿；右滑清单出现游戏项。
+**验收（P1）**：单测绿；右滑清单出现「小游戏」项。
 
 #### M16.S2 游戏页 + 一局闭环（P0）
 
 **任务**
-- [ ] 点击游戏项 → `FeatureActivity : BaseActivity` 打开（00 T-16 / ADR-12，不占主屏常驻）。
-- [ ] 玩一局（限时）→ 结算提示（仅会话级，不入 stats / 不动宠物状态，doc/09 §5.6 解耦）。
-- [ ] 手测路径：右滑 → 游戏 → 一局结束 → 返回主屏。
+- [x] 点击游戏项 → `GameActivity : BaseActivity` 打开（与「设置/过往」同款 Activity 范式，00 T-16 / ADR-12，不占主屏常驻）。
+- [x] 玩一局（限时 30s 点泡泡）→ 结算显示本局得分（仅会话级，不入 stats / 不动宠物状态，doc/09 §5.6 解耦；泡泡坐标归一化映射到圆屏安全区、按 ttl 自动消失、点击命中计分）。
+- [ ] 手测路径：右滑 → 游戏 → 一局结束 → 返回主屏。（真机走查待做）
 
 **产出**：一局可玩的完整闭环。
 
@@ -682,8 +682,8 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 | M13 玩具变体 | ≥2 玩具表现/收益可区分 | ☑ | S1 收盘（domain）：`ToyType` 注册表（7 款，差异化 moodDelta / 情绪类别 ToyVibe / 稀有度）+ 解锁来源规则 `ToyRules`（默认 / 智力阈值 / 里程碑 / 事件掉落）+ `onPlay` 接入可选 `toy`（玩具覆盖数值档、日志带 toy 名）；`ActionsTest` 新增玩具专项 9 例全绿、全量单测绿。S2 收盘（差异表现已接）：玩具选择子页（镜像 FeedPage，已解锁实心可选 / 未解锁空心带来源）+ `onAction/performAction` 透传 `toy` 已接通；`ToyVibe→M10 情绪层` 已接入（presentation `ToyVibe.toEmotion()` 映射 LIVELY→HAPPY 蹦跳 / GENTLE→SHY 侧头 / FOCUSED→CURIOUS 歪头，经 `ActionResult.toy`→`PetFx.emotion` 透传）；真机手测待走查 |
 | M14 宠物便条 | 长按/回顾见贴合便条 | ☑ | S1 收盘（domain）：`NoteGenerator` 纯函数（输入 `SettlementSummary`+`SessionLog` → 结构化 `PetNote`：离线开场档位 + 在线陪伴计数）+ `NoteGeneratorTest` 9 例全绿。S2 收盘（presentation）：`PetNote.toText`（映射 `NoteTone`→`greet_*` 五档 + 在线计数模板）、状态面板顶部便条卡（圆角胶囊、低 alpha 底、文字不透明）、`sessionLog` 由 PetActivity 经 PetScreen→OverlayLayer→StatusPanelBody 透传；真机手测走查待做 ||
 | M15 收藏档案 | A→换B(墓碑)→切回A 一致 | ☑ | S1 收盘（domain）：`PetStore` 升级多档（当前档 + 墓碑集合 `pet_tombs_v3`，含 v2 单键迁移）+ `archiveCurrent/switchTo/listTombs/deleteTomb` 纯逻辑（`PetArchive` 经 `KVStore` 抽象、PetStore 用 SharedPreferences 实现，JVM 单测用内存假实现）+ `PetTombCodec`；`PetArchiveTest`/`PetTombCodecTest` 共 13 例全绿、编译绿。S2 收盘（presentation）：`SettingsActivity`（设置统一入口：换宠归档 + 我的档案/电子墓碑，`settings` 图标已就位）、`TombActivity`（墓碑列表 + 切回），右滑网格新增「设置」单元；编译绿。真机 A→B→切回 A 手测走查待做 ||
-| M16 休闲小游戏 | 右滑进游戏一局有始有终 | ☐ | |
-| M17 偏好设置 | 右滑「偏好设置」→设置页；重开宠物/墓碑设置可用 | ☐ | |
+| M16 休闲小游戏 | 右滑进游戏一局有始有终 | ☑ | S1+S2 代码收盘：`MiniGameEngine`（domain 纯逻辑：计时/计分/泡泡生成，6 例单测全绿）+ `GameActivity`（开始/限时 30s 点泡泡/结算返回，全 Compose 零新素材）+ 右滑网格「小游戏」单元（纯 Compose 泡泡图标，与设置同款）；游戏结果仅会话级不动宠物、不写 stats（doc/09 §5.6 解耦）。编译绿 + 全量单测绿。真机手测（M16 手测路径）留走查 ||
+| M17 偏好设置 | 右滑「偏好设置」→设置页；重开宠物/墓碑设置可用 | ◑ | S1+S2 代码收盘（待真机走查）：`SettingsStore`（独立 SP `settings_store`，与 `PetStore` 解耦）+ 纯逻辑 `SettingsPrefs`（JVM 单测 `SettingsStoreTest` 3 例全绿）；设置页接入三开关——是否归档（换宠时归档/覆盖写重开）、过往入口可见性、切回需二次确认；「重新开始选择宠物」二次确认（警示红）+「切回」二次确认均落地；显示名「电子墓碑」→「过往」。编译绿 + 全量单测绿。真机手测（开关联动 / 换宠归档态 / 切回确认）留走查 ||
 
 > 里程碑建议顺序：主链 M1→…→M10（M8 可与 M9/M10 并行，仅依赖 M1）；扩展 M11→…→M17（编号连续、不叫 V2，M16 仅依赖 M8、可与 M11–M15 并行；M17 依赖 M8 功能清单 + M15 墓碑）。每里程碑收盘把「验证记录 / 例外」填入上表并同步更新 README §9 阶段指引。
 
