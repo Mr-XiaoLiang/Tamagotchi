@@ -128,7 +128,13 @@
     <string name="settings_restart_confirm_title">Start Over?</string>
     <string name="settings_restart_confirm_hint">The current pet will be archived. You can switch back from Archive later.</string>
     <string name="settings_restart_confirm">Confirm &amp; Start Over</string>
+    <string name="settings_toggle_archive">Archive on restart (keep Past)</string>
+    <string name="settings_toggle_tomb_visible">Show “Past” entry</string>
+    <string name="settings_toggle_switch_confirm">Confirm before switch-back</string>
     <string name="cancel">Cancel</string>
+    <string name="archive_switch_confirm_title">Switch back to this pet?</string>
+    <string name="archive_switch_confirm_hint">It will be removed from Past and restored as the current pet.</string>
+    <string name="archive_switch_confirm">Confirm switch-back</string>
     <string name="archive_title">Past</string>
     <string name="archive_empty">No archived pets</string>
     <string name="archive_switch_back">Switch Back</string>

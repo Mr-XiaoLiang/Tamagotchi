@@ -128,7 +128,13 @@
     <string name="settings_restart_confirm_title">重新选择宠物？</string>
     <string name="settings_restart_confirm_hint">当前宠物将被归档，之后可在「档案」中切回。</string>
     <string name="settings_restart_confirm">确认重新开始</string>
+    <string name="settings_toggle_archive">换宠时归档（保留过往）</string>
+    <string name="settings_toggle_tomb_visible">显示「过往」入口</string>
+    <string name="settings_toggle_switch_confirm">切回需二次确认</string>
     <string name="cancel">取消</string>
+    <string name="archive_switch_confirm_title">切回这只宠物？</string>
+    <string name="archive_switch_confirm_hint">将从「过往」移除并恢复为当前宠物。</string>
+    <string name="archive_switch_confirm">确认切回</string>
     <string name="archive_title">过往</string>
     <string name="archive_empty">暂无归档宠物</string>
     <string name="archive_switch_back">切回</string>

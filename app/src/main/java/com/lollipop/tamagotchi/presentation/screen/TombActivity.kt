@@ -10,6 +10,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -19,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lollipop.tamagotchi.R
 import com.lollipop.tamagotchi.data.store.PetStore
+import com.lollipop.tamagotchi.data.store.SettingsStore
 import com.lollipop.tamagotchi.domain.model.PetTomb
 import com.lollipop.tamagotchi.presentation.base.BaseActivity
 import com.lollipop.tamagotchi.presentation.component.PillItem
@@ -28,20 +33,25 @@ import com.lollipop.tamagotchi.presentation.component.roundSafeInset
 import com.lollipop.tamagotchi.presentation.theme.ColorToken
 
 /**
- * 电子墓碑页（M15.S2，doc/04 §3.3 / 09 §5.5）：列出换宠归档的宠物快照，
- * 支持「切回」——把墓碑还原为当前档并重启主屏。墓碑只读、可恢复。
- * 结构：设置 → 我的档案 / 电子墓碑。
+ * 过往页（M15.S2，doc/04 §3.3 / 09 §5.5）：列出换宠归档的宠物快照，
+ * 支持「切回」——把过往宠还原为当前档并重启主屏。过往只读、可切回（受「切回确认」偏好约束）。
+ * 结构：设置 → 我的档案 / 过往。
  * 遵循圆屏列表规范：滚动流 [space、title、item…、space]，首末 RoundEdgeSpace 留半屏。
  */
 class TombActivity : BaseActivity() {
 
     override fun onBootStart() {
+        val confirmSwitchBack = SettingsStore(this).isSwitchBackConfirm()
         injectContent(load = { PetStore(this).listTombs() }) { tombs ->
-            TombScreen(tombs = tombs, onSwitchBack = ::switchBack)
+            TombContent(
+                tombs = tombs,
+                confirmSwitchBack = confirmSwitchBack,
+                onSwitchBack = ::switchBack,
+            )
         }
     }
 
-    /** 切回：墓碑 → 当前档，重启主屏即打开该宠（doc/08 §3 打开即结算复用）。 */
+    /** 切回：过往 → 当前档，重启主屏即打开该宠（doc/08 §3 打开即结算复用）。 */
     private fun switchBack(petId: String) {
         val store = PetStore(this)
         store.switchTo(petId)
@@ -50,6 +60,32 @@ class TombActivity : BaseActivity() {
         }
         startActivity(intent)
         finish()
+    }
+}
+
+@Composable
+private fun TombContent(
+    tombs: List<PetTomb>,
+    confirmSwitchBack: Boolean,
+    onSwitchBack: (String) -> Unit,
+) {
+    var pending: String? by remember { mutableStateOf(null) }
+    if (pending != null && confirmSwitchBack) {
+        ConfirmSwitchBackScreen(
+            onConfirm = {
+                val id = pending!!
+                pending = null
+                onSwitchBack(id)
+            },
+            onCancel = { pending = null },
+        )
+    } else {
+        TombScreen(
+            tombs = tombs,
+            onSwitchBack = {
+                if (confirmSwitchBack) pending = it else onSwitchBack(it)
+            },
+        )
     }
 }
 
@@ -89,7 +125,7 @@ private fun TombScreen(
     }
 }
 
-/** 单个墓碑行：宠物名 + 共处时长（无背景列表行）+ 切回按钮（PillItem）。 */
+/** 单个过往行：宠物名 + 共处时长（无背景列表行）+ 切回按钮（PillItem）。 */
 @Composable
 private fun TombRow(
     tomb: PetTomb,
@@ -116,6 +152,51 @@ private fun TombRow(
             textAlign = TextAlign.Center,
             onClick = onSwitchBack,
         )
+    }
+}
+
+/**
+ * 切回二次确认页（受「切回确认」偏好约束，遵循圆屏列表规范）：
+ * 标题提示将从「过往」移除并恢复为当前宠；确认 / 取消。不另着警示色（切回为恢复、非销毁）。
+ */
+@Composable
+private fun ConfirmSwitchBackScreen(
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .roundEdgeFade()
+            .padding(horizontal = roundSafeInset()),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        item { RoundEdgeSpace() }
+        item { PageTitle(stringResource(R.string.archive_switch_confirm_title)) }
+        item {
+            Text(
+                stringResource(R.string.archive_switch_confirm_hint),
+                color = ColorToken.Text2,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
+        }
+        item {
+            PillItem(
+                text = stringResource(R.string.archive_switch_confirm),
+                filled = true,
+                textAlign = TextAlign.Center,
+                onClick = onConfirm,
+            )
+        }
+        item {
+            PillItem(
+                text = stringResource(R.string.cancel),
+                textAlign = TextAlign.Center,
+                onClick = onCancel,
+            )
+        }
+        item { RoundEdgeSpace() }
     }
 }
 

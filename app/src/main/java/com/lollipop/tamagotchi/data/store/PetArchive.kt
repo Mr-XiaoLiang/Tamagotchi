@@ -46,11 +46,18 @@ class PetArchive(private val kv: KVStore) {
     }
 
     /**
-     * 快照切换：把墓碑宠反序列化为当前档（切回继续养），并从墓碑集合移除。
+     * 快照切换（swap 语义）：把墓碑宠反序列化为当前档（切回继续养），并从墓碑集合移除。
+     * 切回前**先把当前正在养的宠归档**（避免被覆盖丢失），因此任何一次切换都不会丢宠——
+     * 例如当前 B、切回墓碑 A，则 B 被归档进「过往」、A 成为当前档。
      * 返回切回的档案；无此墓碑返回 null。
      */
-    fun switchTo(petId: String): PetProfile? {
+    fun switchTo(petId: String, now: Long = System.currentTimeMillis()): PetProfile? {
         val tomb = listTombs().firstOrNull { it.petId == petId } ?: return null
+        // 切回前先把当前宠（如 B）归档，防止被覆盖丢失
+        val current = loadCurrent()
+        if (current != null) {
+            archiveCurrent(current, now)
+        }
         val remaining = listTombs().filter { it.petId != petId }
         kv.put(TOMBS_KEY, PetTombCodec.listToJson(remaining))
         saveCurrent(tomb.profile)
