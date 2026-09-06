@@ -106,4 +106,14 @@
     <string name="greet_verylong">这么久才回来，人家想死你了</string>
 
     <string name="replay_title">在你离开的这段时间…</string>
+    <string name="review_online_title">本次动态</string>
+
+    <!-- M9 在线随机事件气泡（doc/03 §4） -->
+    <string name="ev_found_food">翻到好吃的，偷偷尝一口！</string>
+    <string name="ev_sneeze">阿嚏！</string>
+    <string name="ev_curious_walk">想去溜达溜达～</string>
+    <string name="ev_yawn">哈啊——困了</string>
+    <string name="ev_beg_food">喂喂我嘛～</string>
+    <string name="ev_dream">梦里也在笑</string>
+    <string name="ev_treat_hunt">闻到零食味儿！</string>
 </resources>

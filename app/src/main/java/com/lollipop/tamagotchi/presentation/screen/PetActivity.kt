@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -19,13 +20,17 @@ import com.lollipop.tamagotchi.data.time.SystemClock
 import com.lollipop.tamagotchi.domain.engine.ActionType
 import com.lollipop.tamagotchi.domain.engine.PetActions
 import com.lollipop.tamagotchi.domain.engine.SettleEngine
+import com.lollipop.tamagotchi.domain.engine.EventEngine
 import com.lollipop.tamagotchi.domain.engine.SettlementSummary
 import com.lollipop.tamagotchi.domain.log.InMemorySessionLog
+import com.lollipop.tamagotchi.domain.log.EventLog
+import com.lollipop.tamagotchi.domain.log.EventLogType
 import com.lollipop.tamagotchi.domain.model.PetProfile
 import com.lollipop.tamagotchi.presentation.base.BaseActivity
 import com.lollipop.tamagotchi.presentation.boot.BootLog
 import com.lollipop.tamagotchi.presentation.boot.BootStage
 import com.lollipop.tamagotchi.presentation.screen.setup.SetupProfileScreen
+import com.lollipop.tamagotchi.presentation.screen.OnlineEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -68,6 +73,12 @@ class PetActivity : BaseActivity() {
 /** 热恢复再结算的间隔阈值（doc/08 §3「≥5s 再 settle」）。 */
 private const val RESUME_SETTLE_GAP_MS = 5_000L
 
+/** 在线随机事件探测间隔（doc/03 §2.3 全局节奏 5~10min，此处前台每 30s 探一次）。 */
+private const val EVENT_CHECK_MS = 30_000L
+
+/** 传给引擎的近期日志窗口：覆盖最长单事件冷却（sneeze 30min）。 */
+private const val EVENT_LOG_WINDOW_MS = 30 * 60_000L
+
 /**
  * 有档 / 建档路由。建档确认存盘后置 profile 即切主屏；
  * profile 的创建只此一处（PetStore.save → 内存态 → UI），无二义事实源。
@@ -88,6 +99,13 @@ private fun EntryFlow(
     val clock = remember { SystemClock() }
     // 会话内动作流水（M6.S2：喂食/玩耍/抚摸/治疗追加；本进程生命周期，不跨冷启动）
     val sessionLog = remember { InMemorySessionLog() }
+    // M9.S2 在线随机事件引擎（seed 取启动时刻，保证每会话抽签序列不同）
+    val eventEngine = remember { EventEngine(seed = clock.nowMillis()) }
+    // 最近一次在线随机事件（命中风波自增号；供 PetScreen 重启短演出）
+    var onlineEvent by remember { mutableStateOf<OnlineEvent?>(null) }
+    var eventSeq by remember { mutableLongStateOf(0L) }
+    // M9.S2 会话回顾：本会话命中的在线事件（供状态面板「本次动态」展示）
+    var onlineReview by remember { mutableStateOf<List<EventLog>>(emptyList()) }
     // 最近一次动作执行事件（成功才置位；id 单调自增 → UI 据此重启短演出，见 PetScreen）
     var lastActionEvent by remember { mutableStateOf<ActionEvent?>(null) }
     var actionSeq by remember { mutableLongStateOf(0L) }
@@ -189,6 +207,27 @@ private fun EntryFlow(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    // M9.S2 在线节奏：前台每 [EVENT_CHECK_MS] 探一次；全局间隔 / 单事件冷却 / 日上限由引擎保证不连刷
+    // （doc/03 §2.3）。命中 → 应用数值微扰 + 写 RANDOM_EVENT 日志 + 上抛 [OnlineEvent] 供 PetScreen 演出。
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(EVENT_CHECK_MS)
+            if (!lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) continue
+            val cur = profile ?: continue
+            val now = clock.nowMillis()
+            val recent = sessionLog.liveLogsSince(now - EVENT_LOG_WINDOW_MS)
+            val triggered = eventEngine.trigger(
+                EventEngine.EventContext(cur, now, recent),
+                sessionLog,
+            ) ?: continue
+            withContext(Dispatchers.Default) { store.save(triggered.profile) }
+            profile = triggered.profile
+            eventSeq++
+            onlineEvent = OnlineEvent(nonce = eventSeq, petEvent = triggered.event)
+            onlineReview = sessionLog.liveLogsSince(0).filter { it.type == EventLogType.RANDOM_EVENT }
+        }
+    }
+
     val current = profile
     if (current == null) {
         SetupProfileScreen(
@@ -219,6 +258,8 @@ private fun EntryFlow(
             },
             onAction = { type, food -> performAction(type, food) },
             actionEvent = lastActionEvent,
+            onlineEvent = onlineEvent,
+            onlineReview = onlineReview,
         )
     }
 }

@@ -98,4 +98,14 @@
     <string name="greet_verylong">Took you forever—I missed you so much</string>
 
     <string name="replay_title">While you were away…</string>
+    <string name="review_online_title">This session</string>
+
+    <!-- M9 online random event bubbles (doc/03 §4) -->
+    <string name="ev_found_food">Found a snack, sneaking a bite!</string>
+    <string name="ev_sneeze">Achoo!</string>
+    <string name="ev_curious_walk">Wanna go for a walk~</string>
+    <string name="ev_yawn">Yaawn—sleepy</string>
+    <string name="ev_beg_food">Feed me, please~</string>
+    <string name="ev_dream">Smiling in a dream</string>
+    <string name="ev_treat_hunt">Smells like a treat!</string>
 </resources>

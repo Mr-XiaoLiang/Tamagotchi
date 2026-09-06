@@ -136,8 +136,10 @@ import com.lollipop.tamagotchi.domain.engine.ActionHint
 import com.lollipop.tamagotchi.domain.engine.ActionResult
 import com.lollipop.tamagotchi.domain.engine.ActionRule
 import com.lollipop.tamagotchi.domain.engine.ActionType
+import com.lollipop.tamagotchi.domain.engine.EventEngine
 import com.lollipop.tamagotchi.domain.engine.OfflineEvent
 import com.lollipop.tamagotchi.domain.engine.SettlementSummary
+import com.lollipop.tamagotchi.domain.log.EventLog
 import com.lollipop.tamagotchi.presentation.render.FxFloat
 import com.lollipop.tamagotchi.presentation.render.FxKind
 import com.lollipop.tamagotchi.presentation.render.PetFx
@@ -172,6 +174,12 @@ data class ActionEvent(
     val result: ActionResult,
 )
 
+/** 在线随机事件上抛（M9.S2）：命中风波自增号，与 [ActionEvent] 同机制驱动短演出重启。 */
+data class OnlineEvent(
+    val nonce: Long,
+    val petEvent: EventEngine.PetEvent,
+)
+
 /** 操作面板页内子级：动作列表 ⇄ 食物选择（投喂子页）。 */
 private enum class ActionPage { Actions, Feed }
 
@@ -199,6 +207,10 @@ fun PetScreen(
     onAction: (type: ActionType, food: FoodType?) -> Unit = { _, _ -> },
     /** M6.S2：最近一次动作执行事件（成功才非空，[ActionEvent.id] 单调自增）。 */
     actionEvent: ActionEvent? = null,
+    /** M9.S2：最近一次在线随机事件（命中风波自增号，[OnlineEvent.nonce] 单调自增）。 */
+    onlineEvent: OnlineEvent? = null,
+    /** M9.S2 会话回顾：本会话命中的在线事件列表（供状态面板「本次动态」）。 */
+    onlineReview: List<EventLog> = emptyList(),
 ) {
     var stage by remember { mutableStateOf(BootStage.Shell) }
     // 当前挂载面板：null=主屏；非 null=抽屉在「拖出中 / 展开动画 / 全开 / 收回动画」任一阶段
@@ -282,6 +294,17 @@ fun PetScreen(
         // 先收面板（动作发生在面板内；收起后主屏可见宠物演出）
         closeSheet()
         currentFx = ev.result.toPetFx(ev.id, ctx)
+    }
+
+    // ── M9.S2 在线随机事件：命中 → 构建短演出（复用 PetFx 气泡/浮字/宠物表现）──
+    // 持久态提示（SLEEPING/WALKING）已由 [onlineEvent.petEvent] 写回 profile.fsmState，
+    // 由 PetLivingSprite 自行表现；此处仅驱动一次性气泡演出。
+    var seenEventNonce by remember { mutableStateOf(-1L) }
+    LaunchedEffect(onlineEvent) {
+        val ev = onlineEvent ?: return@LaunchedEffect
+        if (ev.nonce == seenEventNonce) return@LaunchedEffect
+        seenEventNonce = ev.nonce
+        currentFx = ev.petEvent.toPetFx(ev.nonce, ctx)
     }
 
     LaunchedEffect(Unit) {
@@ -597,6 +620,7 @@ fun PetScreen(
                     p = mounted,
                     profile = profile,
                     settleSummary = settleSummary,
+                    onlineReview = onlineReview,
                     onResetProfile = onResetProfile,
                     reveal = { reveal },
                     sheetExtent = sheetExtent,
@@ -632,6 +656,7 @@ private fun BoxScope.OverlayLayer(
     p: Panel,
     profile: PetProfile,
     settleSummary: SettlementSummary? = null,
+    onlineReview: List<EventLog> = emptyList(),
     onResetProfile: (() -> Unit)?,
     reveal: () -> Float,
     sheetExtent: SnapshotStateMap<Panel, Int>,
@@ -667,6 +692,7 @@ private fun BoxScope.OverlayLayer(
                     StatusPanelBody(
                         profile = profile,
                         settleTimeline = settleSummary?.offlineTimeline,
+                        onlineReview = onlineReview,
                         onDismiss = onDismiss,
                     )
                 }
@@ -818,6 +844,7 @@ private fun GreetingBubble(settleSummary: SettlementSummary?) {
 private fun ColumnScope.StatusPanelBody(
     profile: PetProfile,
     settleTimeline: List<OfflineEvent>? = null,
+    onlineReview: List<EventLog> = emptyList(),
     onDismiss: () -> Unit,
 ) {
     Box(
@@ -857,6 +884,22 @@ private fun ColumnScope.StatusPanelBody(
                         filled = false,
                         contentPadding = PaddingValues(start = 18.dp, end = 11.dp),
                         icon = { ColorDot(if (ev.highlight) ColorToken.Accent else ColorToken.Text2) },
+                        trailing = null,
+                        onClick = null,
+                    )
+                }
+            }
+            // M9.S2 会话回顾：本会话命中的在线随机事件（与离线回放并列，doc/04 §9.2）
+            if (onlineReview.isNotEmpty()) {
+                RoundListSpacer()
+                PanelTitle(stringResource(R.string.review_online_title))
+                onlineReview.reversed().forEach { log ->
+                    RoundListSpacer()
+                    PillItem(
+                        stringResource(eventBubbleRes(log.note ?: "") ?: R.string.ev_idle_pass),
+                        filled = false,
+                        contentPadding = PaddingValues(start = 18.dp, end = 11.dp),
+                        icon = { ColorDot(ColorToken.Accent) },
                         trailing = null,
                         onClick = null,
                     )
@@ -1217,6 +1260,39 @@ private fun ActionResult.toPetFx(nonce: Long, ctx: Context): PetFx {
         .map { (id, d) ->
             val sign = if (d > 0) "+" else "-"
             FxFloat(text = "$sign${abs(d).roundToInt()} ${ctx.getString(id.labelRes)}", color = attributeColor(id))
+        }
+    return PetFx(nonce = nonce, kind = kind, bubble = bubble, floats = floats)
+}
+
+/** 在线事件气泡 id → 字符串资源（M9，doc/03 §4；无匹配回落 ev_idle_pass）。 */
+private fun eventBubbleRes(bubbleId: String): Int? = when (bubbleId) {
+    "event.found_food" -> R.string.ev_found_food
+    "event.sneeze" -> R.string.ev_sneeze
+    "event.curious_walk" -> R.string.ev_curious_walk
+    "event.yawn" -> R.string.ev_yawn
+    "event.beg_food" -> R.string.ev_beg_food
+    "event.dream" -> R.string.ev_dream
+    "event.treat_hunt" -> R.string.ev_treat_hunt
+    else -> null
+}
+
+/** [EventEngine.PetEvent] → 表现层短演出指令（气泡文案 + 属性浮字；nonce = 事件自增号）。 */
+private fun EventEngine.PetEvent.toPetFx(nonce: Long, ctx: Context): PetFx {
+    // 持久态（WALKING/SLEEPING）由 fsmState 自现；瞬态（EXCITED）或纯气泡统一蹦跳表现
+    val kind = FxKind.EXCITED
+    val bubble = ctx.getString(eventBubbleRes(bubbleId) ?: R.string.ev_idle_pass)
+    val floats = AttributeRegistry.all
+        .mapNotNull { meta ->
+            val d = attrDelta[meta.id]
+            if (abs(d) < 0.5f) null else meta.id to d
+        }
+        .sortedBy { if (it.second > 0) 0 else 1 }
+        .map { (id, d) ->
+            val sign = if (d > 0) "+" else "-"
+            FxFloat(
+                text = "$sign${abs(d).roundToInt()} ${ctx.getString(id.labelRes)}",
+                color = attributeColor(id),
+            )
         }
     return PetFx(nonce = nonce, kind = kind, bubble = bubble, floats = floats)
 }
