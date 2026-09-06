@@ -10,11 +10,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.lollipop.tamagotchi.presentation.theme.ColorToken
-import kotlin.math.min
 
 /**
  * 圆屏安全区（doc/06 §8.2）：
@@ -22,11 +20,7 @@ import kotlin.math.min
  * 运行换算按 min(screenW, screenH) 取固定比例（含真机校准预留）。
  */
 @Composable
-fun roundSafeInset(): Dp {
-    val config = LocalConfiguration.current
-    val minSideDp = min(config.screenWidthDp, config.screenHeightDp)
-    return (minSideDp.dp * 0.06f).coerceIn(14.dp, 30.dp)
-}
+fun roundSafeInset(): Dp = screenMetrics().edgeSafeInset
 
 /**
  * 列表/滚动容器上下缘渐隐（EdgeFade）：列表越出可视区的内容向屏幕缘渐隐为黑，避免硬裁切。

@@ -91,7 +91,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.platform.LocalConfiguration
+
 import android.content.Intent
 import com.lollipop.tamagotchi.presentation.component.AppIcon
 import com.lollipop.tamagotchi.presentation.component.toImageBitmap
@@ -115,6 +115,8 @@ import com.lollipop.tamagotchi.presentation.component.RoundListSpacer
 import com.lollipop.tamagotchi.presentation.component.RoundSheet
 import com.lollipop.tamagotchi.presentation.component.roundEdgeFade
 import com.lollipop.tamagotchi.presentation.component.roundSafeInset
+import com.lollipop.tamagotchi.presentation.component.AdaptTokens
+import com.lollipop.tamagotchi.presentation.component.screenMetrics
 import com.lollipop.tamagotchi.presentation.component.SheetEdge
 import com.lollipop.tamagotchi.presentation.theme.BlackGlowBackground
 import com.lollipop.tamagotchi.presentation.theme.ColorToken
@@ -156,7 +158,7 @@ private const val HANDLE_HINT_MS = 10_000L
  * 三向「边缘热区带」带深：贴屏缘的常驻不可见窄带，同时是「点按展开」与「跟手拖拽」的
  * 起点判定区（见 [sheetDragZone]）。带深不过大，避免侵占中央宠物活动区（doc/06 §1/§5）。
  */
-private val EdgeBand = 32.dp
+private val EdgeBand = AdaptTokens.EDGE_BAND
 
 /** 状态行/图标低值预警阈值（<30，doc/06 §2/§3.1）。 */
 private const val LOW_VALUE_WARN = 30f
@@ -379,13 +381,10 @@ fun PetScreen(
                     },
                 ),
         ) {
-            val minSide = if (maxWidth < maxHeight) maxWidth else maxHeight
-            val screenR = minSide / 2
-            // 环近贴屏缘充当刻度环（外缘距屏缘 4dp 呼吸位）
-            val ringOuter = screenR - 4.dp
-            // 三向把手 = 上层 overlay 箭头，贴主环内沿悬浮（环段图标内缘≈ringOuter-9，箭头外缘≈ringOuter-11）
-            // 宠物活动范围=全屏底层，可与环/把手重叠穿过（M4.S2 布局调整）
-            val handleR = ringOuter - 22.dp
+            // 屏幕适配统一口径（见 ScreenAdapt）：主环/把手半径由真实屏宽推导，后期调参只改 AdaptTokens
+            val metrics = screenMetrics()
+            val ringOuter = metrics.ringOuter
+            val handleR = metrics.handleR
 
             // 三向把手延迟隐藏（doc/06 §1）：每箭头从**自身显现时刻**起计 [HANDLE_HINT_MS] 后
             // 自动淡出，避免常驻观感。三把手分属不同业务层、启动就绪时点不同
@@ -458,7 +457,7 @@ fun PetScreen(
                 Modifier
                     .align(Alignment.Center)
                     .alpha(petAlpha)
-                    .size(minSide)
+                    .size(metrics.minSide)
                     // 全屏圆裁切（物理屏圆）；宠物不出屏由 FSM clamp + 渲染映射保证，clip 仅为保险
                     .clip(CircleShape)
                     // Debug 安装：长按屏内进入 M2.S1 切片核对屏（release 不携带手势）。
@@ -550,7 +549,7 @@ fun PetScreen(
             // 与顶缘下拉/下面板「状态」同一入口（§3.2 三入口合一）。异常才亮（低值阈值见
             // doc/06 §2）：饥饿/不开心/脏 <30 分别亮碗/云/水滴，SICK 亮「病」十字；
             // 图标沿用对应属性语义色（§4）。平时空载隐藏、不占常观感。
-            val iconRowR = ringOuter * 0.62f
+            val iconRowR = metrics.iconRowR
             val statusIcons = if (stage >= BootStage.Status) {
                 buildList {
                     if (profile.attributes[AttributeId.SATIATION] < LOW_VALUE_WARN) {
@@ -757,9 +756,10 @@ internal fun RoundHeader(title: String, closeDir: ChevronDir, onDismiss: () -> U
             modifier = Modifier.weight(1f, fill = false),
         )
         Spacer(Modifier.width(8.dp))
+        val metrics = screenMetrics()
         Box(
             Modifier
-                .size(30.dp)
+                .size(metrics.dp(30.dp))
                 .clip(CircleShape)
                 .background(ColorToken.Accent.copy(alpha = 0.08f))
                 .border(1.dp, ColorToken.Text2.copy(alpha = 0.22f), CircleShape)
@@ -896,15 +896,16 @@ private fun StatusIconButton(kind: StatusIconKind, onClick: () -> Unit) {
         StatusIconKind.SICK -> stringResource(R.string.status_icon_sick)
     }
     val cd = stringResource(R.string.status_icon_cd, description)
+    val metrics = screenMetrics()
     Box(
         modifier = Modifier
-            .size(30.dp)
+            .size(metrics.dp(30.dp))
             .clip(CircleShape)
             .clickable(onClick = onClick)
             .semantics { contentDescription = cd },
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(Modifier.size(22.dp)) {
+        Canvas(Modifier.size(metrics.dp(22.dp))) {
             drawStatusIcon(kind = kind, tint = tint)
         }
     }
@@ -1091,9 +1092,10 @@ private fun FeedPage(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // 子页返回（滚动首元素行，chevron ≥20dp 视觉、热区 ≥30dp）
+            val metrics = screenMetrics()
             Box(
                 modifier = Modifier
-                    .size(34.dp)
+                    .size(metrics.dp(34.dp))
                     .clip(CircleShape)
                     .clickable(onClick = onBack),
                 contentAlignment = Alignment.Center,
@@ -1338,10 +1340,9 @@ private fun AppGridContent(
     onLaunch: (String) -> Unit,
     onLongPress: (String) -> Unit,
 ) {
-    val config = LocalConfiguration.current
-    val longSide = max(config.screenWidthDp, config.screenHeightDp).dp
-    val topPad = longSide * 0.5f - 24.dp
-    val bottomPad = longSide * 0.5f
+    val metrics = screenMetrics()
+    val topPad = metrics.listEdge(24.dp)
+    val bottomPad = metrics.longSide * 0.5f
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = Modifier
@@ -1385,6 +1386,7 @@ private fun AppGridCell(
     onLaunch: (String) -> Unit,
     onLongPress: (String) -> Unit,
 ) {
+    val metrics = screenMetrics()
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -1393,9 +1395,9 @@ private fun AppGridCell(
                 onClick = { onLaunch(app.packageName) },
                 onLongClick = { onLongPress(app.packageName) },
             )
-            .padding(6.dp),
+            .padding(metrics.dp(6.dp)),
     ) {
-        AppIcon(app.packageName, icons)
+        AppIcon(app.packageName, icons, size = metrics.dp(46.dp))
         Spacer(Modifier.height(4.dp))
         Text(
             app.label,
@@ -1412,16 +1414,17 @@ private fun AppGridCell(
 /** 编辑入口网格单元：与 App 图标同款样式，固定为网格最后一个（tune 图标）。 */
 @Composable
 private fun EditGridCell(onEdit: () -> Unit) {
+    val metrics = screenMetrics()
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(onClick = onEdit)
-            .padding(6.dp),
+            .padding(metrics.dp(6.dp)),
     ) {
         Box(
             modifier = Modifier
-                .size(46.dp)
+                .size(metrics.dp(46.dp))
                 .clip(CircleShape)
                 .background(ColorToken.Text2.copy(alpha = 0.15f)),
             contentAlignment = Alignment.Center,
@@ -1430,7 +1433,7 @@ private fun EditGridCell(onEdit: () -> Unit) {
                 tune,
                 contentDescription = null,
                 tint = ColorToken.Accent,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(metrics.dp(32.dp)),
             )
         }
         Spacer(Modifier.height(4.dp))
@@ -1474,20 +1477,21 @@ private fun PanelTitle(title: String) {
  */
 @Composable
 private fun DismissStrip(dir: ChevronDir, onDismiss: () -> Unit) {
+    val metrics = screenMetrics()
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(36.dp),
+            .height(metrics.dp(36.dp)),
         contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
-                .width(48.dp)
+                .width(metrics.dp(48.dp))
                 .fillMaxHeight()
                 .clickable(onClick = onDismiss),
             contentAlignment = Alignment.Center,
         ) {
-            MiniChevron(dir = dir, tint = ColorToken.Text2, size = 20.dp)
+            MiniChevron(dir = dir, tint = ColorToken.Text2, size = metrics.dp(20.dp))
         }
     }
 }
@@ -1501,20 +1505,21 @@ private fun DismissStrip(dir: ChevronDir, onDismiss: () -> Unit) {
  */
 @Composable
 private fun DismissStripV(dir: ChevronDir, onDismiss: () -> Unit) {
+    val metrics = screenMetrics()
     Box(
         modifier = Modifier
-            .width(36.dp)
+            .width(metrics.dp(36.dp))
             .fillMaxHeight(),
         contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp)
+                .height(metrics.dp(48.dp))
                 .clickable(onClick = onDismiss),
             contentAlignment = Alignment.Center,
         ) {
-            MiniChevron(dir = dir, tint = ColorToken.Text2, size = 20.dp)
+            MiniChevron(dir = dir, tint = ColorToken.Text2, size = metrics.dp(20.dp))
         }
     }
 }
@@ -1580,14 +1585,15 @@ internal fun MiniChevron(
  */
 @Composable
 private fun EdgeHint(dir: ChevronDir) {
+    val metrics = screenMetrics()
     Box(
-        modifier = Modifier.size(40.dp),
+        modifier = Modifier.size(metrics.dp(40.dp)),
         contentAlignment = Alignment.Center,
     ) {
         MiniChevron(
             dir = dir,
             tint = Color.White.copy(alpha = 0.6f),
-            size = 22.dp,
+            size = metrics.dp(22.dp),
         )
     }
 }

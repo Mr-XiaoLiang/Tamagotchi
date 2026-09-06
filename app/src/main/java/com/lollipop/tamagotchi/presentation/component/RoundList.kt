@@ -10,10 +10,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import kotlin.math.max
 
 /**
  * RoundList —— overlay / 页面内纵向列表（doc/06 §8.3）。
@@ -44,8 +42,6 @@ fun RoundList(
  * 末段同值，使滚动后末项也能到达屏中可读区。所有「非特定布局」的纵向列表一律使用，禁止自行拍脑袋留白。
  */
 @Composable
-fun RoundEdgeSpace(titleRowHalf: Dp = 24.dp) {
-    val config = LocalConfiguration.current
-    val longSide = max(config.screenWidthDp, config.screenHeightDp).dp
-    Spacer(Modifier.height(longSide * 0.5f - titleRowHalf))
+fun RoundEdgeSpace(titleRowHalf: Dp = AdaptTokens.LIST_TITLE_HALF) {
+    Spacer(Modifier.height(screenMetrics().listEdge(titleRowHalf)))
 }
