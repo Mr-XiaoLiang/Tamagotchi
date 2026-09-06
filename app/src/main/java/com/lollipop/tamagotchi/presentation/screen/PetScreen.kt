@@ -185,7 +185,7 @@ data class OnlineEvent(
 private enum class ActionPage { Actions, Feed }
 
 /** 主屏顶内「状态图标区」图标种类（doc/06 §3.1：饥饿/不开心/脏/病，异常才亮）。 */
-private enum class StatusIconKind { HUNGRY, SAD, DIRTY, SICK, INTELLIGENCE }
+private enum class StatusIconKind { HUNGRY, SAD, DIRTY, SICK, KNOWLEDGE }
 
 /**
  * 主屏四区 + 三 overlay 路由（doc/06 §1/§2/§5，Task.md M1.S2）。
@@ -919,7 +919,7 @@ private fun attributeColor(id: AttributeId): Color = when (id) {
     AttributeId.SATIATION -> ColorToken.Satiation
     AttributeId.MOOD -> ColorToken.Mood
     AttributeId.HEALTH -> ColorToken.Health
-    AttributeId.INTELLIGENCE -> ColorToken.Intelligence
+    AttributeId.KNOWLEDGE -> ColorToken.Knowledge
     AttributeId.HYGIENE -> ColorToken.Hygiene
 }
 
@@ -934,14 +934,14 @@ private fun StatusIconButton(kind: StatusIconKind, onClick: () -> Unit) {
         StatusIconKind.SAD -> ColorToken.Mood
         StatusIconKind.DIRTY -> ColorToken.Hygiene
         StatusIconKind.SICK -> ColorToken.Health
-        StatusIconKind.INTELLIGENCE -> ColorToken.Intelligence
+        StatusIconKind.KNOWLEDGE -> ColorToken.Knowledge
     }
     val description = when (kind) {
         StatusIconKind.HUNGRY -> stringResource(R.string.status_icon_hungry)
         StatusIconKind.SAD -> stringResource(R.string.status_icon_sad)
         StatusIconKind.DIRTY -> stringResource(R.string.status_icon_dirty)
         StatusIconKind.SICK -> stringResource(R.string.status_icon_sick)
-        StatusIconKind.INTELLIGENCE -> stringResource(R.string.status_icon_intelligence)
+        StatusIconKind.KNOWLEDGE -> stringResource(R.string.status_icon_knowledge)
     }
     val cd = stringResource(R.string.status_icon_cd, description)
     val metrics = screenMetrics()
@@ -969,7 +969,7 @@ private fun AttributeIcon(id: AttributeId, tint: Color) {
     }
 }
 
-/** 状态图标字形（碗=饿 / 云=不开心 / 水滴=脏 / 圆角十字=病 / 四角星=智力），单色随属性色。 */
+/** 状态图标字形（碗=饿 / 云=不开心 / 水滴=脏 / 圆角十字=病 / 四角星=知识），单色随属性色。 */
 private fun DrawScope.drawStatusIcon(kind: StatusIconKind, tint: Color) {
     val l = size.width
     val strokeW = l * 0.13f
@@ -1024,7 +1024,7 @@ private fun DrawScope.drawStatusIcon(kind: StatusIconKind, tint: Color) {
                 cornerRadius = CornerRadius(r, r),
             )
         }
-        StatusIconKind.INTELLIGENCE -> {
+        StatusIconKind.KNOWLEDGE -> {
             // 四角星（智慧/聪慧；面板属性图标专属，首页状态条不出现，仅用于状态面板对照）
             val cx = l * 0.5f
             val cy = l * 0.5f
@@ -1137,6 +1137,15 @@ private fun ActionListPage(
                 denied = petDenied,
                 dotColor = ColorToken.Health,
                 onClick = { onAction(ActionType.PET, null) },
+            )
+            // 学习：智力只增不减，随时可学（冷却 1h；冷却空心只读，M12）
+            val studyDenied = ActionRule.studyDenied(profile, nowMs)
+            RoundListSpacer()
+            ActionRow(
+                title = stringResource(R.string.action_study),
+                denied = studyDenied,
+                dotColor = ColorToken.Knowledge,
+                onClick = { onAction(ActionType.STUDY, null) },
             )
             // 清洁：仅「脏了」（hygiene < 告警阈值）才出现；冷却空心只读（M11）
             if (profile.attributes[AttributeId.HYGIENE] < LOW_VALUE_WARN) {
@@ -1288,6 +1297,7 @@ private fun ActionResult.toPetFx(nonce: Long, ctx: Context): PetFx {
         ActionHint.AFFECTION -> FxKind.AFFECTION
         ActionHint.TREATED -> FxKind.TREATED
         ActionHint.CLEANING -> FxKind.CLEANING
+        ActionHint.STUDYING -> FxKind.STUDYING
     }
     val bubble = when (hint) {
         ActionHint.EATING -> if (note != null) ctx.getString(R.string.fx_eat_note, note) else ctx.getString(R.string.fx_eat)
@@ -1295,6 +1305,7 @@ private fun ActionResult.toPetFx(nonce: Long, ctx: Context): PetFx {
         ActionHint.AFFECTION -> ctx.getString(R.string.fx_affection)
         ActionHint.TREATED -> ctx.getString(R.string.fx_treated)
         ActionHint.CLEANING -> ctx.getString(R.string.fx_clean)
+        ActionHint.STUDYING -> if (unlockTier != null) ctx.getString(R.string.fx_study_unlock) else ctx.getString(R.string.fx_study)
     }
     // 属性浮字：正值在前、负值（如喂食附带的清洁 −4）随后；四舍五入为整数展示
     val floats = AttributeRegistry.all

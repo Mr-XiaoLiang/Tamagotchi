@@ -261,8 +261,8 @@ internal fun DrawScope.drawAttributeGlyph(id: AttributeId, center: Offset, tint:
             }
             drawPath(path, tint)
         }
-        // 五角星（智力；面板专属，主环无此段）
-        AttributeId.INTELLIGENCE -> {
+        // 五角星（知识；面板专属，主环无此段）
+        AttributeId.KNOWLEDGE -> {
             val outer = w * 0.40f
             val inner = w * 0.17f
             val cx = center.x

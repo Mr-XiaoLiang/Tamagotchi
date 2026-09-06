@@ -15,6 +15,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.lollipop.tamagotchi.core.attribute.FoodType
+import com.lollipop.tamagotchi.core.attribute.PlayType
 import com.lollipop.tamagotchi.data.store.PetStore
 import com.lollipop.tamagotchi.data.time.SystemClock
 import com.lollipop.tamagotchi.domain.engine.ActionType
@@ -22,6 +23,7 @@ import com.lollipop.tamagotchi.domain.engine.PetActions
 import com.lollipop.tamagotchi.domain.engine.SettleEngine
 import com.lollipop.tamagotchi.domain.engine.EventEngine
 import com.lollipop.tamagotchi.domain.engine.SettlementSummary
+import com.lollipop.tamagotchi.domain.util.FxSeq
 import com.lollipop.tamagotchi.domain.log.InMemorySessionLog
 import com.lollipop.tamagotchi.domain.log.EventLog
 import com.lollipop.tamagotchi.domain.log.EventLogType
@@ -108,7 +110,8 @@ private fun EntryFlow(
     // 最近一次动作执行事件（成功才置位；[fxSeq] 单调自增、动作与在线事件共用同一序号空间，
     // 供 PetScreen/PetLivingSprite 按 nonce 去重时全局唯一，避免两类事件序号撞车导致某次演出被误吞）
     var lastActionEvent by remember { mutableStateOf<ActionEvent?>(null) }
-    var fxSeq by remember { mutableLongStateOf(0L) }
+    // 单一序号源：动作事件与在线事件共用同一 FxSeq 实例，保证全局 nonce 唯一（回归点：曾因两套计数撞车漏播演出）
+    val fxSeq = remember { FxSeq() }
     // 上次尝试结算的墙钟（进程内）：用于热恢复节流；冷启动 force 结算不受限。
     var lastSettleWall by remember { mutableLongStateOf(0L) }
     // 最近一次结算摘要（含离线时间线 + 结局基调），供 PetScreen 迎接气泡 / 回放（M7.S2）。
@@ -161,17 +164,21 @@ private fun EntryFlow(
             val result = withContext(Dispatchers.Default) {
                 val r = when (type) {
                     ActionType.FEED -> PetActions.onFeed(cur, now, food ?: return@withContext null, sessionLog)
-                    ActionType.PLAY -> PetActions.onPlay(cur, now, sessionLog)
+                    ActionType.PLAY -> PetActions.onPlay(
+                        cur, now,
+                        style = PlayType.entries[(now / 1000).toInt().mod(PlayType.entries.size)],
+                        log = sessionLog,
+                    )
                     ActionType.PET -> PetActions.onPet(cur, now, sessionLog)
                     ActionType.HEAL -> PetActions.onHeal(cur, now, sessionLog)
                     ActionType.CLEAN -> PetActions.onClean(cur, now, sessionLog)
+                    ActionType.STUDY -> PetActions.onStudy(cur, now, sessionLog)
                 }
                 if (r != null) store.save(r.profile)
                 r
             } ?: return@launch
             profile = result.profile
-            fxSeq++
-            lastActionEvent = ActionEvent(id = fxSeq, result = result)
+            lastActionEvent = ActionEvent(id = fxSeq.next(), result = result)
         }
     }
 
@@ -223,8 +230,7 @@ private fun EntryFlow(
             ) ?: continue
             withContext(Dispatchers.Default) { store.save(triggered.profile) }
             profile = triggered.profile
-            fxSeq++
-            onlineEvent = OnlineEvent(nonce = fxSeq, petEvent = triggered.event)
+            onlineEvent = OnlineEvent(nonce = fxSeq.next(), petEvent = triggered.event)
             onlineReview = sessionLog.liveLogsSince(0).filter { it.type == EventLogType.RANDOM_EVENT }
         }
     }

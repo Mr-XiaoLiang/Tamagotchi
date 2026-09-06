@@ -37,7 +37,7 @@ object ColorToken {
     val Satiation = Color(0xFFD9AF85) // 饱腹 琥珀
     val Mood = Color(0xFF84BCAE)      // 心情 青绿
     val Health = Color(0xFFCF9AA2)    // 健康 玫红
-    val Intelligence = Color(0xFF9E94C9) // 智力 蓝紫（M12 起用）
+    val Knowledge = Color(0xFF9E94C9) // 知识 蓝紫（M12 起用）
     val Hygiene = Color(0xFF93BFCF)   // 清洁 浅蓝（M11 起用）
 
     // ── 状态色（doc/06 §4） ───────────────────────────────

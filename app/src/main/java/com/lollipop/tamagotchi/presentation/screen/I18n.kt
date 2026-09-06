@@ -21,7 +21,7 @@ val AttributeId.labelRes: Int
         AttributeId.SATIATION -> R.string.attr_satiation
         AttributeId.MOOD -> R.string.attr_mood
         AttributeId.HEALTH -> R.string.attr_health
-        AttributeId.INTELLIGENCE -> R.string.attr_intelligence
+        AttributeId.KNOWLEDGE -> R.string.attr_knowledge
         AttributeId.HYGIENE -> R.string.attr_hygiene
     }
 

@@ -1,5 +1,6 @@
 package com.lollipop.tamagotchi.data.store
 
+import com.lollipop.tamagotchi.core.attribute.AttributeId
 import com.lollipop.tamagotchi.core.attribute.AttributeMap
 import com.lollipop.tamagotchi.core.attribute.AttributeRegistry
 import com.lollipop.tamagotchi.core.attribute.FoodFlavor
@@ -152,9 +153,12 @@ internal object PetProfileCodec {
 
     private fun attributesFromJson(obj: JSONObject?): AttributeMap {
         val values = AttributeRegistry.all.associate { meta ->
+            // 知识属性曾用键 "intelligence"，旧档兼容读取（rename INTELLIGENCE→KNOWLEDGE）
+            val legacyKey = if (meta.id == AttributeId.KNOWLEDGE) "intelligence" else null
             val raw = obj?.optDouble(meta.id.name.lowercase(), Double.NaN)
-                ?.takeIf { !it.isNaN() }?.toFloat()
-            val v = raw ?: meta.defaultStart
+                ?.takeIf { !it.isNaN() }
+                ?: legacyKey?.let { obj?.optDouble(it, Double.NaN)?.takeIf { !it.isNaN() } }
+            val v = raw?.toFloat() ?: meta.defaultStart
             meta.id to meta.clamp(v)
         }
         return AttributeMap.of(values)

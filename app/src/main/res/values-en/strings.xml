@@ -9,7 +9,7 @@
     <string name="status_icon_sad">Unhappy</string>
     <string name="status_icon_dirty">Dirty</string>
     <string name="status_icon_sick">Sick</string>
-    <string name="status_icon_intelligence">Intelligence</string>
+    <string name="status_icon_knowledge">Knowledge</string>
     <string name="status_icon_cd">%1$s (tap to view status)</string>
 
     <string name="actions_title">Actions</string>
@@ -20,6 +20,7 @@
     <string name="action_clean">Clean</string>
     <string name="action_pet">Pet</string>
     <string name="action_heal">Heal</string>
+    <string name="action_study">Study</string>
     <string name="actions_note">Cooldown / full attr → read-only · feeding needs a flavor (match +10%)</string>
 
     <string name="feed_title">Pick food · %1$s</string>
@@ -40,7 +41,7 @@
     <string name="attr_satiation">Satiation</string>
     <string name="attr_mood">Mood</string>
     <string name="attr_health">Health</string>
-    <string name="attr_intelligence">Intelligence</string>
+    <string name="attr_knowledge">Knowledge</string>
     <string name="attr_hygiene">Hygiene</string>
 
     <string name="deny_cooldown">Cooldown %1$s</string>
@@ -54,6 +55,8 @@
     <string name="fx_affection">Snuggles you!</string>
     <string name="fx_treated">Feeling better!</string>
     <string name="fx_clean">All clean!</string>
+    <string name="fx_study">Learned something new!</string>
+    <string name="fx_study_unlock">Learned a new trick! Unlocked new interactions</string>
 
 
     <string name="quick_edit">Edit</string>

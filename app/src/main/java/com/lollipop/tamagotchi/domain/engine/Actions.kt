@@ -5,6 +5,7 @@ import com.lollipop.tamagotchi.core.attribute.AttributeId
 import com.lollipop.tamagotchi.core.attribute.AttributeMap
 import com.lollipop.tamagotchi.core.attribute.AttributeRegistry
 import com.lollipop.tamagotchi.core.attribute.FoodType
+import com.lollipop.tamagotchi.core.attribute.PlayType
 import com.lollipop.tamagotchi.core.behavior.PetState
 import com.lollipop.tamagotchi.domain.log.EventLog
 import com.lollipop.tamagotchi.domain.log.EventLogType
@@ -16,14 +17,14 @@ import com.lollipop.tamagotchi.domain.model.PetProfile
  * 玩家动作类型（doc/01 §10 面板动作集）。M1–M10 主链只实现四种：
  * 喂食（选食物）/ 玩耍 / 抚摸 / 治疗；清洁/学习随 M11/M12（doc/09 §5.2/§5.3）。
  */
-enum class ActionType { FEED, PLAY, PET, HEAL, CLEAN }
+enum class ActionType { FEED, PLAY, PET, HEAL, CLEAN, STUDY }
 
 /**
  * 动作 FSM 提示（doc/02 §1.1）：喂食 → EATING、玩耍 → EXCITED 是短状态（2~3s 后回落）；
  * 抚摸「亲昵」与治疗无独立 PetState（doc/02 §1.1 注释：以短动作动画+气泡在现有状态上叠加）。
  * M6.S1 只出提示；表现层（M6.S2）据此播放，不把短态落持久快照（防冷启卡死锁态）。
  */
-enum class ActionHint { EATING, EXCITED, AFFECTION, TREATED, CLEANING }
+enum class ActionHint { EATING, EXCITED, AFFECTION, TREATED, CLEANING, STUDYING }
 
 /** 动作不可执行的展示原因（doc/06 §8.3：面板空心胶囊 = 只读信息位）。 */
 sealed interface ActionDenied {
@@ -58,6 +59,8 @@ data class ActionResult(
     val hint: ActionHint,
     val cooldownUntil: Long?,
     val note: String? = null,
+    /** 学习解锁档位（智力跨越该阈值时非 null，供 UI 弹「学会新招」气泡；doc/01 §4.1）。 */
+    val unlockTier: Int? = null,
 )
 
 /**
@@ -81,6 +84,8 @@ object ActionRule {
     const val PLAY_COOLDOWN_MS: Long = 5 * 1000L
     const val PET_COOLDOWN_MS: Long = 5 * 1000L
     const val CLEAN_COOLDOWN_MS: Long = 5 * 1000L
+    /** 学习冷却 5s（doc/01 §6.2 / §10；与喂/玩/抚/清洁统一最小间隔）。 */
+    const val STUDY_COOLDOWN_MS: Long = 5 * 1000L
 
     /** 口味契合加成（doc/01 §7：额外 +10%）。 */
     const val FLAVOR_BONUS: Float = 1.1f
@@ -96,6 +101,8 @@ object ActionRule {
 
     /** 治疗 health +40（doc/01 §6.2/§10）。 */
     const val HEAL_GAIN: Float = 40f
+    /** 治疗附带饱食消耗（doc/01 §6.2：疗伤也费体力）。 */
+    const val HEAL_SAT_COST: Float = 3f
 
     /** 喂食附带清洁代价（doc/01 §6.2 备注：-4）。 */
     const val FEED_HYGIENE_COST: Float = 4f
@@ -120,6 +127,12 @@ object ActionRule {
     fun cleanDenied(profile: PetProfile, now: Long): ActionDenied? =
         cooldown(profile.cooldowns.cleanUntil, now)
 
+    fun studyDenied(profile: PetProfile, now: Long): ActionDenied? =
+        cooldown(profile.cooldowns.studyUntil, now)
+
+    /** 学习智力增速受 learner 特质加权（doc/02 §4.4：learnSpeed = (0.5 + learner) × base）。 */
+    fun studyIntGain(base: Float, learner: Float): Float = base * (0.5f + learner)
+
     fun healDenied(profile: PetProfile): ActionDenied? =
         if (profile.fsmState != PetState.SICK) ActionDenied.NotSick else null
 
@@ -140,8 +153,18 @@ object ActionRule {
  * 玩家动作执行（doc/01 §6.2/§10；Task M6.S1）。
  *
  * 全部纯函数：denied 非空 → 返回 null（未执行、快照不变）；成功返回 [ActionResult]。
- * 成功后即时：属性按边际收益/clamp 应用、冷却写 next-until、stats（里程碑）命中 +1、
- * 可选 [log] 追加 `ACTION_*` 条目（内存会话日志，doc/04 §3.1）。
+ * 成功后即时：属性按「特质缩放 × 边际收益 × 随机浮动」应用并 clamp、冷却写 next-until、
+ * stats（里程碑）命中 +1、可选 [log] 追加 `ACTION_*` 条目（内存会话日志，doc/04 §3.1）。
+ *
+ * **联动模型（用户平衡需求 / doc/01 §6.3 补充）**：每个属性的增减都受宠物固定特质（traits）
+ * 与当前浮动值共同影响，且每次增减带 ±[JITTER] 随机浮动（避免固定参数）：
+ * - 喂食：饱腹/心情走「口味×特质×边际递减」；健康按食物表固定；并触发交叉副作用——
+ *   同时增饱腹+健康的食物同步降心情（健康餐不开心），增心情的食物同步降健康、并可能降清洁。
+ * - 玩耍：心情↑、健康↓、清洁↓、饱食↓、知识小幅↓（不变笨）；不同 [PlayType] 幅度不同。
+ * - 学习：知识↑（受隐藏智商 learner 加权）、心情↓、饱食↓。
+ * - 清洁：清洁↑；health 偏低时顺带补少量健康；耗饱食。
+ * - 治疗：健康↑（固定）、耗饱食。
+ * 所有动作冷却统一 5s。
  *
  * fsmState 语义（M6.S1 落地决策，doc/02 §1.2）：
  * - 短动作态 EATING/EXCITED **不写持久快照**（由表现层临时演出，防动作后杀进程冷启卡锁态）；
@@ -153,12 +176,15 @@ object PetActions {
     private val SAT = AttributeId.SATIATION
     private val MOOD = AttributeId.MOOD
     private val HEALTH = AttributeId.HEALTH
-    private val INT = AttributeId.INTELLIGENCE
+    private val INT = AttributeId.KNOWLEDGE
     private val HYG = AttributeId.HYGIENE
 
     /**
-     * 喂食（选一种食物，doc/01 §7）：sat/mood 按口味契合 ×1.1 后走边际收益；
-     * health 照类型表固定；hyg 附 -4。冷却 5s。成功 stats.feed +1。
+     * 喂食（选一种食物，doc/01 §7）：sat/mood 按「口味契合 × 特质缩放 × 边际收益」；
+     * health 照类型表固定（不递减）。并触发交叉副作用（用户平衡需求）：
+     * - 同时增饱腹+健康 → 同步降心情（健康餐让人不开心）；
+     * - 增心情 → 同步降健康，并可能降清洁（越开心越不讲究）。
+     * 全部增量经 [jitter] 随机浮动。冷却 5s。成功 stats.feed +1。
      */
     fun onFeed(
         profile: PetProfile,
@@ -168,12 +194,32 @@ object PetActions {
     ): ActionResult? {
         if (ActionRule.feedDenied(profile, now) != null) return null
         val cur = profile.attributes
+        val traits = profile.personality.traits
         val k = ActionRule.flavorMultiplier(food, profile)
+        // 基础增量：饱腹/心情走「口味×特质×边际递减」；健康按食物表固定。
+        val satGain = ActionRule.diminishedGain(
+            traitScale(food.satDelta * k, traits.appetite, APPETITE_SLOPE), cur[SAT])
+        val moodBase = traitScale(food.moodDelta * k, traits.temper, TEMPER_SLOPE)
+        val moodGain = if (moodBase > 0f) ActionRule.diminishedGain(moodBase, cur[MOOD]) else moodBase
+        val healthGain = food.healthDelta * k
+        // 交叉副作用
+        var moodOut = moodGain
+        var healthOut = healthGain
+        var hygOut = -ActionRule.FEED_HYGIENE_COST.toFloat()
+        if (healthGain > 0f && satGain > 0f) {
+            moodOut -= FEED_HEALTH_TO_MOOD * healthGain          // (a) 健康餐 → 降心情
+        }
+        if (moodGain > 0f) {
+            healthOut -= FEED_MOOD_TO_HEALTH * moodGain           // (b) 开心餐 → 降健康
+            if (effectRng() < FEED_MOOD_TO_HYG_PROB) {
+                hygOut -= FEED_MOOD_TO_HYG * moodGain             // (b) 可能降清洁
+            }
+        }
         val attrs = cur
-            .set(SAT, cur[SAT] + ActionRule.diminishedGain(food.satDelta * k, cur[SAT]))
-            .set(MOOD, cur[MOOD] + ActionRule.diminishedGain(food.moodDelta * k, cur[MOOD]))
-            .set(HEALTH, cur[HEALTH] + food.healthDelta)
-            .set(HYG, cur[HYG] - ActionRule.FEED_HYGIENE_COST)
+            .set(SAT, cur[SAT] + jitter(satGain))
+            .set(MOOD, cur[MOOD] + jitter(moodOut))
+            .set(HEALTH, cur[HEALTH] + jitter(healthOut))
+            .set(HYG, cur[HYG] + jitter(hygOut))
         val after = withSadRecovery(profile, attrs).copy(
             cooldowns = profile.cooldowns.copy(
                 feedUntil = now + ActionRule.FEED_COOLDOWN_MS,
@@ -185,21 +231,31 @@ object PetActions {
     }
 
     /**
-     * 玩耍：mood +15（边际）、health +2、hyg -2、int +1（边际，学习型）。冷却 5s。
-     * 成功 stats.play +1。
+     * 玩耍：心情↑、健康↓、清洁↓、饱食↓；知识小幅↓（不变笨，仅被玩消耗）。不同 [style] 幅度不同
+     * （doc/01 §6.2：翻滚/追尾巴/逗弄）。心情增益随急躁放大、健康损耗随好动放大，全部带随机浮动。
+     * 冷却 5s。成功 stats.play +1。
      */
     fun onPlay(
         profile: PetProfile,
         now: Long,
+        style: PlayType = PlayType.DEFAULT,
         log: SessionLog? = null,
     ): ActionResult? {
         if (ActionRule.playDenied(profile, now) != null) return null
         val cur = profile.attributes
+        val traits = profile.personality.traits
+        val moodGain = ActionRule.diminishedGain(
+            traitScale(style.moodDelta, traits.temper, TEMPER_SLOPE), cur[MOOD])
+        val dHealth = -traitScale(style.healthCost, traits.activity, ACTIVITY_SLOPE)
+        val dHyg = -style.hygieneCost.toFloat()
+        val dSat = -style.satCost.toFloat()
+        val dInt = -PlayType.KNOWLEDGE_COST
         val attrs = cur
-            .set(MOOD, cur[MOOD] + ActionRule.diminishedGain(PLAY_MOOD_GAIN, cur[MOOD]))
-            .set(HEALTH, cur[HEALTH] + PLAY_HEALTH_GAIN)
-            .set(HYG, cur[HYG] + PLAY_HYGIENE_COST)
-            .set(INT, cur[INT] + ActionRule.diminishedGain(PLAY_INT_GAIN, cur[INT]))
+            .set(MOOD, cur[MOOD] + jitter(moodGain))
+            .set(HEALTH, cur[HEALTH] + jitter(dHealth))
+            .set(HYG, cur[HYG] + jitter(dHyg))
+            .set(SAT, cur[SAT] + jitter(dSat))
+            .set(INT, cur[INT] + jitter(dInt))
         val after = withSadRecovery(profile, attrs).copy(
             cooldowns = profile.cooldowns.copy(
                 playUntil = now + ActionRule.PLAY_COOLDOWN_MS,
@@ -207,10 +263,10 @@ object PetActions {
             milestones = bump(profile.milestones) { it.copy(play = it.play + 1) },
         )
         return finish(profile, now, after, ActionHint.EXCITED,
-            now + ActionRule.PLAY_COOLDOWN_MS, EventLogType.ACTION_PLAY, log, null)
+            now + ActionRule.PLAY_COOLDOWN_MS, EventLogType.ACTION_PLAY, log, style.label)
     }
 
-    /** 抚摸：mood +5（边际，轻互动）。冷却 5s。成功 stats.pet +1。 */
+    /** 抚摸：心情↑（边际，随急躁放大）；冷却 5s。成功 stats.pet +1。 */
     fun onPet(
         profile: PetProfile,
         now: Long,
@@ -218,7 +274,10 @@ object PetActions {
     ): ActionResult? {
         if (ActionRule.petDenied(profile, now) != null) return null
         val cur = profile.attributes
-        val attrs = cur.set(MOOD, cur[MOOD] + ActionRule.diminishedGain(PET_MOOD_GAIN, cur[MOOD]))
+        val traits = profile.personality.traits
+        val moodGain = ActionRule.diminishedGain(
+            traitScale(PET_MOOD_GAIN, traits.temper, TEMPER_SLOPE), cur[MOOD])
+        val attrs = cur.set(MOOD, cur[MOOD] + jitter(moodGain))
         val after = withSadRecovery(profile, attrs).copy(
             cooldowns = profile.cooldowns.copy(
                 petUntil = now + ActionRule.PET_COOLDOWN_MS,
@@ -230,8 +289,8 @@ object PetActions {
     }
 
     /**
-     * 清洁：hygiene +35（clamp 100，doc/01 §4.2）。冷却 5s。成功 stats.clean +1。
-     * 低 hygiene 仅触发轻度表现（M11.S2），domain 层只管数值与冷却。
+     * 清洁：清洁↑（clamp 100）；health 偏低（<[CLEAN_HEALTH_THRESHOLD]）时顺带补少量健康；耗饱食
+     * （洗澡也费体力）。全部经 [jitter] 浮动。冷却 5s。成功 stats.clean +1。
      */
     fun onClean(
         profile: PetProfile,
@@ -240,7 +299,13 @@ object PetActions {
     ): ActionResult? {
         if (ActionRule.cleanDenied(profile, now) != null) return null
         val cur = profile.attributes
-        val attrs = cur.set(HYG, cur[HYG] + CLEAN_HYGIENE_GAIN)
+        val dHyg = CLEAN_HYGIENE_GAIN
+        val dSat = -CLEAN_SAT_COST
+        val dHealth = if (cur[HEALTH] < CLEAN_HEALTH_THRESHOLD) CLEAN_HEALTH_BONUS else 0f
+        val attrs = cur
+            .set(HYG, cur[HYG] + jitter(dHyg))
+            .set(SAT, cur[SAT] + jitter(dSat))
+            .set(HEALTH, cur[HEALTH] + jitter(dHealth))
         val after = profile.copy(
             attributes = attrs,
             cooldowns = profile.cooldowns.copy(cleanUntil = now + ActionRule.CLEAN_COOLDOWN_MS),
@@ -251,8 +316,40 @@ object PetActions {
     }
 
     /**
-     * 治疗：仅 SICK 可用；health +40（固定，doc/01 §6.2/§10）并结束 SICK（→ IDLE）。
-     * 无冷却字段（治愈即不可再点）。成功 stats.heal +1。
+     * 学习（M12，doc/09 §5.2 / 01 §6.2）：知识↑（受隐藏智商 learner 加权 + 边际递减）、心情↓、饱食↓。
+     * 知识只由学习增长、只被玩耍主动减（doc/01 §4.1，不随时间被动衰减，不变笨）。全部经 [jitter] 浮动。
+     * 冷却 5s。成功 stats.study +1；跨越解锁档 → 弹「学会新招」。
+     */
+    fun onStudy(
+        profile: PetProfile,
+        now: Long,
+        log: SessionLog? = null,
+    ): ActionResult? {
+        if (ActionRule.studyDenied(profile, now) != null) return null
+        val cur = profile.attributes
+        val learner = profile.personality.traits.learner
+        val beforeInt = cur[INT]
+        val intGain = ActionRule.diminishedGain(
+            ActionRule.studyIntGain(STUDY_INT_GAIN, learner), cur[INT])
+        val attrs = cur
+            .set(INT, cur[INT] + jitter(intGain))
+            .set(MOOD, cur[MOOD] + jitter(-STUDY_MOOD_COST))
+            .set(SAT, cur[SAT] + jitter(-STUDY_SAT_COST))
+        val after = profile.copy(
+            attributes = attrs,
+            cooldowns = profile.cooldowns.copy(studyUntil = now + ActionRule.STUDY_COOLDOWN_MS),
+            milestones = bump(profile.milestones) { it.copy(study = it.study + 1) },
+        )
+        // 知识跨越解锁档位 → 弹「学会新招」（取本窗首次跨越的最高档；doc/01 §4.1）
+        val unlockedTier = STUDY_UNLOCK_TIERS.firstOrNull { beforeInt < it && attrs[INT] >= it }
+        return finish(profile, now, after, ActionHint.STUDYING,
+            now + ActionRule.STUDY_COOLDOWN_MS, EventLogType.ACTION_STUDY, log, null,
+            unlockTier = unlockedTier)
+    }
+
+    /**
+     * 治疗：仅 SICK 可用；health +40（固定，clamp 100）并结束 SICK（→ IDLE）；耗少量饱食。
+     * 全部经 [jitter] 浮动。无冷却字段（治愈即不可再点）。成功 stats.heal +1。
      */
     fun onHeal(
         profile: PetProfile,
@@ -261,7 +358,9 @@ object PetActions {
     ): ActionResult? {
         if (ActionRule.healDenied(profile) != null) return null
         val cur = profile.attributes
-        val attrs = cur.set(HEALTH, cur[HEALTH] + ActionRule.HEAL_GAIN)
+        val attrs = cur
+            .set(HEALTH, cur[HEALTH] + jitter(ActionRule.HEAL_GAIN))
+            .set(SAT, cur[SAT] + jitter(-ActionRule.HEAL_SAT_COST))
         val after = profile.copy(
             attributes = attrs,
             fsmState = PetState.IDLE,
@@ -296,6 +395,7 @@ object PetActions {
         type: EventLogType,
         log: SessionLog?,
         note: String?,
+        unlockTier: Int? = null,
     ): ActionResult {
         val attrsBefore = before.attributes
         val delta = AttributeDelta(
@@ -314,13 +414,43 @@ object PetActions {
             ),
         )
         return ActionResult(profile = after, delta = delta, hint = hint,
-            cooldownUntil = cooldownUntil, note = note)
+            cooldownUntil = cooldownUntil, note = note, unlockTier = unlockTier)
     }
 
-    private const val PLAY_MOOD_GAIN = 15f
-    private const val PLAY_HEALTH_GAIN = 2f
-    private const val PLAY_HYGIENE_COST = -2f
-    private const val PLAY_INT_GAIN = 1f
     private const val PET_MOOD_GAIN = 5f
+
     private const val CLEAN_HYGIENE_GAIN = 35f
+    private const val CLEAN_SAT_COST = 3f
+    private const val CLEAN_HEALTH_THRESHOLD = 30f   // health 低于此值，清洁顺带补少量健康
+    private const val CLEAN_HEALTH_BONUS = 5f
+
+    private const val STUDY_INT_GAIN = 5f
+    private const val STUDY_MOOD_COST = 5f
+    private const val STUDY_SAT_COST = 3f
+    /** 知识解锁档位（doc/01 §4.1：解锁更多互动/玩具/事件；阈值首版，待真机校准）。 */
+    private val STUDY_UNLOCK_TIERS = listOf(30, 60, 90)
+
+    // ── 喂食交叉副作用（用户平衡需求 / doc/01 §6.3 补充）──
+    // (a) 同时增饱腹+健康的食物 → 同步降心情（健康餐让人不开心）：心情惩罚 ∝ 健康增量。
+    private const val FEED_HEALTH_TO_MOOD = 0.3f
+    // (b) 增心情的食物 → 同步降健康；并有一定概率降清洁（越开心越不讲究）。
+    private const val FEED_MOOD_TO_HEALTH = 0.15f
+    private const val FEED_MOOD_TO_HYG_PROB = 0.3f
+    private const val FEED_MOOD_TO_HYG = 0.2f
+
+    // ── 浮动 / 特质缩放 ───────────────────────────────────
+    /** 每次增减的随机浮动幅度（±，相对值）；测试注入固定 rng 时退化为无浮动。 */
+    internal var effectRng: () -> Float = { kotlin.random.Random.nextFloat() }
+    private const val JITTER = 0.2f
+    /** 特质线性缩放斜率：trait=0.5 时缩放系数为 1（默认个体数值不变，便于既有断言稳定）。 */
+    private const val APPETITE_SLOPE = 0.8f   // 饱腹增益随贪吃放大
+    private const val TEMPER_SLOPE = 0.4f     // 心情增益/波动随急躁放大
+    private const val ACTIVITY_SLOPE = 0.4f   // 玩耍健康损耗随好动放大
+
+    /** 随机浮动：v × (1 ± JITTER)；effectRng=0.5 时退化为 v（测试用）。 */
+    private fun jitter(v: Float): Float = v * (1f + (effectRng() - 0.5f) * 2f * JITTER)
+
+    /** 特质线性缩放：trait=0.5 → 系数 1（不动默认值），越高/低越放大/缩小。 */
+    private fun traitScale(v: Float, trait: Float, slope: Float): Float =
+        v * (1f + slope * (trait - 0.5f))
 }

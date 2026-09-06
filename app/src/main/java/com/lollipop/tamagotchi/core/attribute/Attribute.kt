@@ -11,7 +11,7 @@ enum class AttributeRole {
     /** 主属性：satiation / mood / health（主环三段进度条，实时 0~100）。 */
     PRIMARY_MAIN,
 
-    /** 可变隐藏属性：intelligence / hygiene（状态面板 + 图标，不进主环）。 */
+    /** 可变隐藏属性：knowledge / hygiene（状态面板 + 图标，不进主环）。 */
     MUTABLE_HIDDEN,
 }
 
@@ -20,7 +20,7 @@ enum class AttributeId(val label: String) {
     SATIATION("饱腹度"),
     MOOD("心情度"),
     HEALTH("健康度"),
-    INTELLIGENCE("智力"),
+    KNOWLEDGE("知识"),
     HYGIENE("清洁度"),
 }
 
@@ -35,7 +35,7 @@ data class AttributeMeta(
     val defaultStart: Float,
     /** 表现下限，归零无恶劣后果（doc/01 §1.3 floor）。 */
     val floor: Float = 0f,
-    /** 只增不减（doc/01 §4.1：智力学了不随时间衰减，仅学习增长）。 */
+    /** 不随时间被动衰减（doc/01 §4.1：知识仅由学习增长、可经玩耍主动减，结算不掉）。 */
     val monotonicOnly: Boolean = false,
 ) {
     /** 值域上限（doc/01 §1.2 统一 0~100）。 */
@@ -58,11 +58,11 @@ data class AttributeMeta(
  */
 object AttributeRegistry {
 
-    /** 建档默认：饱腹 80 / 心情 80 / 健康 100 / 智力 0 / 清洁 100。 */
+    /** 建档默认：饱腹 80 / 心情 80 / 健康 100 / 知识 0 / 清洁 100。 */
     private const val DEFAULT_SATIATION = 80f
     private const val DEFAULT_MOOD = 80f
     private const val DEFAULT_HEALTH = 100f
-    private const val DEFAULT_INTELLIGENCE = 0f
+    private const val DEFAULT_KNOWLEDGE = 0f
     private const val DEFAULT_HYGIENE = 100f
 
     /** 全部注册条目（顺序即面板展示顺序）。 */
@@ -71,10 +71,10 @@ object AttributeRegistry {
         AttributeMeta(AttributeId.MOOD, AttributeRole.PRIMARY_MAIN, DEFAULT_MOOD),
         AttributeMeta(AttributeId.HEALTH, AttributeRole.PRIMARY_MAIN, DEFAULT_HEALTH),
         AttributeMeta(
-            AttributeId.INTELLIGENCE,
+            AttributeId.KNOWLEDGE,
             AttributeRole.MUTABLE_HIDDEN,
-            DEFAULT_INTELLIGENCE,
-            monotonicOnly = true, // doc/01 §4.1：学了不随时间衰减，只增不减
+            DEFAULT_KNOWLEDGE,
+            // 知识可经玩耍主动降低（doc/01 §4.1 用户平衡需求）；仍不随时间被动衰减
         ),
         AttributeMeta(AttributeId.HYGIENE, AttributeRole.MUTABLE_HIDDEN, DEFAULT_HYGIENE),
     )

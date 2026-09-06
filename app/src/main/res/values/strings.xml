@@ -9,7 +9,7 @@
     <string name="status_icon_sad">不开心</string>
     <string name="status_icon_dirty">脏</string>
     <string name="status_icon_sick">生病</string>
-    <string name="status_icon_intelligence">智力</string>
+    <string name="status_icon_knowledge">知识</string>
     <string name="status_icon_cd">%1$s（点按查看状态）</string>
 
     <!-- 操作面板 -->
@@ -21,6 +21,7 @@
     <string name="action_clean">清洁</string>
     <string name="action_pet">抚摸</string>
     <string name="action_heal">治疗</string>
+    <string name="action_study">学习</string>
     <string name="actions_note">冷却 / 属性满自动只读 · 喂食需选口味（契合 +10%）</string>
 
     <!-- 投喂子页 -->
@@ -44,7 +45,7 @@
     <string name="attr_satiation">饱腹度</string>
     <string name="attr_mood">心情度</string>
     <string name="attr_health">健康度</string>
-    <string name="attr_intelligence">智力</string>
+    <string name="attr_knowledge">知识</string>
     <string name="attr_hygiene">清洁度</string>
 
     <!-- 动作拒绝原因 -->
@@ -60,6 +61,8 @@
     <string name="fx_affection">亲昵地蹭蹭你！</string>
     <string name="fx_treated">病好起来啦！</string>
     <string name="fx_clean">洗得干干净净！</string>
+    <string name="fx_study">学到了新东西！</string>
+    <string name="fx_study_unlock">学会新招！解锁了新互动</string>
 
     <!-- 快捷功能面板（M8 右滑插件清单，doc/05） -->
     <string name="quick_edit">编辑</string>

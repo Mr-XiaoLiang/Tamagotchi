@@ -114,6 +114,7 @@ private fun fxEmotion(kind: FxKind): Emotion = when (kind) {
     FxKind.TREATED -> Emotion.NONE
     FxKind.EATING -> Emotion.NONE
     FxKind.CLEANING -> Emotion.NONE
+    FxKind.STUDYING -> Emotion.NONE
 }
 
 /** FSM 持久状态 → 情绪（doc/07 §3 触发场景）。 */
@@ -168,7 +169,7 @@ private fun emotionTransform(e: Emotion, tick: Long, side: Float): PoseTransform
 }
 
 /** 动作短演出类别（doc/02 §1.1：短动作态 EATING/EXCITED 不落持久快照，表现层临时演出）。 */
-enum class FxKind { EATING, EXCITED, AFFECTION, TREATED, CLEANING }
+enum class FxKind { EATING, EXCITED, AFFECTION, TREATED, CLEANING, STUDYING }
 
 /** 浮字条目：属性变化反馈（如「+12 饱腹」），颜色随属性语义色。 */
 data class FxFloat(
@@ -601,6 +602,7 @@ private fun DrawScope.drawScriptDecor(
             }
         }
         FxKind.EXCITED -> Unit
+        FxKind.STUDYING -> Unit
     }
 }
 
