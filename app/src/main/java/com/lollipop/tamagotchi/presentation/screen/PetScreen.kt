@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import com.lollipop.tamagotchi.presentation.icon.settings
 import com.lollipop.tamagotchi.presentation.icon.tune
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -127,7 +128,10 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import com.lollipop.tamagotchi.core.attribute.FoodFlavor
 import com.lollipop.tamagotchi.core.attribute.FoodType
 import com.lollipop.tamagotchi.core.behavior.PetState
@@ -143,6 +147,10 @@ import com.lollipop.tamagotchi.domain.engine.EventEngine
 import com.lollipop.tamagotchi.domain.engine.OfflineEvent
 import com.lollipop.tamagotchi.domain.engine.SettlementSummary
 import com.lollipop.tamagotchi.domain.log.EventLog
+import com.lollipop.tamagotchi.domain.log.SessionLog
+import com.lollipop.tamagotchi.domain.note.NoteGenerator
+import com.lollipop.tamagotchi.domain.note.PetNote
+import com.lollipop.tamagotchi.core.attribute.AttributeDelta
 import com.lollipop.tamagotchi.presentation.render.FxFloat
 import com.lollipop.tamagotchi.presentation.render.FxKind
 import com.lollipop.tamagotchi.presentation.render.PetFx
@@ -216,6 +224,8 @@ fun PetScreen(
     onlineEvent: OnlineEvent? = null,
     /** M9.S2 会话回顾：本会话命中的在线事件列表（供状态面板「本次动态」）。 */
     onlineReview: List<EventLog> = emptyList(),
+    /** M14 宠物便条：原始会话日志（供 [NoteGenerator] 统计本次互动，doc/04 §4）。 */
+    sessionLog: SessionLog? = null,
 ) {
     var stage by remember { mutableStateOf(BootStage.Shell) }
     // 当前挂载面板：null=主屏；非 null=抽屉在「拖出中 / 展开动画 / 全开 / 收回动画」任一阶段
@@ -627,6 +637,7 @@ fun PetScreen(
                     profile = profile,
                     settleSummary = settleSummary,
                     onlineReview = onlineReview,
+                    sessionLog = sessionLog,
                     onResetProfile = onResetProfile,
                     reveal = { reveal },
                     sheetExtent = sheetExtent,
@@ -663,6 +674,8 @@ private fun BoxScope.OverlayLayer(
     profile: PetProfile,
     settleSummary: SettlementSummary? = null,
     onlineReview: List<EventLog> = emptyList(),
+    /** M14 宠物便条：原始会话日志（供 [NoteGenerator] 统计本次互动）。 */
+    sessionLog: SessionLog? = null,
     onResetProfile: (() -> Unit)?,
     reveal: () -> Float,
     sheetExtent: SnapshotStateMap<Panel, Int>,
@@ -697,8 +710,10 @@ private fun BoxScope.OverlayLayer(
                 RoundSheet(edge = edge, glow = ColorToken.Health.copy(alpha = 0.07f)) {
                     StatusPanelBody(
                         profile = profile,
+                        settleSummary = settleSummary,
                         settleTimeline = settleSummary?.offlineTimeline,
                         onlineReview = onlineReview,
+                        sessionLog = sessionLog,
                         onDismiss = onDismiss,
                     )
                 }
@@ -849,8 +864,10 @@ private fun GreetingBubble(settleSummary: SettlementSummary?) {
 @Composable
 private fun ColumnScope.StatusPanelBody(
     profile: PetProfile,
+    settleSummary: SettlementSummary? = null,
     settleTimeline: List<OfflineEvent>? = null,
     onlineReview: List<EventLog> = emptyList(),
+    sessionLog: SessionLog? = null,
     onDismiss: () -> Unit,
 ) {
     Box(
@@ -879,6 +896,14 @@ private fun ColumnScope.StatusPanelBody(
                     },
                     onClick = null,
                 )
+            }
+            // M14：宠物便条卡（离线开场 + 本次在线陪伴），见 doc/04 §4/§5。
+            if (sessionLog != null) {
+                val note = NoteGenerator.generate(
+                    settleSummary ?: SettlementSummary(0L, AttributeDelta.EMPTY),
+                    sessionLog,
+                )
+                PetNoteCard(note)
             }
             // M7.S2 离线回放：把本次离线时间线铺进状态面板底部（圆表友好滚动）
             if (settleTimeline != null && settleTimeline.isNotEmpty()) {
@@ -916,6 +941,37 @@ private fun ColumnScope.StatusPanelBody(
         }
     }
     DismissStrip(dir = ChevronDir.Up, onDismiss)
+}
+
+// ── M14 宠物便条卡 ──────────────────────────
+
+/**
+ * 宠物便条卡（doc/04 §4/§5、doc/09 §5.4）：把 [NoteGenerator] 产出的结构化便条
+ * 渲染成多语言文案。样式遵守圆表约束：文字 ≥11sp 且不透明，背景/描边才可用低 alpha。
+ */
+@Composable
+private fun PetNoteCard(note: PetNote) {
+    val ctx = LocalContext.current
+    val text = remember(note) { note.toText(ctx) }
+    if (text.isBlank()) return
+    RoundListSpacer()
+    PanelTitle(stringResource(R.string.note_title))
+    RoundListSpacer()
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(ColorToken.Accent.copy(alpha = 0.10f))
+            .padding(12.dp),
+    ) {
+        Text(
+            text = text,
+            color = ColorToken.Text2,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            lineHeight = 17.sp,
+        )
+    }
 }
 
 /** 属性 → 主题色（与主环/建档预览同源，doc/01 §3）。 */
@@ -1484,6 +1540,12 @@ private fun ColumnScope.QuickPanelBody(
         onDismiss()
     }
 
+    // 进入设置页（统一入口：换宠归档 / 电子墓碑，M15/M17）
+    fun openSettings() {
+        context.startActivity(Intent(context, SettingsActivity::class.java))
+        onDismiss()
+    }
+
     Row(
         Modifier
             .fillMaxWidth()
@@ -1499,6 +1561,7 @@ private fun ColumnScope.QuickPanelBody(
                 apps = selectedApps,
                 icons = icons,
                 onEdit = { openEdit() },
+                onSettings = { openSettings() },
                 onLaunch = { launchApp(it) },
                 onLongPress = { openEdit() },
             )
@@ -1530,6 +1593,7 @@ private fun AppGridContent(
     apps: List<AppEntry>,
     icons: Map<String, ImageBitmap?>,
     onEdit: () -> Unit,
+    onSettings: () -> Unit,
     onLaunch: (String) -> Unit,
     onLongPress: (String) -> Unit,
 ) {
@@ -1563,6 +1627,10 @@ private fun AppGridContent(
         }
         items(apps, key = { it.packageName }, contentType = { 0 }) { app ->
             AppGridCell(app = app, icons = icons, onLaunch = onLaunch, onLongPress = onLongPress)
+        }
+        // 设置入口：统一入口（换宠归档 / 电子墓碑），位于编辑之前（settings 图标）
+        item(key = "quick_settings") {
+            SettingsGridCell(onSettings = onSettings)
         }
         // 编辑入口固定为最后一个网格单元，样式与 App 图标一致（tune 图标）
         item(key = "quick_edit") {
@@ -1643,6 +1711,44 @@ private fun EditGridCell(onEdit: () -> Unit) {
 }
 
 
+
+/** 设置入口网格单元：与编辑同款样式，位于编辑之前（settings 图标，M15/M17 统一入口）。 */
+@Composable
+private fun SettingsGridCell(onSettings: () -> Unit) {
+    val metrics = screenMetrics()
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(onClick = onSettings)
+            .padding(metrics.dp(6.dp)),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(metrics.dp(46.dp))
+                .clip(CircleShape)
+                .background(ColorToken.Text2.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                settings,
+                contentDescription = null,
+                tint = ColorToken.Accent,
+                modifier = Modifier.size(metrics.dp(32.dp)),
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            stringResource(R.string.settings_title),
+            color = ColorToken.Accent,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
 
 /**
  * 面板标题：滚动流首元素（随列表滚动，doc/06 §8.1）——

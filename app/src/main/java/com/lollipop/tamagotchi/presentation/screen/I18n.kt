@@ -1,11 +1,14 @@
 package com.lollipop.tamagotchi.presentation.screen
 
+import android.content.Context
 import androidx.annotation.StringRes
 import com.lollipop.tamagotchi.R
 import com.lollipop.tamagotchi.core.attribute.AttributeId
 import com.lollipop.tamagotchi.core.attribute.FoodFlavor
 import com.lollipop.tamagotchi.core.attribute.FoodType
 import com.lollipop.tamagotchi.domain.engine.EndingMood
+import com.lollipop.tamagotchi.domain.note.NoteTone
+import com.lollipop.tamagotchi.domain.note.PetNote
 
 /**
  * 枚举 → 字符串资源映射（M7 多语言基建）。
@@ -97,4 +100,50 @@ fun greetingRes(offlineMs: Long, endingMood: EndingMood?): Int {
         min < 1440 -> R.string.greet_longwait
         else -> R.string.greet_verylong
     }
+}
+
+// ── M14 宠物便条：语气档 / 多语言拼装（doc/04 §4/§5、doc/09 §5.4）──────
+
+/** 离线语气档 → 多语言文案（与 M7 greetingRes 同档位，doc/04 §5）。 */
+val NoteTone.greetRes: Int
+    get() = when (this) {
+        NoteTone.CASUAL -> R.string.greet_back
+        NoteTone.MISS -> R.string.greet_miss
+        NoteTone.WAIT -> R.string.greet_wait
+        NoteTone.LONG_WAIT -> R.string.greet_longwait
+        NoteTone.ABANDONED -> R.string.greet_verylong
+    }
+
+/** 离线时长 → 人类可读时长（分钟/小时/天），供便条离线句插值。 */
+fun formatNoteDuration(ms: Long, ctx: Context): String {
+    val min = (ms / 60_000L).coerceAtLeast(1L)
+    return when {
+        min < 60 -> ctx.getString(R.string.note_minute, min)
+        min < 1440 -> ctx.getString(R.string.note_hour, min / 60L)
+        else -> ctx.getString(R.string.note_day, min / 1440L)
+    }
+}
+
+/** [PetNote] → 多语言便条文本（离线开场 + 在线陪伴，1~2 句；doc/04 §4/§5）。 */
+fun PetNote.toText(ctx: Context): String {
+    val lines = mutableListOf<String>()
+    opening?.let { o ->
+        val duration = formatNoteDuration(o.durationMs, ctx)
+        val moodRes = o.endingMood?.labelRes ?: o.tone.greetRes
+        lines += ctx.getString(R.string.note_offline, duration, ctx.getString(moodRes))
+    }
+    companionship?.let { c ->
+        val phrases = buildList {
+            if (c.feed > 0) add(ctx.getString(R.string.note_feed, c.feed))
+            if (c.pet > 0) add(ctx.getString(R.string.note_pet, c.pet))
+            if (c.play > 0) add(ctx.getString(R.string.note_play, c.play))
+            if (c.heal > 0) add(ctx.getString(R.string.note_heal, c.heal))
+            if (c.clean > 0) add(ctx.getString(R.string.note_clean, c.clean))
+            if (c.study > 0) add(ctx.getString(R.string.note_study, c.study))
+        }
+        if (phrases.isNotEmpty()) {
+            lines += ctx.getString(R.string.note_online, phrases.joinToString("、"))
+        }
+    }
+    return lines.joinToString("\n")
 }

@@ -269,6 +269,7 @@ private fun EntryFlow(
             actionEvent = lastActionEvent,
             onlineEvent = onlineEvent,
             onlineReview = onlineReview,
+            sessionLog = sessionLog,
         )
     }
 }

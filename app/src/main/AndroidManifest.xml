@@ -46,6 +46,20 @@
             android:exported="false"
             android:taskAffinity=""
             android:theme="@style/TamagotchiTheme.Full" />
+
+        <!-- 设置页：M15/M17 统一入口（换宠归档 / 电子墓碑） -->
+        <activity
+            android:name=".presentation.screen.SettingsActivity"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@style/TamagotchiTheme.Full" />
+
+        <!-- 电子墓碑页：墓碑列表 + 切回 -->
+        <activity
+            android:name=".presentation.screen.TombActivity"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@style/TamagotchiTheme.Full" />
     </application>
 
 </manifest>

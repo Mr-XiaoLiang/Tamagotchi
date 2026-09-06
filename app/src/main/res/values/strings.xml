@@ -116,6 +116,33 @@
     <string name="replay_title">在你离开的这段时间…</string>
     <string name="review_online_title">本次动态</string>
 
+    <!-- M14 宠物便条（doc/04 §4/§5、doc/09 §5.4） -->
+    <string name="note_title">宠物便条</string>
+    <string name="note_offline">你离开了 %1$s——%2$s</string>
+    <string name="note_online">这次见面：%1$s，谢谢你～</string>
+    <string name="note_minute">%1$d 分钟</string>
+    <string name="note_hour">%1$d 小时</string>
+    <string name="note_day">%1$d 天</string>
+    <string name="note_feed">喂了 %1$d 次</string>
+    <string name="note_pet">摸了 %1$d 次</string>
+    <string name="note_play">玩了 %1$d 次</string>
+    <string name="note_heal">治了 %1$d 次</string>
+    <string name="note_clean">洗了 %1$d 次</string>
+
+    <!-- M15 收藏档案：设置入口 + 过往（doc/04 §3.3） -->
+    <string name="settings_title">设置</string>
+    <string name="settings_restart_pet">重新开始选择宠物</string>
+    <string name="settings_archive">我的档案 / 过往</string>
+    <string name="settings_restart_confirm_title">重新选择宠物？</string>
+    <string name="settings_restart_confirm_hint">当前宠物将被归档，之后可在「档案」中切回。</string>
+    <string name="settings_restart_confirm">确认重新开始</string>
+    <string name="cancel">取消</string>
+    <string name="archive_title">过往</string>
+    <string name="archive_empty">暂无归档宠物</string>
+    <string name="archive_switch_back">切回</string>
+    <string name="archive_together">共处 %s</string>
+    <string name="note_study">学了 %1$d 次</string>
+
     <!-- M9 在线随机事件气泡（doc/03 §4） -->
     <string name="ev_found_food">翻到好吃的，偷偷尝一口！</string>
     <string name="ev_sneeze">阿嚏！</string>

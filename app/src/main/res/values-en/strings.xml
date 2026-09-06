@@ -108,6 +108,33 @@
     <string name="replay_title">While you were away…</string>
     <string name="review_online_title">This session</string>
 
+    <!-- M14 Pet note (doc/04 §4/§5, doc/09 §5.4) -->
+    <string name="note_title">Pet Note</string>
+    <string name="note_offline">You were away for %1$s — %2$s</string>
+    <string name="note_online">This time: %1$s, thank you~</string>
+    <string name="note_minute">%1$d min</string>
+    <string name="note_hour">%1$d h</string>
+    <string name="note_day">%1$d d</string>
+    <string name="note_feed">fed %1$d times</string>
+    <string name="note_pet">petted %1$d times</string>
+    <string name="note_play">played %1$d times</string>
+    <string name="note_heal">healed %1$d times</string>
+    <string name="note_clean">bathed %1$d times</string>
+
+    <!-- M15 Archive: settings entry + past (doc/04 §3.3) -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_restart_pet">Start Over (Pick a Pet)</string>
+    <string name="settings_archive">My Archive / Past</string>
+    <string name="settings_restart_confirm_title">Start Over?</string>
+    <string name="settings_restart_confirm_hint">The current pet will be archived. You can switch back from Archive later.</string>
+    <string name="settings_restart_confirm">Confirm &amp; Start Over</string>
+    <string name="cancel">Cancel</string>
+    <string name="archive_title">Past</string>
+    <string name="archive_empty">No archived pets</string>
+    <string name="archive_switch_back">Switch Back</string>
+    <string name="archive_together">Together for %s</string>
+    <string name="note_study">studied %1$d times</string>
+
     <!-- M9 online random event bubbles (doc/03 §4) -->
     <string name="ev_found_food">Found a snack, sneaking a bite!</string>
     <string name="ev_sneeze">Achoo!</string>

@@ -521,9 +521,9 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 #### M14.S1 Note 生成：从会话日志到便条（P1）
 
 **任务**
-- [ ] `NoteGenerator`：输入 `SettlementSummary` + `SessionLog` 开场段/在线摘要 → 输出 1~2 句便条文本（模板 + 状态插值，doc/09 §5.4 / 04 §4）。
-- [ ] 语气方向：离线时长、endingMood、动作/事件计数决定语气（欢迎回来 / 惦记 / 撒娇），不引入新状态。
-- [ ] 单测：不同输入组合 → 预期文案模板命中。
+- [x] `NoteGenerator`：输入 `SettlementSummary` + `SessionLog` 开场段/在线摘要 → 输出结构化 `PetNote`（离线开场 + 在线陪伴），由 presentation 经 `PetNote.toText` 模板化为 1~2 句多语言文案（doc/09 §5.4 / 04 §4）。
+- [x] 语气方向：离线时长（分档与 M7 `greetingRes` 同档）、endingMood、动作/事件计数决定语气（欢迎回来 / 惦记 / 撒娇），不引入新状态。
+- [x] 单测：`NoteGeneratorTest` 覆盖 NoteTone 分档边界 + 离线/在线拼装（9 例全绿）。
 
 **产出**：便条纯函数 + 模板 + 单测绿。
 
@@ -532,9 +532,9 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 #### M14.S2 便条呈现（P0）
 
 **任务**
-- [ ] 入口：会话回顾页顶部便条卡 或 长按宠物触发 overlay（06 §10 弹层复用）。
-- [ ] 样式：走 RoundSafe 组件 + 胶囊文本，不越安全区（06 §8）。
-- [ ] 手测路径：长离线 → 打开 → 便条与回顾剧语义一致。
+- [x] 入口：状态（回顾）面板顶部便条卡（在属性列表之后、离线回放/本次动态之前）。
+- [x] 样式：走 RoundSafe 滚动流 + 圆角胶囊文本（低 alpha 底色，文字不透明 ≥11sp，06 §8），不越安全区。
+- [ ] 手测路径：长离线 → 打开 → 便条与回顾剧语义一致（真机走查待做）。
 
 **产出**：可见的宠物便条。
 
@@ -549,22 +549,22 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 #### M15.S1 PetStore 多档化 + 墓碑/切换纯逻辑（P1）
 
 **任务**
-- [ ] `PetStore` 从单键升级多档（SP 键：当前档 + 墓碑集合；schemaVersion 升 v3，含 **旧 v2 单键迁移**，doc/01 §9）：当前档 = 正在养；墓碑 = `{petId, finalSnapshot, stats 终值, retiredAt, 共处时长}` 只读。
-- [ ] `archiveCurrent()`：换宠前把当前宠最终快照写入墓碑（电子墓碑素材）。
-- [ ] `switchTo(petId)`：把墓碑宠反序列化为当前档（快照切换），`lastSettledAt` 语义按 08 §3「打开即结算」复用（切回即视为打开该宠）。
-- [ ] 单测：v2→v3 迁移、存档/取档 roundtrip、墓碑只读不丢、切回状态一致。
+- [x] `PetStore` 从单键升级多档（SP 键：当前档 `pet_profile` + 墓碑集合 `pet_tombs_v3`；含 **旧 v2 单键迁移**——旧 v2 档即当前档、墓碑集合为空，doc/01 §9）：当前档 = 正在养；墓碑 = `{petId, finalSnapshot, stats 终值, retiredAt, 共处时长}` 只读。
+- [x] `archiveCurrent()`：换宠前把当前宠最终快照写入墓碑（电子墓碑素材，不删当前档）。
+- [x] `switchTo(petId)`：把墓碑宠反序列化为当前档（快照切换），从墓碑集合移除；`lastSettledAt` 语义由切回即视为打开该宠（08 §3「打开即结算」）在调用方复用。
+- [x] 单测：`PetArchiveTest` + `PetTombCodecTest` 覆盖 v2→v3 迁移、存档/取档 roundtrip、墓碑只读不丢、切回状态一致（共 13 例全绿）。
 
 **产出**：多档 PetStore + 迁移 + 单测绿。
 
-**验收（P1）**：单测覆盖迁移与存取往返；M3 既有建档单测不回退。
+**验收（P1）**：单测覆盖迁移与存取往返；M3 既有建档单测不回退（仍只读 `pet_profile` 单键）。
 
 #### M15.S2 换宠流程 + 档案页 UI（P0）
 
 **任务**
-- [ ] 建档页扩展「我的宠物」入口：列出当前宠 + 墓碑列表（名字/最终状态/共处时长）。
-- [ ] 换宠 = 把当前宠归档成墓碑 → 开新档（原「重开档覆盖写」升级为「换宠归档」，覆盖 doc/00 ADR-1 现状——收盘时同步改 doc/00 ADR-1/ADR-6、doc/09 §5.5、doc/04 §3.3 口径）。
-- [ ] 墓碑详情页（电子墓碑：最终快照 + stats + 里程碑文案，承接 M10.S2）+「切回它」按钮（switchTo）。
-- [ ] 手测路径：养 A → 换 B（A 成墓碑）→ 档案页切回 A → 状态/数值一致。
+- [x] 统一入口（用户决策，收敛外部感知）：首页→右侧功能面板→设置（SettingsActivity，`settings` 图标已就位）→「重新开始选择宠物」/「我的档案 / 电子墓碑」，不再单开网格单元或状态面板入口。
+- [x] 换宠 = `archiveCurrent(当前宠)` 写墓碑（含 stats 终值/共处时长）→ `PetStore.delete()` 清当前档 → 重启 PetActivity 走建档（M3 复用）；原档只读不丢、可在「档案」切回。
+- [x] 墓碑页（TombActivity）：列出墓碑（宠物名/共处时长，复用 `formatNoteDuration`）+「切回」按钮（`switchTo` 还原为当前档并重启主屏，原样恢复、不重抽性格/不重跑日志）。
+- [ ] 手测路径：养 A → 设置换 B（A 成墓碑）→ 档案切回 A → 状态/数值一致（真机走查待做）。
 
 **产出**：换宠归档 + 切回的完整闭环。
 
@@ -680,8 +680,8 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 | M11 清洁/洗澡 | 脏→清洁→净 + 泡泡表现 | ☑ | S1+S2 代码收盘：onClean+3h 冷却+hygiene+35+clean 里程碑+ACTION_CLEAN 日志；面板脏时清洁胶囊+泡泡占位+fx_clean 三语；ActionsTest 4 例绿、全量单测绿。真机手测（脏→清洁→净、冷却实时）留走查 |
 | M12 学习/教育 | 知识增长 + 阈值解锁可见 | ☑ | S1+S2 代码收盘：onStudy(knowledge +5×(0.5+learner)加权 / mood −5 / sat −3，冷却 5s，知识可经玩耍主动减) + `Milestones.study` + `ACTION_STUDY` 日志；操作面板「学习」胶囊（冷却 5s 空心只读、可用实心）+ 解锁档位 30/60/90 弹「学会新招」气泡（阈值首版待真机校准）；`ActionsTest` 学习 7 例全绿、全量单测绿。真机手测（学习闭环/解锁气泡观感/思考 pose 细化）留走查 |
 | M13 玩具变体 | ≥2 玩具表现/收益可区分 | ☑ | S1 收盘（domain）：`ToyType` 注册表（7 款，差异化 moodDelta / 情绪类别 ToyVibe / 稀有度）+ 解锁来源规则 `ToyRules`（默认 / 智力阈值 / 里程碑 / 事件掉落）+ `onPlay` 接入可选 `toy`（玩具覆盖数值档、日志带 toy 名）；`ActionsTest` 新增玩具专项 9 例全绿、全量单测绿。S2 收盘（差异表现已接）：玩具选择子页（镜像 FeedPage，已解锁实心可选 / 未解锁空心带来源）+ `onAction/performAction` 透传 `toy` 已接通；`ToyVibe→M10 情绪层` 已接入（presentation `ToyVibe.toEmotion()` 映射 LIVELY→HAPPY 蹦跳 / GENTLE→SHY 侧头 / FOCUSED→CURIOUS 歪头，经 `ActionResult.toy`→`PetFx.emotion` 透传）；真机手测待走查 |
-| M14 宠物便条 | 长按/回顾见贴合便条 | ☐ | |
-| M15 收藏档案 | A→换B(墓碑)→切回A 一致 | ☐ | |
+| M14 宠物便条 | 长按/回顾见贴合便条 | ☑ | S1 收盘（domain）：`NoteGenerator` 纯函数（输入 `SettlementSummary`+`SessionLog` → 结构化 `PetNote`：离线开场档位 + 在线陪伴计数）+ `NoteGeneratorTest` 9 例全绿。S2 收盘（presentation）：`PetNote.toText`（映射 `NoteTone`→`greet_*` 五档 + 在线计数模板）、状态面板顶部便条卡（圆角胶囊、低 alpha 底、文字不透明）、`sessionLog` 由 PetActivity 经 PetScreen→OverlayLayer→StatusPanelBody 透传；真机手测走查待做 ||
+| M15 收藏档案 | A→换B(墓碑)→切回A 一致 | ☑ | S1 收盘（domain）：`PetStore` 升级多档（当前档 + 墓碑集合 `pet_tombs_v3`，含 v2 单键迁移）+ `archiveCurrent/switchTo/listTombs/deleteTomb` 纯逻辑（`PetArchive` 经 `KVStore` 抽象、PetStore 用 SharedPreferences 实现，JVM 单测用内存假实现）+ `PetTombCodec`；`PetArchiveTest`/`PetTombCodecTest` 共 13 例全绿、编译绿。S2 收盘（presentation）：`SettingsActivity`（设置统一入口：换宠归档 + 我的档案/电子墓碑，`settings` 图标已就位）、`TombActivity`（墓碑列表 + 切回），右滑网格新增「设置」单元；编译绿。真机 A→B→切回 A 手测走查待做 ||
 | M16 休闲小游戏 | 右滑进游戏一局有始有终 | ☐ | |
 | M17 偏好设置 | 右滑「偏好设置」→设置页；重开宠物/墓碑设置可用 | ☐ | |
 
