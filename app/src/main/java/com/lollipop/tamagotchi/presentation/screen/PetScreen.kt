@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import com.lollipop.tamagotchi.presentation.icon.bubble_chart
 import com.lollipop.tamagotchi.presentation.icon.settings
 import com.lollipop.tamagotchi.presentation.icon.tune
 import androidx.compose.runtime.Composable
@@ -1546,6 +1547,12 @@ private fun ColumnScope.QuickPanelBody(
         onDismiss()
     }
 
+    // 进入休闲小游戏（M16，独立 Activity，与陪伴解耦）
+    fun openGame() {
+        context.startActivity(Intent(context, GameActivity::class.java))
+        onDismiss()
+    }
+
     Row(
         Modifier
             .fillMaxWidth()
@@ -1562,6 +1569,7 @@ private fun ColumnScope.QuickPanelBody(
                 icons = icons,
                 onEdit = { openEdit() },
                 onSettings = { openSettings() },
+                onGame = { openGame() },
                 onLaunch = { launchApp(it) },
                 onLongPress = { openEdit() },
             )
@@ -1594,6 +1602,7 @@ private fun AppGridContent(
     icons: Map<String, ImageBitmap?>,
     onEdit: () -> Unit,
     onSettings: () -> Unit,
+    onGame: () -> Unit,
     onLaunch: (String) -> Unit,
     onLongPress: (String) -> Unit,
 ) {
@@ -1627,6 +1636,10 @@ private fun AppGridContent(
         }
         items(apps, key = { it.packageName }, contentType = { 0 }) { app ->
             AppGridCell(app = app, icons = icons, onLaunch = onLaunch, onLongPress = onLongPress)
+        }
+        // 小游戏入口：独立 Activity，与陪伴解耦（M16），位于设置之前
+        item(key = "quick_game") {
+            GameGridCell(onGame = onGame)
         }
         // 设置入口：统一入口（换宠归档 / 电子墓碑），位于编辑之前（settings 图标）
         item(key = "quick_settings") {
@@ -1711,6 +1724,44 @@ private fun EditGridCell(onEdit: () -> Unit) {
 }
 
 
+
+/** 小游戏入口网格单元（M16）：与编辑同款样式；图标用 bubble_chart。 */
+@Composable
+private fun GameGridCell(onGame: () -> Unit) {
+    val metrics = screenMetrics()
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(onClick = onGame)
+            .padding(metrics.dp(6.dp)),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(metrics.dp(46.dp))
+                .clip(CircleShape)
+                .background(ColorToken.Text2.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                bubble_chart,
+                contentDescription = null,
+                tint = ColorToken.Accent,
+                modifier = Modifier.size(metrics.dp(32.dp)),
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            stringResource(R.string.game_title),
+            color = ColorToken.Accent,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
 
 /** 设置入口网格单元：与编辑同款样式，位于编辑之前（settings 图标，M15/M17 统一入口）。 */
 @Composable

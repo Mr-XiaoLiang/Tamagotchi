@@ -149,4 +149,13 @@
     <string name="ev_beg_food">Feed me, please~</string>
     <string name="ev_dream">Smiling in a dream</string>
     <string name="ev_treat_hunt">Smells like a treat!</string>
+
+    <!-- M16 Mini game (doc/09 §5.6) -->
+    <string name="game_title">Mini Game</string>
+    <string name="game_intro">Pop the bubbles in 30 seconds.</string>
+    <string name="game_start">Start</string>
+    <string name="game_hud">Time %1$ds · Score %2$d</string>
+    <string name="game_over">Game Over</string>
+    <string name="game_final_score">Score this round: %1$d</string>
+    <string name="game_back">Back</string>
 </resources>

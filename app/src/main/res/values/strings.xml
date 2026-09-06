@@ -157,4 +157,13 @@
     <string name="ev_beg_food">喂喂我嘛～</string>
     <string name="ev_dream">梦里也在笑</string>
     <string name="ev_treat_hunt">闻到零食味儿！</string>
+
+    <!-- M16 休闲小游戏（doc/09 §5.6） -->
+    <string name="game_title">小游戏</string>
+    <string name="game_intro">限时 30 秒，点破冒出的泡泡得分</string>
+    <string name="game_start">开始</string>
+    <string name="game_hud">剩余 %1$d 秒 · 得分 %2$d</string>
+    <string name="game_over">本局结束</string>
+    <string name="game_final_score">本局得分 %1$d</string>
+    <string name="game_back">返回</string>
 </resources>

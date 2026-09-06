@@ -60,6 +60,13 @@
             android:exported="false"
             android:taskAffinity=""
             android:theme="@style/TamagotchiTheme.Full" />
+
+        <!-- 休闲小游戏页：M16，独立 Activity，与陪伴解耦 -->
+        <activity
+            android:name=".presentation.screen.GameActivity"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@style/TamagotchiTheme.Full" />
     </application>
 
 </manifest>
