@@ -13,8 +13,8 @@ android {
         applicationId = "com.lollipop.tamagotchi"
         minSdk = 30
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 1_00_00
+        versionName = "1.0.0"
 
     }
 
@@ -26,8 +26,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            // 本地试用：用 debug 签名给 release 包签名，便于 adb install。
-            // 正式发布请改为独立 release keystore（见下方 signingConfigs 说明）。
+            // 本地试用：用 SDK 自带的 debug 密钥给 release 包签名，便于 adb install。
+            // 正式发布请改为独立 release keystore（在 signingConfigs 中配置）。
             signingConfig = signingConfigs.getByName("debug")
             optimization {
                 enable = true
@@ -38,7 +38,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    useLibrary("wear-sdk")
     buildFeatures {
         compose = true
     }

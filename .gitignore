@@ -14,3 +14,4 @@
 .cxx
 local.properties
 /.codebuddy/
+/app/src/test/
