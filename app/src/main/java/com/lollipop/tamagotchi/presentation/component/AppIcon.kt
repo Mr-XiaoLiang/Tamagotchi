@@ -36,8 +36,17 @@ fun Drawable.toImageBitmap(): ImageBitmap {
 @Composable
 fun AppIcon(pkg: String, icons: Map<String, ImageBitmap?>, size: Dp = 46.dp) {
     val bmp = icons[pkg]
+    // 与功能菜单功能入口（编辑/游戏/设置）同款：圆形裁剪 + 半透明灰底
+    val circleBg = ColorToken.Text2.copy(alpha = 0.15f)
     if (bmp != null) {
-        Image(bitmap = bmp, contentDescription = null, modifier = Modifier.size(size))
+        Image(
+            bitmap = bmp,
+            contentDescription = null,
+            modifier = Modifier
+                .size(size)
+                .clip(CircleShape)
+                .background(circleBg),
+        )
     } else {
         Box(Modifier.size(size).clip(CircleShape).background(ColorToken.PillOutline))
     }
