@@ -49,6 +49,7 @@
     <string name="deny_cooldown">Cooldown %1$s</string>
     <string name="deny_full_satiation">Already full</string>
     <string name="deny_full_mood">Already happy</string>
+    <string name="deny_full_hygiene">Already clean</string>
     <string name="deny_not_sick">Not sick</string>
 
     <string name="fx_eat_note">Tasted %1$s!</string>

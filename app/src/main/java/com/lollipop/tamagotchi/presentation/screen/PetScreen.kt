@@ -1216,21 +1216,23 @@ private fun ActionListPage(
                 dotColor = ColorToken.Knowledge,
                 onClick = { onAction(ActionType.STUDY, null, null) },
             )
-            // 清洁：仅「脏了」（hygiene < 告警阈值）才出现；冷却空心只读（M11）
-            if (profile.attributes[AttributeId.HYGIENE] < LOW_VALUE_WARN) {
-                RoundListSpacer()
-                ActionRow(
-                    title = stringResource(R.string.action_clean),
-                    denied = cleanDenied,
-                    dotColor = ColorToken.Hygiene,
-                    onClick = { onAction(ActionType.CLEAN, null, null) },
-                )
-            }
-            // 治疗：仅 SICK 才出现（不 SICK 不占位，引擎同条件拦截）
-            if (profile.fsmState == PetState.SICK) {
-                RoundListSpacer()
-                PillItem(stringResource(R.string.action_heal), filled = true, onClick = { onAction(ActionType.HEAL, null, null) })
-            }
+            // 清洁：常驻显示；冷却 / 已洗到满值（hygiene ≥ 100）→ 空心只读「已经很干净啦」（同喂/玩天花板范式）
+            RoundListSpacer()
+            ActionRow(
+                title = stringResource(R.string.action_clean),
+                denied = cleanDenied,
+                dotColor = ColorToken.Hygiene,
+                onClick = { onAction(ActionType.CLEAN, null, null) },
+            )
+            // 治疗：常驻显示；仅 SICK 可点，非 SICK 空心只读「没有生病」（引擎同条件拦截）
+            val healDenied = ActionRule.healDenied(profile)
+            RoundListSpacer()
+            ActionRow(
+                title = stringResource(R.string.action_heal),
+                denied = healDenied,
+                dotColor = ColorToken.Health,
+                onClick = { onAction(ActionType.HEAL, null, null) },
+            )
         }
         RoundEdgeSpace(48.dp)
     }
@@ -1381,6 +1383,8 @@ private fun ActionDenied.reasonText(ctx: Context): String = when (this) {
     is ActionDenied.Cooldown -> ctx.getString(R.string.deny_cooldown, fmtRemain(remainMs))
     is ActionDenied.AttributeCeiling -> when (id) {
         AttributeId.SATIATION -> ctx.getString(R.string.deny_full_satiation)
+        AttributeId.MOOD -> ctx.getString(R.string.deny_full_mood)
+        AttributeId.HYGIENE -> ctx.getString(R.string.deny_full_hygiene)
         else -> ctx.getString(R.string.deny_full_mood)
     }
     ActionDenied.NotSick -> ctx.getString(R.string.deny_not_sick)

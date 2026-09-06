@@ -73,6 +73,7 @@ data class ActionResult(
  * - 喂食：`now >= feed_until` 且 `satiation < 95`（冷却 5s，防连点 + 缓冲）；
  * - 玩耍：`now >= play_until` 且 `mood < 90`（冷却 5s）；
  * - 抚摸：`now >= pet_until`（冷却 5s，无条件属性限制）；
+ * - 清洁：`now >= clean_until` 且 `hygiene < 100`（冷却 5s；满值视为「已干净」不可再洗）；
  * - 治疗：`fsmState == SICK`（无冷却字段，治愈即不可用）。
  *
  * 数值规则：
@@ -102,6 +103,9 @@ object ActionRule {
     /** 玩耍 mood 上限（doc/01 §10：<90 可玩）。 */
     const val PLAY_MOOD_CEILING: Float = 90f
 
+    /** 清洁满值线（clamp 100；≥ 本值视为已干净不可再洗——按钮常驻而非「脏了才出现」）。 */
+    const val CLEAN_HYGIENE_CEILING: Float = 100f
+
     /** 治疗 health +40（doc/01 §6.2/§10）。 */
     const val HEAL_GAIN: Float = 40f
     /** 治疗附带饱食消耗（doc/01 §6.2：疗伤也费体力）。 */
@@ -127,8 +131,12 @@ object ActionRule {
     fun petDenied(profile: PetProfile, now: Long): ActionDenied? =
         cooldown(profile.cooldowns.petUntil, now)
 
-    fun cleanDenied(profile: PetProfile, now: Long): ActionDenied? =
-        cooldown(profile.cooldowns.cleanUntil, now)
+    fun cleanDenied(profile: PetProfile, now: Long): ActionDenied? {
+        cooldown(profile.cooldowns.cleanUntil, now)?.let { return it }
+        val hyg = profile.attributes[AttributeId.HYGIENE]
+        if (hyg >= CLEAN_HYGIENE_CEILING) return ActionDenied.AttributeCeiling(AttributeId.HYGIENE, hyg)
+        return null
+    }
 
     fun studyDenied(profile: PetProfile, now: Long): ActionDenied? =
         cooldown(profile.cooldowns.studyUntil, now)

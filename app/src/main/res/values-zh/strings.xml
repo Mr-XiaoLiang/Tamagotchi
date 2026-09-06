@@ -49,6 +49,7 @@
     <string name="deny_cooldown">冷却 %1$s</string>
     <string name="deny_full_satiation">已经吃饱啦</string>
     <string name="deny_full_mood">心情很好啦</string>
+    <string name="deny_full_hygiene">已经很干净啦</string>
     <string name="deny_not_sick">没有生病</string>
 
     <string name="fx_eat_note">吃到了%1$s！</string>
