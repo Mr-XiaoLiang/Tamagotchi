@@ -1,169 +1,161 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 应用名（Launcher 标签；原 values/strings.xml 唯一键，被 i18n 改造合并保留） -->
+    <!-- App name (Launcher label) -->
     <string name="app_name">Tamagotchi</string>
 
-    <!-- 状态面板 -->
-    <string name="status_title">状态 · %1$s</string>
-    <string name="status_icon_hungry">饥饿</string>
-    <string name="status_icon_sad">不开心</string>
-    <string name="status_icon_dirty">脏</string>
-    <string name="status_icon_sick">生病</string>
-    <string name="status_icon_knowledge">知识</string>
-    <string name="status_icon_cd">%1$s（点按查看状态）</string>
+    <!-- English (M7 i18n scaffold; primary copy is zh in values/). -->
+    <string name="status_title">Status · %1$s</string>
+    <string name="status_icon_hungry">Hungry</string>
+    <string name="status_icon_sad">Unhappy</string>
+    <string name="status_icon_dirty">Dirty</string>
+    <string name="status_icon_sick">Sick</string>
+    <string name="status_icon_knowledge">Knowledge</string>
+    <string name="status_icon_cd">%1$s (tap to view status)</string>
 
-    <!-- 操作面板 -->
-    <string name="actions_title">操作</string>
-    <string name="action_status">状态</string>
-    <string name="action_sleeping">呼噜中… 醒来后再来照顾</string>
-    <string name="action_feed">投喂</string>
-    <string name="action_play">玩耍</string>
-    <string name="action_clean">清洁</string>
-    <string name="action_pet">抚摸</string>
-    <string name="action_heal">治疗</string>
-    <string name="action_study">学习</string>
+    <string name="actions_title">Actions</string>
+    <string name="action_status">Status</string>
+    <string name="action_sleeping">Zzz… wake up to care</string>
+    <string name="action_feed">Feed</string>
+    <string name="action_play">Play</string>
+    <string name="action_clean">Clean</string>
+    <string name="action_pet">Pet</string>
+    <string name="action_heal">Heal</string>
+    <string name="action_study">Study</string>
 
-    <!-- 投喂子页 -->
-    <string name="feed_title">选择食物 · %1$s</string>
-    <string name="toy_title">选择玩具 · %1$s</string>
-    <string name="toy_locked_knowledge">知识达 %1$d 解锁</string>
-    <string name="toy_locked_milestone">玩耍 %1$d 次解锁</string>
-    <string name="toy_locked_event">随机事件掉落</string>
-    <string name="feed_match">契合</string>
+    <string name="feed_title">Pick food · %1$s</string>
+    <string name="toy_title">Pick a toy · %1$s</string>
+    <string name="toy_locked_knowledge">Unlocks at knowledge %1$d</string>
+    <string name="toy_locked_milestone">Unlocks at %1$d plays</string>
+    <string name="toy_locked_event">Random event drop</string>
+    <string name="feed_match">Match</string>
 
-    <!-- 食物 / 口味 -->
-    <string name="food_berries">树果餐</string>
-    <string name="food_meal">能量餐</string>
-    <string name="food_nutrition">营养餐</string>
-    <string name="food_snack">小零食</string>
-    <string name="food_porridge">特调糊糊</string>
-    <string name="flavor_balanced">均衡</string>
-    <string name="flavor_hearty">贪吃</string>
-    <string name="flavor_light">清淡</string>
-    <string name="flavor_sweet">甜口</string>
-    <string name="flavor_novel">新奇</string>
+    <string name="food_berries">Berries</string>
+    <string name="food_meal">Hearty meal</string>
+    <string name="food_nutrition">Nutrition</string>
+    <string name="food_snack">Snack</string>
+    <string name="food_porridge">Special porridge</string>
+    <string name="flavor_balanced">Balanced</string>
+    <string name="flavor_hearty">Hearty</string>
+    <string name="flavor_light">Light</string>
+    <string name="flavor_sweet">Sweet</string>
+    <string name="flavor_novel">Novel</string>
 
-    <!-- 属性名（主环 / 状态面板） -->
-    <string name="attr_satiation">饱腹度</string>
-    <string name="attr_mood">心情度</string>
-    <string name="attr_health">健康度</string>
-    <string name="attr_knowledge">知识</string>
-    <string name="attr_hygiene">清洁度</string>
+    <string name="attr_satiation">Satiation</string>
+    <string name="attr_mood">Mood</string>
+    <string name="attr_health">Health</string>
+    <string name="attr_knowledge">Knowledge</string>
+    <string name="attr_hygiene">Hygiene</string>
 
-    <!-- 动作拒绝原因 -->
-    <string name="deny_cooldown">冷却 %1$s</string>
-    <string name="deny_full_satiation">已经吃饱啦</string>
-    <string name="deny_full_mood">心情很好啦</string>
-    <string name="deny_not_sick">没有生病</string>
+    <string name="deny_cooldown">Cooldown %1$s</string>
+    <string name="deny_full_satiation">Already full</string>
+    <string name="deny_full_mood">Already happy</string>
+    <string name="deny_not_sick">Not sick</string>
 
-    <!-- 动作短演出气泡 -->
-    <string name="fx_eat_note">吃到了%1$s！</string>
-    <string name="fx_eat">吃得真香！</string>
-    <string name="fx_excited">开心得蹦起来！</string>
-    <string name="fx_affection">亲昵地蹭蹭你！</string>
-    <string name="fx_treated">病好起来啦！</string>
-    <string name="fx_clean">洗得干干净净！</string>
-    <string name="fx_study">学到了新东西！</string>
-    <string name="fx_study_unlock">学会新招！解锁了新互动</string>
+    <string name="fx_eat_note">Tasted %1$s!</string>
+    <string name="fx_eat">Yum!</string>
+    <string name="fx_excited">So happy!</string>
+    <string name="fx_affection">Snuggles you!</string>
+    <string name="fx_treated">Feeling better!</string>
+    <string name="fx_clean">All clean!</string>
+    <string name="fx_study">Learned something new!</string>
+    <string name="fx_study_unlock">Learned a new trick! Unlocked new interactions</string>
 
-    <!-- 快捷功能面板（M8 右滑插件清单，doc/05） -->
-    <string name="quick_edit">编辑</string>
-    <string name="quick_edit_title">功能清单</string>
-    <string name="quick_empty">暂无应用，点右上「编辑」添加</string>
-    <string name="quick_edit_added">已添加</string>
-    <string name="quick_edit_available">可添加</string>
-    <string name="quick_edit_empty">暂无已添加应用</string>
 
-    <!-- 建档屏 -->
-    <string name="setup_title">档案 · 选择伙伴</string>
-    <string name="setup_subtitle">初次启动：挑一只开始养育（共 %1$d 只）</string>
-    <string name="setup_confirm">确定领养 · 建档开始</string>
-    <string name="flavor_pref">口味偏好 %1$s · seed %2$d</string>
+    <string name="quick_edit">Edit</string>
+    <string name="quick_edit_title">Quick Panel</string>
+    <string name="quick_empty">No apps yet. Tap \"Edit\" top-right to add.</string>
+    <string name="quick_edit_added">Added</string>
+    <string name="quick_edit_available">Available</string>
+    <string name="quick_edit_empty">No apps added yet</string>
 
-    <!-- 建档六维 trait 名（顺序与 Traits.orderedValues 一致） -->
-    <string name="trait_activity">好动</string>
-    <string name="trait_affinity">粘人</string>
-    <string name="trait_appetite">贪吃</string>
-    <string name="trait_curiosity">好奇</string>
-    <string name="trait_temper">温和</string>
-    <string name="trait_learner">聪慧</string>
+    <string name="setup_title">Profile · choose partner</string>
+    <string name="setup_subtitle">First launch: pick one to raise (%1$d total)</string>
+    <string name="setup_confirm">Confirm adoption · start</string>
+    <string name="flavor_pref">Flavor pref %1$s · seed %2$d</string>
 
-    <!-- M7 离线叙事：结局基调 / 事件气泡 / 迎接 / 回放 -->
-    <string name="ending_joyful">睡得好香，精神满满！</string>
-    <string name="ending_grumbling">有点闷闷的…</string>
-    <string name="ending_needy">饿坏啦，快喂喂我！</string>
-    <string name="ending_sleepy">打了个盹儿～</string>
-    <string name="ending_sickly">好像有点不舒服…</string>
+    <string name="trait_activity">Active</string>
+    <string name="trait_affinity">Affectionate</string>
+    <string name="trait_appetite">Appetite</string>
+    <string name="trait_curiosity">Curious</string>
+    <string name="trait_temper">Calm</string>
+    <string name="trait_learner">Smart</string>
 
-    <string name="ev_wait_hungry">肚子咕咕叫，找吃的</string>
-    <string name="ev_dull_wander">晃来晃去好无聊</string>
-    <string name="ev_dust_dirty">沾了一身灰</string>
-    <string name="ev_sleep_sound">睡得正香</string>
-    <string name="ev_ail_sick">有点晕乎乎</string>
-    <string name="ev_idle_pass">发呆中</string>
-    <string name="ev_found_leftover">翻到一点存货</string>
-    <string name="ev_self_play">自己玩得开心</string>
-    <string name="ev_nice_dream">做了个好梦</string>
-    <string name="ev_spooked_noise">被响声吓一跳</string>
-    <string name="ev_knock_bowl">碰翻了饭碗</string>
+    <!-- M7 offline narrative: ending moods / event bubbles / greeting / replay -->
+    <string name="ending_joyful">Slept great, full of energy!</string>
+    <string name="ending_grumbling">Feeling a bit sulky…</string>
+    <string name="ending_needy">Starving—feed me already!</string>
+    <string name="ending_sleepy">Took a little nap~</string>
+    <string name="ending_sickly">Feeling a bit off…</string>
 
-    <string name="greet_back">你回来啦！</string>
-    <string name="greet_miss">想你啦，去哪了？</string>
-    <string name="greet_wait">等了好久～</string>
-    <string name="greet_longwait">你终于回来啦！</string>
-    <string name="greet_verylong">这么久才回来，人家想死你了</string>
+    <string name="ev_wait_hungry">Tummy rumbling, hunting for food</string>
+    <string name="ev_dull_wander">Wandering around, bored</string>
+    <string name="ev_dust_dirty">Got all dusty</string>
+    <string name="ev_sleep_sound">Sleeping soundly</string>
+    <string name="ev_ail_sick">Feeling a little dizzy</string>
+    <string name="ev_idle_pass">Zoning out</string>
+    <string name="ev_found_leftover">Found some leftovers</string>
+    <string name="ev_self_play">Playing happily alone</string>
+    <string name="ev_nice_dream">Had a nice dream</string>
+    <string name="ev_spooked_noise">Startled by a loud noise</string>
+    <string name="ev_knock_bowl">Knocked the bowl over</string>
 
-    <string name="replay_title">在你离开的这段时间…</string>
-    <string name="review_online_title">本次动态</string>
+    <string name="greet_back">You\'re back!</string>
+    <string name="greet_miss">Missed you—where\'d you go?</string>
+    <string name="greet_wait">Waited so long~</string>
+    <string name="greet_longwait">You\'re finally back!</string>
+    <string name="greet_verylong">Took you forever—I missed you so much</string>
 
-    <!-- M14 宠物便条（doc/04 §4/§5、doc/09 §5.4） -->
-    <string name="note_title">宠物便条</string>
-    <string name="note_offline">你离开了 %1$s——%2$s</string>
-    <string name="note_online">这次见面：%1$s，谢谢你～</string>
-    <string name="note_minute">%1$d 分钟</string>
-    <string name="note_hour">%1$d 小时</string>
-    <string name="note_day">%1$d 天</string>
-    <string name="note_feed">喂了 %1$d 次</string>
-    <string name="note_pet">摸了 %1$d 次</string>
-    <string name="note_play">玩了 %1$d 次</string>
-    <string name="note_heal">治了 %1$d 次</string>
-    <string name="note_clean">洗了 %1$d 次</string>
+    <string name="replay_title">While you were away…</string>
+    <string name="review_online_title">This session</string>
 
-    <!-- M15 收藏档案：设置入口 + 过往（doc/04 §3.3） -->
-    <string name="settings_title">设置</string>
-    <string name="settings_restart_pet">重新开始选择宠物</string>
-    <string name="settings_archive">我的档案 / 过往</string>
-    <string name="settings_restart_confirm_title">重新选择宠物？</string>
-    <string name="settings_restart_confirm_hint">当前宠物将被归档，之后可在「档案」中切回。</string>
-    <string name="settings_restart_confirm">确认重新开始</string>
-    <string name="settings_toggle_archive">换宠时归档（保留过往）</string>
-    <string name="settings_toggle_tomb_visible">显示「过往」入口</string>
-    <string name="settings_toggle_switch_confirm">切回需二次确认</string>
-    <string name="cancel">取消</string>
-    <string name="archive_switch_confirm_title">切回这只宠物？</string>
-    <string name="archive_switch_confirm_hint">将从「过往」移除并恢复为当前宠物。</string>
-    <string name="archive_switch_confirm">确认切回</string>
-    <string name="archive_title">过往</string>
-    <string name="archive_empty">暂无归档宠物</string>
-    <string name="archive_switch_back">切回</string>
-    <string name="archive_together">共处 %s</string>
-    <string name="note_study">学了 %1$d 次</string>
+    <!-- M14 Pet note (doc/04 §4/§5, doc/09 §5.4) -->
+    <string name="note_title">Pet Note</string>
+    <string name="note_offline">You were away for %1$s — %2$s</string>
+    <string name="note_online">This time: %1$s, thank you~</string>
+    <string name="note_minute">%1$d min</string>
+    <string name="note_hour">%1$d h</string>
+    <string name="note_day">%1$d d</string>
+    <string name="note_feed">fed %1$d times</string>
+    <string name="note_pet">petted %1$d times</string>
+    <string name="note_play">played %1$d times</string>
+    <string name="note_heal">healed %1$d times</string>
+    <string name="note_clean">bathed %1$d times</string>
 
-    <!-- M9 在线随机事件气泡（doc/03 §4） -->
-    <string name="ev_found_food">翻到好吃的，偷偷尝一口！</string>
-    <string name="ev_sneeze">阿嚏！</string>
-    <string name="ev_curious_walk">想去溜达溜达～</string>
-    <string name="ev_yawn">哈啊——困了</string>
-    <string name="ev_beg_food">喂喂我嘛～</string>
-    <string name="ev_dream">梦里也在笑</string>
-    <string name="ev_treat_hunt">闻到零食味儿！</string>
+    <!-- M15 Archive: settings entry + past (doc/04 §3.3) -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_restart_pet">Start Over (Pick a Pet)</string>
+    <string name="settings_archive">My Archive / Past</string>
+    <string name="settings_restart_confirm_title">Start Over?</string>
+    <string name="settings_restart_confirm_hint">The current pet will be archived. You can switch back from Archive later.</string>
+    <string name="settings_restart_confirm">Confirm &amp; Start Over</string>
+    <string name="settings_toggle_archive">Archive on restart (keep Past)</string>
+    <string name="settings_toggle_tomb_visible">Show “Past” entry</string>
+    <string name="settings_toggle_switch_confirm">Confirm before switch-back</string>
+    <string name="cancel">Cancel</string>
+    <string name="archive_switch_confirm_title">Switch back to this pet?</string>
+    <string name="archive_switch_confirm_hint">It will be removed from Past and restored as the current pet.</string>
+    <string name="archive_switch_confirm">Confirm switch-back</string>
+    <string name="archive_title">Past</string>
+    <string name="archive_empty">No archived pets</string>
+    <string name="archive_switch_back">Switch Back</string>
+    <string name="archive_together">Together for %s</string>
+    <string name="note_study">studied %1$d times</string>
 
-    <!-- M16 休闲小游戏（doc/09 §5.6） -->
-    <string name="game_title">小游戏</string>
-    <string name="game_intro">限时 30 秒，点破冒出的泡泡得分</string>
-    <string name="game_start">开始</string>
-    <string name="game_hud">剩余 %1$d 秒 · 得分 %2$d</string>
-    <string name="game_over">本局结束</string>
-    <string name="game_final_score">本局得分 %1$d</string>
-    <string name="game_back">返回</string>
+    <!-- M9 online random event bubbles (doc/03 §4) -->
+    <string name="ev_found_food">Found a snack, sneaking a bite!</string>
+    <string name="ev_sneeze">Achoo!</string>
+    <string name="ev_curious_walk">Wanna go for a walk~</string>
+    <string name="ev_yawn">Yaawn—sleepy</string>
+    <string name="ev_beg_food">Feed me, please~</string>
+    <string name="ev_dream">Smiling in a dream</string>
+    <string name="ev_treat_hunt">Smells like a treat!</string>
+
+    <!-- M16 Mini game (doc/09 §5.6) -->
+    <string name="game_title">Mini Game</string>
+    <string name="game_intro">Pop the bubbles in 30 seconds.</string>
+    <string name="game_start">Start</string>
+    <string name="game_hud">Time %1$ds · Score %2$d</string>
+    <string name="game_over">Game Over</string>
+    <string name="game_final_score">Score this round: %1$d</string>
+    <string name="game_back">Back</string>
 </resources>

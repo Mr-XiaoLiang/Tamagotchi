@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 应用名（Launcher 标签） -->
-    <string name="app_name">Tamagotchi</string>
+    <string name="app_name">精灵球</string>
 
     <!-- 中文显式覆盖（与默认 values/ 一致；设备 zh 区域走此处） -->
     <string name="status_title">状态 · %1$s</string>
