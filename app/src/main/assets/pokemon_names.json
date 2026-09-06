@@ -1,0 +1,4118 @@
+{
+  "ABOMASNOW": {
+    "en": "Abomasnow",
+    "zh": "雪妖怪"
+  },
+  "ABRA": {
+    "en": "Abra",
+    "zh": "凯西"
+  },
+  "ABSOL": {
+    "en": "Absol",
+    "zh": "阿勃梭鲁"
+  },
+  "ACCELGOR": {
+    "en": "Accelgor",
+    "zh": "敏捷虫"
+  },
+  "AEGISLASH": {
+    "en": "Aegislash",
+    "zh": "坚盾剑怪"
+  },
+  "AERODACTYL": {
+    "en": "Aerodactyl",
+    "zh": "化石翼龙"
+  },
+  "AGGRON": {
+    "en": "Aggron",
+    "zh": "波士可多拉"
+  },
+  "AIPOM": {
+    "en": "Aipom",
+    "zh": "长尾怪手"
+  },
+  "ALAKAZAM": {
+    "en": "Alakazam",
+    "zh": "胡地"
+  },
+  "ALCREMIE": {
+    "en": "Alcremie",
+    "zh": "霜奶仙"
+  },
+  "ALOMOMOLA": {
+    "en": "Alomomola",
+    "zh": "爱心鱼"
+  },
+  "ALTARIA": {
+    "en": "Altaria",
+    "zh": "七夕青鸟"
+  },
+  "AMAURA": {
+    "en": "Amaura",
+    "zh": "冰雪龙"
+  },
+  "AMBIPOM": {
+    "en": "Ambipom",
+    "zh": "双尾怪手"
+  },
+  "AMOONGUSS": {
+    "en": "Amoonguss",
+    "zh": "败露球菇"
+  },
+  "AMPHAROS": {
+    "en": "Ampharos",
+    "zh": "电龙"
+  },
+  "ANNIHILAPE": {
+    "en": "Annihilape",
+    "zh": "古简蜗"
+  },
+  "ANORITH": {
+    "en": "Anorith",
+    "zh": "触手百合"
+  },
+  "APPLETUN": {
+    "en": "Appletun",
+    "zh": "丰蜜龙"
+  },
+  "APPLIN": {
+    "en": "Applin",
+    "zh": "好吃豆"
+  },
+  "ARAQUANID": {
+    "en": "Araquanid",
+    "zh": "水蛛"
+  },
+  "ARBOK": {
+    "en": "Arbok",
+    "zh": "阿柏怪"
+  },
+  "ARBOLIVA": {
+    "en": "Arboliva",
+    "zh": "橄榄鸟"
+  },
+  "ARCANINE": {
+    "en": "Arcanine",
+    "zh": "风速狗"
+  },
+  "ARCEUS": {
+    "en": "Arceus",
+    "zh": "阿尔宙斯"
+  },
+  "ARCHEN": {
+    "en": "Archen",
+    "zh": "始祖小鸟"
+  },
+  "ARCHEOPS": {
+    "en": "Archeops",
+    "zh": "始祖大鸟"
+  },
+  "ARCTIBAX": {
+    "en": "Arctibax",
+    "zh": "冰砌鹅"
+  },
+  "ARCTOVISH": {
+    "en": "Arctovish",
+    "zh": "鳃鱼龙"
+  },
+  "ARCTOZOLT": {
+    "en": "Arctozolt",
+    "zh": "雷鸟龙"
+  },
+  "ARIADOS": {
+    "en": "Ariados",
+    "zh": "阿利多斯"
+  },
+  "ARMALDO": {
+    "en": "Armaldo",
+    "zh": "太古羽虫"
+  },
+  "ARMAROUGE": {
+    "en": "Armarouge",
+    "zh": "红莲铠骑"
+  },
+  "AROMATISSE": {
+    "en": "Aromatisse",
+    "zh": "芳香精"
+  },
+  "ARON": {
+    "en": "Aron",
+    "zh": "可可多拉"
+  },
+  "ARROKUDA": {
+    "en": "Arrokuda",
+    "zh": "咬咬鱼"
+  },
+  "ARTICUNO": {
+    "en": "Articuno",
+    "zh": "急冻鸟"
+  },
+  "AUDINO": {
+    "en": "Audino",
+    "zh": "差不多娃娃"
+  },
+  "AURORUS": {
+    "en": "Aurorus",
+    "zh": "冰雪龙"
+  },
+  "AVALUGG": {
+    "en": "Avalugg",
+    "zh": "冰岩怪"
+  },
+  "AXEW": {
+    "en": "Axew",
+    "zh": "牙牙"
+  },
+  "AZELF": {
+    "en": "Azelf",
+    "zh": "由克希"
+  },
+  "AZUMARILL": {
+    "en": "Azumarill",
+    "zh": "玛力露丽"
+  },
+  "AZURILL": {
+    "en": "Azurill",
+    "zh": "小福蛋"
+  },
+  "BAGON": {
+    "en": "Bagon",
+    "zh": "暴飞龙"
+  },
+  "BALTOY": {
+    "en": "Baltoy",
+    "zh": "天秤偶"
+  },
+  "BANETTE": {
+    "en": "Banette",
+    "zh": "诅咒娃娃"
+  },
+  "BARBARACLE": {
+    "en": "Barbaracle",
+    "zh": "龟脚脚"
+  },
+  "BARBOACH": {
+    "en": "Barboach",
+    "zh": "泥泥鳅"
+  },
+  "BARRASKEWDA": {
+    "en": "Barraskewda",
+    "zh": "戽斗尖梭"
+  },
+  "BASCULEGION": {
+    "en": "Basculegion",
+    "zh": "暴噬龟"
+  },
+  "BASCULEGION_female": {
+    "en": "Basculegion ♀",
+    "zh": "暴噬龟"
+  },
+  "BASCULIN": {
+    "en": "Basculin",
+    "zh": "野蛮鲈鱼"
+  },
+  "BASTIODON": {
+    "en": "Bastiodon",
+    "zh": "护城龙"
+  },
+  "BAXCALIBUR": {
+    "en": "Baxcalibur",
+    "zh": "苍炎刃鬼"
+  },
+  "BAYLEEF": {
+    "en": "Bayleef",
+    "zh": "月桂叶"
+  },
+  "BEARTIC": {
+    "en": "Beartic",
+    "zh": "冻原熊"
+  },
+  "BEAUTIFLY": {
+    "en": "Beautifly",
+    "zh": "毒粉蛾"
+  },
+  "BEEDRILL": {
+    "en": "Beedrill",
+    "zh": "大针蜂"
+  },
+  "BEHEEYEM": {
+    "en": "Beheeyem",
+    "zh": "哥德宝宝"
+  },
+  "BELDUM": {
+    "en": "Beldum",
+    "zh": "铁哑铃"
+  },
+  "BELLIBOLT": {
+    "en": "Bellibolt",
+    "zh": "电肚蛙"
+  },
+  "BELLOSSOM": {
+    "en": "Bellossom",
+    "zh": "美丽花"
+  },
+  "BELLSPROUT": {
+    "en": "Bellsprout",
+    "zh": "喇叭芽"
+  },
+  "BERGMITE": {
+    "en": "Bergmite",
+    "zh": "冰宝"
+  },
+  "BEWEAR": {
+    "en": "Bewear",
+    "zh": "投摔怪"
+  },
+  "BIBAREL": {
+    "en": "Bibarel",
+    "zh": "大尾狸"
+  },
+  "BIDOOF": {
+    "en": "Bidoof",
+    "zh": "大牙狸"
+  },
+  "BINACLE": {
+    "en": "Binacle",
+    "zh": "龟脚脚"
+  },
+  "BISHARP": {
+    "en": "Bisharp",
+    "zh": "劈斩司令"
+  },
+  "BLACEPHALON": {
+    "en": "Blacephalon",
+    "zh": "恶食大王"
+  },
+  "BLASTOISE": {
+    "en": "Blastoise",
+    "zh": "水箭龟"
+  },
+  "BLAZIKEN": {
+    "en": "Blaziken",
+    "zh": "火焰鸡"
+  },
+  "BLIPBUG": {
+    "en": "Blipbug",
+    "zh": "郁香苗"
+  },
+  "BLISSEY": {
+    "en": "Blissey",
+    "zh": "吉利蛋"
+  },
+  "BLITZLE": {
+    "en": "Blitzle",
+    "zh": "电电虫"
+  },
+  "BOLDORE": {
+    "en": "Boldore",
+    "zh": "重岩石"
+  },
+  "BOLTUND": {
+    "en": "Boltund",
+    "zh": "逐电犬"
+  },
+  "BOMBIRDIER": {
+    "en": "Bombirdier",
+    "zh": "负电拍拍"
+  },
+  "BOMBIRDIERs": {
+    "en": "Bombirdiers",
+    "zh": "负电拍拍"
+  },
+  "BONSLY": {
+    "en": "Bonsly",
+    "zh": "盆才怪"
+  },
+  "BOUFFALANT": {
+    "en": "Bouffalant",
+    "zh": "爆炸头水牛"
+  },
+  "BOUNSWEET": {
+    "en": "Bounsweet",
+    "zh": "甜竹竹"
+  },
+  "BRAIXEN": {
+    "en": "Braixen",
+    "zh": "长尾火狐"
+  },
+  "BRAMBLEGHAST": {
+    "en": "Brambleghast",
+    "zh": "操陷棺"
+  },
+  "BRAMBLIN": {
+    "en": "Bramblin",
+    "zh": "缠丝角"
+  },
+  "BRAVIARY": {
+    "en": "Braviary",
+    "zh": "勇士鹰"
+  },
+  "BRELOOM": {
+    "en": "Breloom",
+    "zh": "斗笠菇"
+  },
+  "BRIONNE": {
+    "en": "Brionne",
+    "zh": "花漾海狮"
+  },
+  "BRONZONG": {
+    "en": "Bronzong",
+    "zh": "青铜钟"
+  },
+  "BRONZOR": {
+    "en": "Bronzor",
+    "zh": "铜镜怪"
+  },
+  "BRUTEBONNET": {
+    "en": "Brutebonnet",
+    "zh": "铁包袱"
+  },
+  "BRUXISH": {
+    "en": "Bruxish",
+    "zh": "啃咬鱼"
+  },
+  "BUDEW": {
+    "en": "Budew",
+    "zh": "含羞苞"
+  },
+  "BUIZEL": {
+    "en": "Buizel",
+    "zh": "浮潜鼬"
+  },
+  "BULBASAUR": {
+    "en": "Bulbasaur",
+    "zh": "妙蛙种子"
+  },
+  "BUNEARY": {
+    "en": "Buneary",
+    "zh": "卷卷耳"
+  },
+  "BUNNELBY": {
+    "en": "Bunnelby",
+    "zh": "掘掘兔"
+  },
+  "BURMY": {
+    "en": "Burmy",
+    "zh": "结草虫"
+  },
+  "BUTTERFREE": {
+    "en": "Butterfree",
+    "zh": "巴大蝶"
+  },
+  "BUZZWOLE": {
+    "en": "Buzzwole",
+    "zh": "具甲蜂"
+  },
+  "CACNEA": {
+    "en": "Cacnea",
+    "zh": "仙人掌"
+  },
+  "CACTURNE": {
+    "en": "Cacturne",
+    "zh": "仙人掌王"
+  },
+  "CALYREX": {
+    "en": "Calyrex",
+    "zh": "苍响"
+  },
+  "CAMERUPT": {
+    "en": "Camerupt",
+    "zh": "喷火驼"
+  },
+  "CAPSAKID": {
+    "en": "Capsakid",
+    "zh": "辣茄"
+  },
+  "CARBINK": {
+    "en": "Carbink",
+    "zh": "小碎钻"
+  },
+  "CARKOL": {
+    "en": "Carkol",
+    "zh": "烧火蚣"
+  },
+  "CARNIVINE": {
+    "en": "Carnivine",
+    "zh": "食人花"
+  },
+  "CARRACOSTA": {
+    "en": "Carracosta",
+    "zh": "肋骨海龟"
+  },
+  "CARVANHA": {
+    "en": "Carvanha",
+    "zh": "利牙鱼"
+  },
+  "CASCOON": {
+    "en": "Cascoon",
+    "zh": "甲壳茧"
+  },
+  "CASTFORM": {
+    "en": "Castform",
+    "zh": "飘浮泡泡"
+  },
+  "CATERPIE": {
+    "en": "Caterpie",
+    "zh": "绿毛虫"
+  },
+  "CELEBI": {
+    "en": "Celebi",
+    "zh": "雪拉比"
+  },
+  "CELESTEELA": {
+    "en": "Celesteela",
+    "zh": "杖尾鳞琴"
+  },
+  "CENTISKORCH": {
+    "en": "Centiskorch",
+    "zh": "焚焰蚣"
+  },
+  "CERULEDGE": {
+    "en": "Ceruledge",
+    "zh": "苍刃将军"
+  },
+  "CETITAN": {
+    "en": "Cetitan",
+    "zh": "大白鲸"
+  },
+  "CETODDLE": {
+    "en": "Cetoddle",
+    "zh": "小白鲸"
+  },
+  "CHANDELURE": {
+    "en": "Chandelure",
+    "zh": "水晶灯火灵"
+  },
+  "CHANSEY": {
+    "en": "Chansey",
+    "zh": "吉利蛋"
+  },
+  "CHARCADET": {
+    "en": "Charcadet",
+    "zh": "炭小侍"
+  },
+  "CHARIZARD": {
+    "en": "Charizard",
+    "zh": "喷火龙"
+  },
+  "CHARJABUG": {
+    "en": "Charjabug",
+    "zh": "虫电宝"
+  },
+  "CHARMANDER": {
+    "en": "Charmander",
+    "zh": "小火龙"
+  },
+  "CHARMELEON": {
+    "en": "Charmeleon",
+    "zh": "火恐龙"
+  },
+  "CHATOT": {
+    "en": "Chatot",
+    "zh": "喇叭雀"
+  },
+  "CHERRIM": {
+    "en": "Cherrim",
+    "zh": "樱花儿"
+  },
+  "CHERUBI": {
+    "en": "Cherubi",
+    "zh": "樱花儿"
+  },
+  "CHESNAUGHT": {
+    "en": "Chesnaught",
+    "zh": "布里卡龙"
+  },
+  "CHESPIN": {
+    "en": "Chespin",
+    "zh": "哈力栗"
+  },
+  "CHEWTLE": {
+    "en": "Chewtle",
+    "zh": "啃果虫"
+  },
+  "CHIENPAO": {
+    "en": "Chienpao",
+    "zh": "月月熊"
+  },
+  "CHIKORITA": {
+    "en": "Chikorita",
+    "zh": "菊草叶"
+  },
+  "CHIMCHAR": {
+    "en": "Chimchar",
+    "zh": "小火焰猴"
+  },
+  "CHIMECHO": {
+    "en": "Chimecho",
+    "zh": "风铃铃"
+  },
+  "CHINCHOU": {
+    "en": "Chinchou",
+    "zh": "灯笼鱼"
+  },
+  "CHINGLING": {
+    "en": "Chingling",
+    "zh": "铃铛响"
+  },
+  "CHIYU": {
+    "en": "Chiyu",
+    "zh": "水兔"
+  },
+  "CINCCINO": {
+    "en": "Cinccino",
+    "zh": "奇诺栗鼠"
+  },
+  "CINDERACE": {
+    "en": "Cinderace",
+    "zh": "腾蹴小将"
+  },
+  "CLAMPERL": {
+    "en": "Clamperl",
+    "zh": "珍珠贝"
+  },
+  "CLAUNCHER": {
+    "en": "Clauncher",
+    "zh": "铁臂枪虾"
+  },
+  "CLAWITZER": {
+    "en": "Clawitzer",
+    "zh": "铁臂枪虾"
+  },
+  "CLAYDOL": {
+    "en": "Claydol",
+    "zh": "念力土偶"
+  },
+  "CLEFABLE": {
+    "en": "Clefable",
+    "zh": "皮可西"
+  },
+  "CLEFAIRY": {
+    "en": "Clefairy",
+    "zh": "皮皮"
+  },
+  "CLEFFA": {
+    "en": "Cleffa",
+    "zh": "皮宝宝"
+  },
+  "CLOBBOPUS": {
+    "en": "Clobbopus",
+    "zh": "捣蛋章鱼"
+  },
+  "CLODSIRE": {
+    "en": "Clodsire",
+    "zh": "土王"
+  },
+  "CLOYSTER": {
+    "en": "Cloyster",
+    "zh": "刺甲贝"
+  },
+  "COALOSSAL": {
+    "en": "Coalossal",
+    "zh": "巨炭山"
+  },
+  "COBALION": {
+    "en": "Cobalion",
+    "zh": "勾帕路翁"
+  },
+  "COFAGRIGUS": {
+    "en": "Cofagrigus",
+    "zh": "死神棺"
+  },
+  "COMBEE": {
+    "en": "Combee",
+    "zh": "三蜜蜂"
+  },
+  "COMBUSKEN": {
+    "en": "Combusken",
+    "zh": "力壮鸡"
+  },
+  "COMFEY": {
+    "en": "Comfey",
+    "zh": "裙儿小姐"
+  },
+  "CONKELDURR": {
+    "en": "Conkeldurr",
+    "zh": "修缮老头"
+  },
+  "COPPERAJAH": {
+    "en": "Copperajah",
+    "zh": "铜镜怪"
+  },
+  "CORPHISH": {
+    "en": "Corphish",
+    "zh": "龙虾小兵"
+  },
+  "CORSOLA": {
+    "en": "Corsola",
+    "zh": "太阳珊瑚"
+  },
+  "CORVIKNIGHT": {
+    "en": "Corviknight",
+    "zh": "钢翼鸦"
+  },
+  "CORVISQUIRE": {
+    "en": "Corvisquire",
+    "zh": "啄雀"
+  },
+  "COSMOEM": {
+    "en": "Cosmoem",
+    "zh": "科斯莫姆"
+  },
+  "COSMOG": {
+    "en": "Cosmog",
+    "zh": "科斯莫古"
+  },
+  "COTTONEE": {
+    "en": "Cottonee",
+    "zh": "木棉球"
+  },
+  "CRABOMINABLE": {
+    "en": "Crabominable",
+    "zh": "好胜蟹"
+  },
+  "CRABRAWLER": {
+    "en": "Crabrawler",
+    "zh": "好胜毛蟹"
+  },
+  "CRADILY": {
+    "en": "Cradily",
+    "zh": "触手百合"
+  },
+  "CRAMORANT": {
+    "en": "Cramorant",
+    "zh": "古月鸟"
+  },
+  "CRANIDOS": {
+    "en": "Cranidos",
+    "zh": "头盖龙"
+  },
+  "CRAWDAUNT": {
+    "en": "Crawdaunt",
+    "zh": "饭匙蛇"
+  },
+  "CRESSELIA": {
+    "en": "Cresselia",
+    "zh": "美梦幻"
+  },
+  "CROAGUNK": {
+    "en": "Croagunk",
+    "zh": "不良蛙"
+  },
+  "CROBAT": {
+    "en": "Crobat",
+    "zh": "叉字蝠"
+  },
+  "CROCALOR": {
+    "en": "Crocalor",
+    "zh": "盐石宝"
+  },
+  "CROCONAW": {
+    "en": "Croconaw",
+    "zh": "蓝鳄"
+  },
+  "CRUSTLE": {
+    "en": "Crustle",
+    "zh": "岩殿居蟹"
+  },
+  "CRYOGONAL": {
+    "en": "Cryogonal",
+    "zh": "哭哭面具"
+  },
+  "CUBCHOO": {
+    "en": "Cubchoo",
+    "zh": "迷你冰"
+  },
+  "CUBONE": {
+    "en": "Cubone",
+    "zh": "卡拉卡拉"
+  },
+  "CUFANT": {
+    "en": "Cufant",
+    "zh": "铜象"
+  },
+  "CURSOLA": {
+    "en": "Cursola",
+    "zh": "魔灵珊瑚"
+  },
+  "CUTIEFLY": {
+    "en": "Cutiefly",
+    "zh": "童偶熊"
+  },
+  "CYCLIZAR": {
+    "en": "Cyclizar",
+    "zh": "摩托蜥"
+  },
+  "CYNDAQUIL": {
+    "en": "Cyndaquil",
+    "zh": "火球鼠"
+  },
+  "DACHSBUN": {
+    "en": "Dachsbun",
+    "zh": "达克斯汪"
+  },
+  "DARKRAI": {
+    "en": "Darkrai",
+    "zh": "达克赖"
+  },
+  "DARMANITAN": {
+    "en": "Darmanitan",
+    "zh": "达摩狒狒"
+  },
+  "DARTRIX": {
+    "en": "Dartrix",
+    "zh": "投羽枭"
+  },
+  "DARUMAKA": {
+    "en": "Darumaka",
+    "zh": "火红不倒翁"
+  },
+  "DECIDUEYE": {
+    "en": "Decidueye",
+    "zh": "狙射树枭"
+  },
+  "DEDENNE": {
+    "en": "Dedenne",
+    "zh": "咚咚鼠"
+  },
+  "DEERLING": {
+    "en": "Deerling",
+    "zh": "四季鹿"
+  },
+  "DEINO": {
+    "en": "Deino",
+    "zh": "单卵细胞球"
+  },
+  "DELCATTY": {
+    "en": "Delcatty",
+    "zh": "优雅猫"
+  },
+  "DELIBIRD": {
+    "en": "Delibird",
+    "zh": "圣诞鸟"
+  },
+  "DELPHOX": {
+    "en": "Delphox",
+    "zh": "妖火红狐"
+  },
+  "DEOXYS": {
+    "en": "Deoxys",
+    "zh": "代欧奇希斯"
+  },
+  "DEWGONG": {
+    "en": "Dewgong",
+    "zh": "白海狮"
+  },
+  "DEWOTT": {
+    "en": "Dewott",
+    "zh": "双刃丸"
+  },
+  "DEWPIDER": {
+    "en": "Dewpider",
+    "zh": "滴蛛"
+  },
+  "DHELMISE": {
+    "en": "Dhelmise",
+    "zh": "破破袋"
+  },
+  "DIALGA": {
+    "en": "Dialga",
+    "zh": "帝牙卢卡"
+  },
+  "DIANCIE": {
+    "en": "Diancie",
+    "zh": "蒂安希"
+  },
+  "DIGGERSBY": {
+    "en": "Diggersby",
+    "zh": "掘地兔"
+  },
+  "DIGLETT": {
+    "en": "Diglett",
+    "zh": "地鼠"
+  },
+  "DITTO": {
+    "en": "Ditto",
+    "zh": "百变怪"
+  },
+  "DODRIO": {
+    "en": "Dodrio",
+    "zh": "嘟嘟利"
+  },
+  "DODUO": {
+    "en": "Doduo",
+    "zh": "嘟嘟"
+  },
+  "DOLLIV": {
+    "en": "Dolliv",
+    "zh": "橄榄猫"
+  },
+  "DONDOZO": {
+    "en": "Dondozo",
+    "zh": "顿多佐"
+  },
+  "DONPHAN": {
+    "en": "Donphan",
+    "zh": "顿甲"
+  },
+  "DOTTLER": {
+    "en": "Dottler",
+    "zh": "瞌睡虫"
+  },
+  "DOUBLADE": {
+    "en": "Doublade",
+    "zh": "双剑鞘"
+  },
+  "DRACOVISH": {
+    "en": "Dracovish",
+    "zh": "鳃鱼王"
+  },
+  "DRACOZOLT": {
+    "en": "Dracozolt",
+    "zh": "雷鸟海兽"
+  },
+  "DRAGALGE": {
+    "en": "Dragalge",
+    "zh": "毒藻龙"
+  },
+  "DRAGAPULT": {
+    "en": "Dragapult",
+    "zh": "多龙奇"
+  },
+  "DRAGONAIR": {
+    "en": "Dragonair",
+    "zh": "哈克龙"
+  },
+  "DRAGONITE": {
+    "en": "Dragonite",
+    "zh": "快龙"
+  },
+  "DRAKLOAK": {
+    "en": "Drakloak",
+    "zh": "多龙梅西亚"
+  },
+  "DRAMPA": {
+    "en": "Drampa",
+    "zh": "老翁龙"
+  },
+  "DRAPION": {
+    "en": "Drapion",
+    "zh": "龙王蝎"
+  },
+  "DRATINI": {
+    "en": "Dratini",
+    "zh": "迷你龙"
+  },
+  "DREDNAW": {
+    "en": "Drednaw",
+    "zh": "咬碎龟"
+  },
+  "DREEPY": {
+    "en": "Dreepy",
+    "zh": "幼棉棉"
+  },
+  "DRIFBLIM": {
+    "en": "Drifblim",
+    "zh": "随风球"
+  },
+  "DRIFLOON": {
+    "en": "Drifloon",
+    "zh": "飘浮泡泡"
+  },
+  "DRILBUR": {
+    "en": "Drilbur",
+    "zh": "螺钉地鼠"
+  },
+  "DRIZZILE": {
+    "en": "Drizzile",
+    "zh": "泪眼蜥"
+  },
+  "DROWZEE": {
+    "en": "Drowzee",
+    "zh": "催眠貘"
+  },
+  "DRUDDIGON": {
+    "en": "Druddigon",
+    "zh": "赤颚龙"
+  },
+  "DUBWOOL": {
+    "en": "Dubwool",
+    "zh": "毛辫羊"
+  },
+  "DUCKLETT": {
+    "en": "Ducklett",
+    "zh": "鸭宝宝"
+  },
+  "DUDUNSPARCE": {
+    "en": "Dudunsparce",
+    "zh": "双首暴龙"
+  },
+  "DUGTRIO": {
+    "en": "Dugtrio",
+    "zh": "三地鼠"
+  },
+  "DUNSPARCE": {
+    "en": "Dunsparce",
+    "zh": "圆法師"
+  },
+  "DUOSION": {
+    "en": "Duosion",
+    "zh": "双分细胞"
+  },
+  "DURALUDON": {
+    "en": "Duraludon",
+    "zh": "铝钢龙"
+  },
+  "DURANT": {
+    "en": "Durant",
+    "zh": "铁蚁"
+  },
+  "DUSCLOPS": {
+    "en": "Dusclops",
+    "zh": "夜魔人"
+  },
+  "DUSKNOIR": {
+    "en": "Dusknoir",
+    "zh": "夜魔人"
+  },
+  "DUSKULL": {
+    "en": "Duskull",
+    "zh": "夜骷颅"
+  },
+  "DUSTOX": {
+    "en": "Dustox",
+    "zh": "毒粉蛾"
+  },
+  "DWEBBLE": {
+    "en": "Dwebble",
+    "zh": "石居蟹"
+  },
+  "EELEKTRIK": {
+    "en": "Eelektrik",
+    "zh": "电电虫"
+  },
+  "EELEKTROSS": {
+    "en": "Eelektross",
+    "zh": "电蜘蛛"
+  },
+  "EEVEE": {
+    "en": "Eevee",
+    "zh": "伊布"
+  },
+  "EISCUE": {
+    "en": "Eiscue",
+    "zh": "爱管侍"
+  },
+  "EKANS": {
+    "en": "Ekans",
+    "zh": "阿柏蛇"
+  },
+  "ELDEGOSS": {
+    "en": "Eldegoss",
+    "zh": "白蓬蓬"
+  },
+  "ELECTABUZZ": {
+    "en": "Electabuzz",
+    "zh": "电击兽"
+  },
+  "ELECTIVIRE": {
+    "en": "Electivire",
+    "zh": "电击魔兽"
+  },
+  "ELECTRIKE": {
+    "en": "Electrike",
+    "zh": "电电虫"
+  },
+  "ELECTRODE": {
+    "en": "Electrode",
+    "zh": "顽皮雷弹"
+  },
+  "ELEKID": {
+    "en": "Elekid",
+    "zh": "小电怪"
+  },
+  "ELGYEM": {
+    "en": "Elgyem",
+    "zh": "哥德宝宝"
+  },
+  "EMBOAR": {
+    "en": "Emboar",
+    "zh": "炎武王"
+  },
+  "EMOLGA": {
+    "en": "Emolga",
+    "zh": "电飞鼠"
+  },
+  "EMPOLEON": {
+    "en": "Empoleon",
+    "zh": "帝王拿波"
+  },
+  "ENAMORUS": {
+    "en": "Enamorus",
+    "zh": "眷恋云"
+  },
+  "ENTEI": {
+    "en": "Entei",
+    "zh": "炎帝"
+  },
+  "ESCAVALIER": {
+    "en": "Escavalier",
+    "zh": "骑士蜗牛"
+  },
+  "ESPATHRA": {
+    "en": "Espathra",
+    "zh": "辉羽鸵"
+  },
+  "ESPEON": {
+    "en": "Espeon",
+    "zh": "太阳伊布"
+  },
+  "ESPURR": {
+    "en": "Espurr",
+    "zh": "妙喵"
+  },
+  "ETERNATUS": {
+    "en": "Eternatus",
+    "zh": "无极汰那"
+  },
+  "EXCADRILL": {
+    "en": "Excadrill",
+    "zh": "龙头地鼠"
+  },
+  "EXEGGCUTE": {
+    "en": "Exeggcute",
+    "zh": "蛋蛋"
+  },
+  "EXEGGUTOR": {
+    "en": "Exeggutor",
+    "zh": "椰蛋树"
+  },
+  "EXPLOUD": {
+    "en": "Exploud",
+    "zh": "爆音怪"
+  },
+  "FALINKS": {
+    "en": "Falinks",
+    "zh": "拼塔兵"
+  },
+  "FARFETCHD": {
+    "en": "Farfetch'd",
+    "zh": "大葱鸭"
+  },
+  "FARIGIRAF": {
+    "en": "Farigiraf",
+    "zh": "长颈鹿"
+  },
+  "FEAROW": {
+    "en": "Fearow",
+    "zh": "大嘴雀"
+  },
+  "FEEBAS": {
+    "en": "Feebas",
+    "zh": "丑丑鱼"
+  },
+  "FENNEKIN": {
+    "en": "Fennekin",
+    "zh": "火狐狸"
+  },
+  "FERALIGATR": {
+    "en": "Feraligatr",
+    "zh": "大力鳄"
+  },
+  "FERROSEED": {
+    "en": "Ferroseed",
+    "zh": "种子铁球"
+  },
+  "FERROTHORN": {
+    "en": "Ferrothorn",
+    "zh": "坚果哑铃"
+  },
+  "FIDOUGH": {
+    "en": "Fidough",
+    "zh": "面团犬"
+  },
+  "FINIZEN": {
+    "en": "Finizen",
+    "zh": "鳍企鹅"
+  },
+  "FINNEON": {
+    "en": "Finneon",
+    "zh": "荧光鱼"
+  },
+  "FLAAFFY": {
+    "en": "Flaaffy",
+    "zh": "棉电羊"
+  },
+  "FLABEBE": {
+    "en": "Flabebe",
+    "zh": "粉蝶虫"
+  },
+  "FLAMIGO": {
+    "en": "Flamigo",
+    "zh": "火烈鸟"
+  },
+  "FLAPPLE": {
+    "en": "Flapple",
+    "zh": "火苹果"
+  },
+  "FLAREON": {
+    "en": "Flareon",
+    "zh": "火伊布"
+  },
+  "FLETCHINDER": {
+    "en": "Fletchinder",
+    "zh": "火箭雀"
+  },
+  "FLETCHLING": {
+    "en": "Fletchling",
+    "zh": "小箭雀"
+  },
+  "FLITTLE": {
+    "en": "Flittle",
+    "zh": "小光虫"
+  },
+  "FLOATZEL": {
+    "en": "Floatzel",
+    "zh": "浮潜鼬"
+  },
+  "FLOETTE": {
+    "en": "Floette",
+    "zh": "花叶蒂"
+  },
+  "FLORAGATO": {
+    "en": "Floragato",
+    "zh": "花猫"
+  },
+  "FLORGES": {
+    "en": "Florges",
+    "zh": "花仙子"
+  },
+  "FLUTTERMANE": {
+    "en": "Fluttermane",
+    "zh": "振翅蝠"
+  },
+  "FLYGON": {
+    "en": "Flygon",
+    "zh": "飞天螳螂"
+  },
+  "FOMANTIS": {
+    "en": "Fomantis",
+    "zh": "伪螳草"
+  },
+  "FOONGUS": {
+    "en": "Foongus",
+    "zh": "伞菇"
+  },
+  "FORRETRESS": {
+    "en": "Forretress",
+    "zh": "佛烈托斯"
+  },
+  "FRAXURE": {
+    "en": "Fraxure",
+    "zh": "双斧龙"
+  },
+  "FRIGIBAX": {
+    "en": "Frigibax",
+    "zh": "冰砌鹅"
+  },
+  "FRILLISH": {
+    "en": "Frillish",
+    "zh": "轻飘飘"
+  },
+  "FRILLISH_female": {
+    "en": "Frillish ♀",
+    "zh": "轻飘飘"
+  },
+  "FROAKIE": {
+    "en": "Froakie",
+    "zh": "呱呱泡蛙"
+  },
+  "FROGADIER": {
+    "en": "Frogadier",
+    "zh": "呱头蛙"
+  },
+  "FROSLASS": {
+    "en": "Froslass",
+    "zh": "雪妖女"
+  },
+  "FROSMOTH": {
+    "en": "Frosmoth",
+    "zh": "冰蛾"
+  },
+  "FUECOCO": {
+    "en": "Fuecoco",
+    "zh": "呆火鳄"
+  },
+  "FURFROU": {
+    "en": "Furfrou",
+    "zh": "长毛狗"
+  },
+  "FURRET": {
+    "en": "Furret",
+    "zh": "尾立"
+  },
+  "GABITE": {
+    "en": "Gabite",
+    "zh": "尖牙陆鲨"
+  },
+  "GABITE_female": {
+    "en": "Gabite ♀",
+    "zh": "尖牙陆鲨"
+  },
+  "GALLADE": {
+    "en": "Gallade",
+    "zh": "艾路雷朵"
+  },
+  "GALVANTULA": {
+    "en": "Galvantula",
+    "zh": "电狼蛛"
+  },
+  "GARBODOR": {
+    "en": "Garbodor",
+    "zh": "双拳海狮"
+  },
+  "GARCHOMP": {
+    "en": "Garchomp",
+    "zh": "烈咬陆鲨"
+  },
+  "GARCHOMP_female": {
+    "en": "Garchomp ♀",
+    "zh": "烈咬陆鲨"
+  },
+  "GARDEVOIR": {
+    "en": "Gardevoir",
+    "zh": "沙奈朵"
+  },
+  "GARGANACL": {
+    "en": "Garganacl",
+    "zh": "盐石巨灵"
+  },
+  "GASTLY": {
+    "en": "Gastly",
+    "zh": "鬼斯"
+  },
+  "GASTRODON": {
+    "en": "Gastrodon",
+    "zh": "海兔兽"
+  },
+  "GENESECT": {
+    "en": "Genesect",
+    "zh": "盖诺赛克特"
+  },
+  "GENGAR": {
+    "en": "Gengar",
+    "zh": "耿鬼"
+  },
+  "GEODUDE": {
+    "en": "Geodude",
+    "zh": "小拳石"
+  },
+  "GHOLDENGO": {
+    "en": "Gholdengo",
+    "zh": "金肉泥"
+  },
+  "GIBLE": {
+    "en": "Gible",
+    "zh": "圆陆鲨"
+  },
+  "GIBLE_female": {
+    "en": "Gible ♀",
+    "zh": "圆陆鲨"
+  },
+  "GIGALITH": {
+    "en": "Gigalith",
+    "zh": "巨石丁"
+  },
+  "GIMMIGHOUL": {
+    "en": "Gimmighoul",
+    "zh": "小幽灵"
+  },
+  "GIRAFARIG": {
+    "en": "Girafarig",
+    "zh": "麒麟奇"
+  },
+  "GIRATINA": {
+    "en": "Giratina",
+    "zh": "骑拉帝纳"
+  },
+  "GLACEON": {
+    "en": "Glaceon",
+    "zh": "冰伊布"
+  },
+  "GLALIE": {
+    "en": "Glalie",
+    "zh": "冰宝"
+  },
+  "GLAMEOW": {
+    "en": "Glameow",
+    "zh": "猫魅"
+  },
+  "GLASTRIER": {
+    "en": "Glastrier",
+    "zh": "雪暴马"
+  },
+  "GLIGAR": {
+    "en": "Gligar",
+    "zh": "天蝎"
+  },
+  "GLIMMET": {
+    "en": "Glimmet",
+    "zh": "矿宝宝"
+  },
+  "GLIMMORA": {
+    "en": "Glimmora",
+    "zh": "原野水母"
+  },
+  "GLISCOR": {
+    "en": "Gliscor",
+    "zh": "天蝎王"
+  },
+  "GLOOM": {
+    "en": "Gloom",
+    "zh": "口呆花"
+  },
+  "GOGOAT": {
+    "en": "Gogoat",
+    "zh": "坐骑山羊"
+  },
+  "GOLBAT": {
+    "en": "Golbat",
+    "zh": "大嘴蝠"
+  },
+  "GOLDEEN": {
+    "en": "Goldeen",
+    "zh": "金鱼王"
+  },
+  "GOLDUCK": {
+    "en": "Golduck",
+    "zh": "哥达鸭"
+  },
+  "GOLEM": {
+    "en": "Golem",
+    "zh": "隆隆岩"
+  },
+  "GOLETT": {
+    "en": "Golett",
+    "zh": "泥偶小人"
+  },
+  "GOLISOPOD": {
+    "en": "Golisopod",
+    "zh": "具甲武者"
+  },
+  "GOLURK": {
+    "en": "Golurk",
+    "zh": "泥偶巨人"
+  },
+  "GOODRA": {
+    "en": "Goodra",
+    "zh": "黏美龙"
+  },
+  "GOOMY": {
+    "en": "Goomy",
+    "zh": "黏黏宝"
+  },
+  "GOREBYSS": {
+    "en": "Gorebyss",
+    "zh": "猎斑鱼"
+  },
+  "GOSSIFLEUR": {
+    "en": "Gossifleur",
+    "zh": "诈唬魔"
+  },
+  "GOTHITA": {
+    "en": "Gothita",
+    "zh": "哥德宝宝"
+  },
+  "GOTHITELLE": {
+    "en": "Gothitelle",
+    "zh": "哥德小姐"
+  },
+  "GOTHORITA": {
+    "en": "Gothorita",
+    "zh": "哥德小童"
+  },
+  "GOURGEIST": {
+    "en": "Gourgeist",
+    "zh": "南瓜怪人"
+  },
+  "GRAFAIAI": {
+    "en": "Grafaiai",
+    "zh": "涂鸦猴"
+  },
+  "GRANBULL": {
+    "en": "Granbull",
+    "zh": "巨牙猪"
+  },
+  "GRAPPLOCT": {
+    "en": "Grapploct",
+    "zh": "格斗章鱼"
+  },
+  "GRAVELER": {
+    "en": "Graveler",
+    "zh": "隆隆石"
+  },
+  "GREATTUSK": {
+    "en": "Greattusk",
+    "zh": "大牙猪"
+  },
+  "GREAVARD": {
+    "en": "Greavard",
+    "zh": "小殡犬"
+  },
+  "GREEDENT": {
+    "en": "Greedent",
+    "zh": "藏饱栗鼠"
+  },
+  "GRENINJA": {
+    "en": "Greninja",
+    "zh": "甲贺忍蛙"
+  },
+  "GRIMER": {
+    "en": "Grimer",
+    "zh": "臭泥"
+  },
+  "GRIMMSNARL": {
+    "en": "Grimmsnarl",
+    "zh": "轰擂金刚猩"
+  },
+  "GROOKEY": {
+    "en": "Grookey",
+    "zh": "敲音猴"
+  },
+  "GROTLE": {
+    "en": "Grotle",
+    "zh": "树林龟"
+  },
+  "GROUDON": {
+    "en": "Groudon",
+    "zh": "固拉多"
+  },
+  "GROVYLE": {
+    "en": "Grovyle",
+    "zh": "森林蜥蜴"
+  },
+  "GROWLITHE": {
+    "en": "Growlithe",
+    "zh": "卡蒂狗"
+  },
+  "GRUBBIN": {
+    "en": "Grubbin",
+    "zh": "强颚鸡母虫"
+  },
+  "GRUMPIG": {
+    "en": "Grumpig",
+    "zh": "压抑怪"
+  },
+  "GULPIN": {
+    "en": "Gulpin",
+    "zh": "吞食兽"
+  },
+  "GUMSHOOS": {
+    "en": "Gumshoos",
+    "zh": "贪吃鼬"
+  },
+  "GURDURR": {
+    "en": "Gurdurr",
+    "zh": "铁骨土人"
+  },
+  "GUZZLORD": {
+    "en": "Guzzlord",
+    "zh": "恶食大王"
+  },
+  "GYARADOS": {
+    "en": "Gyarados",
+    "zh": "暴鲤龙"
+  },
+  "HAKAMOO": {
+    "en": "Hakamoo",
+    "zh": "羽裙蛇"
+  },
+  "HAPPINY": {
+    "en": "Happiny",
+    "zh": "小福蛋"
+  },
+  "HARIYAMA": {
+    "en": "Hariyama",
+    "zh": "铁掌力士"
+  },
+  "HATENNA": {
+    "en": "Hatenna",
+    "zh": "迷布莉姆"
+  },
+  "HATTERENE": {
+    "en": "Hatterene",
+    "zh": "布莉姆温"
+  },
+  "HATTREM": {
+    "en": "Hattrem",
+    "zh": "提布莉姆"
+  },
+  "HAUNTER": {
+    "en": "Haunter",
+    "zh": "鬼斯通"
+  },
+  "HAWLUCHA": {
+    "en": "Hawlucha",
+    "zh": "摔角鹰人"
+  },
+  "HAXORUS": {
+    "en": "Haxorus",
+    "zh": "斧牙龙"
+  },
+  "HEATMOR": {
+    "en": "Heatmor",
+    "zh": "加热洛"
+  },
+  "HEATRAN": {
+    "en": "Heatran",
+    "zh": "席多蓝恩"
+  },
+  "HELIOLISK": {
+    "en": "Heliolisk",
+    "zh": "光电伞蜥"
+  },
+  "HELIOPTILE": {
+    "en": "Helioptile",
+    "zh": "伞电蜥"
+  },
+  "HERACROSS": {
+    "en": "Heracross",
+    "zh": "赫拉克罗斯"
+  },
+  "HERACROSS_female": {
+    "en": "Heracross ♀",
+    "zh": "赫拉克罗斯"
+  },
+  "HERDIER": {
+    "en": "Herdier",
+    "zh": "长毛狗"
+  },
+  "HIPPOPOTAS": {
+    "en": "Hippopotas",
+    "zh": "沙河马"
+  },
+  "HIPPOPOTAS_female": {
+    "en": "Hippopotas ♀",
+    "zh": "沙河马"
+  },
+  "HIPPOWDON": {
+    "en": "Hippowdon",
+    "zh": "河马兽"
+  },
+  "HIPPOWDON_female": {
+    "en": "Hippowdon ♀",
+    "zh": "河马兽"
+  },
+  "HITMONCHAN": {
+    "en": "Hitmonchan",
+    "zh": "快拳郎"
+  },
+  "HITMONLEE": {
+    "en": "Hitmonlee",
+    "zh": "飞腿郎"
+  },
+  "HITMONTOP": {
+    "en": "Hitmontop",
+    "zh": "战舞郎"
+  },
+  "HONCHKROW": {
+    "en": "Honchkrow",
+    "zh": "乌鸦头头"
+  },
+  "HONEDGE": {
+    "en": "Honedge",
+    "zh": "独剑鞘"
+  },
+  "HOOH": {
+    "en": "Hooh",
+    "zh": "凤王"
+  },
+  "HOOPA": {
+    "en": "Hoopa",
+    "zh": "胡帕"
+  },
+  "HOOTHOOT": {
+    "en": "Hoothoot",
+    "zh": "咕咕"
+  },
+  "HOPPIP": {
+    "en": "Hoppip",
+    "zh": "绒毛球"
+  },
+  "HORSEA": {
+    "en": "Horsea",
+    "zh": "墨海马"
+  },
+  "HOUNDOOM": {
+    "en": "Houndoom",
+    "zh": "黑鲁加"
+  },
+  "HOUNDOUR": {
+    "en": "Houndour",
+    "zh": "戴鲁比"
+  },
+  "HOUNDSTONE": {
+    "en": "Houndstone",
+    "zh": "墓仔狗"
+  },
+  "HUNTAIL": {
+    "en": "Huntail",
+    "zh": "猎斑鱼"
+  },
+  "HYDREIGON": {
+    "en": "Hydreigon",
+    "zh": "三头恶龙"
+  },
+  "HYPNO": {
+    "en": "Hypno",
+    "zh": "引梦貘人"
+  },
+  "IGGLYBUFF": {
+    "en": "Igglybuff",
+    "zh": "宝宝丁"
+  },
+  "ILLUMISE": {
+    "en": "Illumise",
+    "zh": "甜甜萤"
+  },
+  "IMPIDIMP": {
+    "en": "Impidimp",
+    "zh": "捣蛋小妖"
+  },
+  "INCINEROAR": {
+    "en": "Incineroar",
+    "zh": "炽焰咆哮虎"
+  },
+  "INDEEDEE": {
+    "en": "Indeedee",
+    "zh": "引梦貘人"
+  },
+  "INFERNAPE": {
+    "en": "Infernape",
+    "zh": "烈焰猴"
+  },
+  "INKAY": {
+    "en": "Inkay",
+    "zh": "好坏星"
+  },
+  "INTELEON": {
+    "en": "Inteleon",
+    "zh": "千面避役"
+  },
+  "IRONBUNDLE": {
+    "en": "Ironbundle",
+    "zh": "铁包袱"
+  },
+  "IRONHANDS": {
+    "en": "Ironhands",
+    "zh": "铁拳"
+  },
+  "IRONJUGULIS": {
+    "en": "Ironjugulis",
+    "zh": "铁鸥"
+  },
+  "IRONLEAVES": {
+    "en": "Ironleaves",
+    "zh": "铁叶"
+  },
+  "IRONMOTH": {
+    "en": "Ironmoth",
+    "zh": "铁蛾"
+  },
+  "IRONTHORNS": {
+    "en": "Ironthorns",
+    "zh": "铁刺"
+  },
+  "IRONTREADS": {
+    "en": "Irontreads",
+    "zh": "铁蹄"
+  },
+  "IRONVALIANT": {
+    "en": "Ironvaliant",
+    "zh": "铁卫"
+  },
+  "IVYSAUR": {
+    "en": "Ivysaur",
+    "zh": "妙蛙草"
+  },
+  "JANGMOO": {
+    "en": "Jangmoo",
+    "zh": "小经"
+  },
+  "JELLICENT": {
+    "en": "Jellicent",
+    "zh": "破破袋"
+  },
+  "JELLICENT_female": {
+    "en": "Jellicent ♀",
+    "zh": "破破袋"
+  },
+  "JIGGLYPUFF": {
+    "en": "Jigglypuff",
+    "zh": "胖丁"
+  },
+  "JIRACHI": {
+    "en": "Jirachi",
+    "zh": "基拉祈"
+  },
+  "JOLTEON": {
+    "en": "Jolteon",
+    "zh": "雷伊布"
+  },
+  "JOLTIK": {
+    "en": "Joltik",
+    "zh": "电电虫"
+  },
+  "JUMPLUFF": {
+    "en": "Jumpluff",
+    "zh": "绵毛泡"
+  },
+  "JYNX": {
+    "en": "Jynx",
+    "zh": "迷唇姐"
+  },
+  "KABUTO": {
+    "en": "Kabuto",
+    "zh": "化石盔"
+  },
+  "KABUTOPS": {
+    "en": "Kabutops",
+    "zh": "镰刀盔"
+  },
+  "KADABRA": {
+    "en": "Kadabra",
+    "zh": "勇基拉"
+  },
+  "KAKUNA": {
+    "en": "Kakuna",
+    "zh": "铁壳蛹"
+  },
+  "KANGASKHAN": {
+    "en": "Kangaskhan",
+    "zh": "袋兽"
+  },
+  "KARRABLAST": {
+    "en": "Karrablast",
+    "zh": "铁臂枪虾"
+  },
+  "KARTANA": {
+    "en": "Kartana",
+    "zh": "纸御剑"
+  },
+  "KECLEON": {
+    "en": "Kecleon",
+    "zh": "变隐龙"
+  },
+  "KELDEO": {
+    "en": "Keldeo",
+    "zh": "凯路迪欧"
+  },
+  "KILOWATTREL": {
+    "en": "Kilowattrel",
+    "zh": "电鸟"
+  },
+  "KINGAMBIT": {
+    "en": "Kingambit",
+    "zh": "劈斧螳螂"
+  },
+  "KINGDRA": {
+    "en": "Kingdra",
+    "zh": "海刺龙"
+  },
+  "KINGLER": {
+    "en": "Kingler",
+    "zh": "巨钳蟹"
+  },
+  "KIRLIA": {
+    "en": "Kirlia",
+    "zh": "奇鲁莉安"
+  },
+  "KLANG": {
+    "en": "Klang",
+    "zh": "齿轮组"
+  },
+  "KLAWF": {
+    "en": "Klawf",
+    "zh": "钳爪蟹"
+  },
+  "KLEAVOR": {
+    "en": "Kleavor",
+    "zh": "劈斧螳螂"
+  },
+  "KLEFKI": {
+    "en": "Klefki",
+    "zh": "钥圈儿"
+  },
+  "KLINK": {
+    "en": "Klink",
+    "zh": "齿轮儿"
+  },
+  "KLINKLANG": {
+    "en": "Klinklang",
+    "zh": "齿轮怪"
+  },
+  "KOFFING": {
+    "en": "Koffing",
+    "zh": "瓦斯弹"
+  },
+  "KOMALA": {
+    "en": "Komala",
+    "zh": "树枕熊"
+  },
+  "KOMMOO": {
+    "en": "Kommoo",
+    "zh": "杖尾鳞鱼龙"
+  },
+  "KORAIDON": {
+    "en": "Koraidon",
+    "zh": "故勒顿"
+  },
+  "KRABBY": {
+    "en": "Krabby",
+    "zh": "大钳蟹"
+  },
+  "KRICKETOT": {
+    "en": "Kricketot",
+    "zh": "音箱蟀"
+  },
+  "KRICKETUNE": {
+    "en": "Kricketune",
+    "zh": "方言蟀"
+  },
+  "KROKOROK": {
+    "en": "Krokorok",
+    "zh": "混混鳄"
+  },
+  "KROOKODILE": {
+    "en": "Krookodile",
+    "zh": "流氓鳄"
+  },
+  "KUBFU": {
+    "en": "Kubfu",
+    "zh": "熊徒弟"
+  },
+  "KYOGRE": {
+    "en": "Kyogre",
+    "zh": "盖欧卡"
+  },
+  "KYUREM": {
+    "en": "Kyurem",
+    "zh": "酋雷姆"
+  },
+  "LAIRON": {
+    "en": "Lairon",
+    "zh": "铁掌力士"
+  },
+  "LAMPENT": {
+    "en": "Lampent",
+    "zh": "灯火幽灵"
+  },
+  "LANDORUS": {
+    "en": "Landorus",
+    "zh": "龙卷云"
+  },
+  "LANTURN": {
+    "en": "Lanturn",
+    "zh": "电灯鱼"
+  },
+  "LAPRAS": {
+    "en": "Lapras",
+    "zh": "拉普拉斯"
+  },
+  "LARVESTA": {
+    "en": "Larvesta",
+    "zh": "火神虫"
+  },
+  "LARVITAR": {
+    "en": "Larvitar",
+    "zh": "幼棉棉"
+  },
+  "LATIAS": {
+    "en": "Latias",
+    "zh": "拉帝亚斯"
+  },
+  "LATIOS": {
+    "en": "Latios",
+    "zh": "拉帝欧斯"
+  },
+  "LEAFEON": {
+    "en": "Leafeon",
+    "zh": "叶伊布"
+  },
+  "LEAVANNY": {
+    "en": "Leavanny",
+    "zh": "裙摆蛾"
+  },
+  "LECHONK": {
+    "en": "Lechonk",
+    "zh": "猪扑"
+  },
+  "LEDIAN": {
+    "en": "Ledian",
+    "zh": "大竺葵"
+  },
+  "LEDYBA": {
+    "en": "Ledyba",
+    "zh": "大竺葵"
+  },
+  "LICKILICKY": {
+    "en": "Lickilicky",
+    "zh": "大舌舔"
+  },
+  "LICKITUNG": {
+    "en": "Lickitung",
+    "zh": "大舌头"
+  },
+  "LIEPARD": {
+    "en": "Liepard",
+    "zh": "酷豹"
+  },
+  "LILEEP": {
+    "en": "Lileep",
+    "zh": "百合根娃娃"
+  },
+  "LILLIGANT": {
+    "en": "Lilligant",
+    "zh": "裙儿小姐"
+  },
+  "LILLIPUP": {
+    "en": "Lillipup",
+    "zh": "小约克"
+  },
+  "LINOONE": {
+    "en": "Linoone",
+    "zh": "蛇纹熊"
+  },
+  "LITLEO": {
+    "en": "Litleo",
+    "zh": "小狮狮"
+  },
+  "LITTEN": {
+    "en": "Litten",
+    "zh": "火斑喵"
+  },
+  "LITWICK": {
+    "en": "Litwick",
+    "zh": "蜡烛宝宝"
+  },
+  "LOKIX": {
+    "en": "Lokix",
+    "zh": "虫蛙"
+  },
+  "LOMBRE": {
+    "en": "Lombre",
+    "zh": "莲花怪"
+  },
+  "LOPUNNY": {
+    "en": "Lopunny",
+    "zh": "长耳兔"
+  },
+  "LOTAD": {
+    "en": "Lotad",
+    "zh": "莲叶童子"
+  },
+  "LOUDRED": {
+    "en": "Loudred",
+    "zh": "吼爆弹"
+  },
+  "LUCARIO": {
+    "en": "Lucario",
+    "zh": "路卡利欧"
+  },
+  "LUDICOLO": {
+    "en": "Ludicolo",
+    "zh": "乐天河童"
+  },
+  "LUGIA": {
+    "en": "Lugia",
+    "zh": "洛奇亚"
+  },
+  "LUMINEON": {
+    "en": "Lumineon",
+    "zh": "荧光鱼"
+  },
+  "LUNALA": {
+    "en": "Lunala",
+    "zh": "露奈雅拉"
+  },
+  "LUNATONE": {
+    "en": "Lunatone",
+    "zh": "月亮岩"
+  },
+  "LURANTIS": {
+    "en": "Lurantis",
+    "zh": "兰螳花"
+  },
+  "LUVDISC": {
+    "en": "Luvdisc",
+    "zh": "爱心鱼"
+  },
+  "LUXIO": {
+    "en": "Luxio",
+    "zh": "勒克猫"
+  },
+  "LUXRAY": {
+    "en": "Luxray",
+    "zh": "伦琴猫"
+  },
+  "LYCANROC": {
+    "en": "Lycanroc",
+    "zh": "鬃岩狼人"
+  },
+  "MABOSTIFF": {
+    "en": "Mabostiff",
+    "zh": "獒教父"
+  },
+  "MACHAMP": {
+    "en": "Machamp",
+    "zh": "怪力"
+  },
+  "MACHOKE": {
+    "en": "Machoke",
+    "zh": "豪力"
+  },
+  "MACHOP": {
+    "en": "Machop",
+    "zh": "腕力"
+  },
+  "MAGBY": {
+    "en": "Magby",
+    "zh": "鸭嘴宝宝"
+  },
+  "MAGCARGO": {
+    "en": "Magcargo",
+    "zh": "熔岩蜗牛"
+  },
+  "MAGEARNA": {
+    "en": "Magearna",
+    "zh": "玛机雅娜"
+  },
+  "MAGIKARP": {
+    "en": "Magikarp",
+    "zh": "鲤鱼王"
+  },
+  "MAGMAR": {
+    "en": "Magmar",
+    "zh": "鸭嘴火兽"
+  },
+  "MAGMORTAR": {
+    "en": "Magmortar",
+    "zh": "鸭嘴炎兽"
+  },
+  "MAGNEMITE": {
+    "en": "Magnemite",
+    "zh": "小磁怪"
+  },
+  "MAGNETON": {
+    "en": "Magneton",
+    "zh": "三合一磁怪"
+  },
+  "MAGNEZONE": {
+    "en": "Magnezone",
+    "zh": "自爆磁怪"
+  },
+  "MAKUHITA": {
+    "en": "Makuhita",
+    "zh": "力壮鸡"
+  },
+  "MALAMAR": {
+    "en": "Malamar",
+    "zh": "好坏星"
+  },
+  "MAMOSWINE": {
+    "en": "Mamoswine",
+    "zh": "象牙猪"
+  },
+  "MANAPHY": {
+    "en": "Manaphy",
+    "zh": "玛纳霏"
+  },
+  "MANDIBUZZ": {
+    "en": "Mandibuzz",
+    "zh": "秃鹰娜"
+  },
+  "MANECTRIC": {
+    "en": "Manectric",
+    "zh": "大象"
+  },
+  "MANKEY": {
+    "en": "Mankey",
+    "zh": "火暴猴"
+  },
+  "MANTINE": {
+    "en": "Mantine",
+    "zh": "巨翅飞鱼"
+  },
+  "MANTYKE": {
+    "en": "Mantyke",
+    "zh": "小巨翅鱼"
+  },
+  "MARACTUS": {
+    "en": "Maractus",
+    "zh": "刺刺花"
+  },
+  "MAREANIE": {
+    "en": "Mareanie",
+    "zh": "毒刺水母"
+  },
+  "MAREEP": {
+    "en": "Mareep",
+    "zh": "咩利羊"
+  },
+  "MARILL": {
+    "en": "Marill",
+    "zh": "玛力露"
+  },
+  "MAROWAK": {
+    "en": "Marowak",
+    "zh": "嘎啦嘎啦"
+  },
+  "MARSHADOW": {
+    "en": "Marshadow",
+    "zh": "玛夏多"
+  },
+  "MARSHTOMP": {
+    "en": "Marshtomp",
+    "zh": "莲帽小童"
+  },
+  "MASCHIFF": {
+    "en": "Maschiff",
+    "zh": "小恶犬"
+  },
+  "MASQUERAIN": {
+    "en": "Masquerain",
+    "zh": "雨翅蛾"
+  },
+  "MAUSHOLD": {
+    "en": "Maushold",
+    "zh": "家圈鼠"
+  },
+  "MAWILE": {
+    "en": "Mawile",
+    "zh": "大嘴娃"
+  },
+  "MEDICHAM": {
+    "en": "Medicham",
+    "zh": "冥想封"
+  },
+  "MEDITITE": {
+    "en": "Meditite",
+    "zh": "玛沙那"
+  },
+  "MEGANIUM": {
+    "en": "Meganium",
+    "zh": "大竺葵"
+  },
+  "MEGANIUM_female": {
+    "en": "Meganium ♀",
+    "zh": "大竺葵"
+  },
+  "MELMETAL": {
+    "en": "Melmetal",
+    "zh": "美录梅塔"
+  },
+  "MELOETTA": {
+    "en": "Meloetta",
+    "zh": "美洛耶塔"
+  },
+  "MELTAN": {
+    "en": "Meltan",
+    "zh": "美录坦"
+  },
+  "MEOWSCARADA": {
+    "en": "Meowscarada",
+    "zh": "魔幻假面喵"
+  },
+  "MEOWSTIC": {
+    "en": "Meowstic",
+    "zh": "超能妙喵"
+  },
+  "MEOWSTIC_female": {
+    "en": "Meowstic ♀",
+    "zh": "超能妙喵"
+  },
+  "MEOWTH": {
+    "en": "Meowth",
+    "zh": "喵喵"
+  },
+  "MESPRIT": {
+    "en": "Mesprit",
+    "zh": "艾姆利多"
+  },
+  "METAGROSS": {
+    "en": "Metagross",
+    "zh": "巨金怪"
+  },
+  "METANG": {
+    "en": "Metang",
+    "zh": "铁哑铃"
+  },
+  "METAPOD": {
+    "en": "Metapod",
+    "zh": "铁甲蛹"
+  },
+  "MEW": {
+    "en": "Mew",
+    "zh": "梦幻"
+  },
+  "MEWTWO": {
+    "en": "Mewtwo",
+    "zh": "超梦"
+  },
+  "MIENFOO": {
+    "en": "Mienfoo",
+    "zh": "武术鼬"
+  },
+  "MIENSHAO": {
+    "en": "Mienshao",
+    "zh": "师父鼬"
+  },
+  "MIGHTYENA": {
+    "en": "Mightyena",
+    "zh": "大狼犬"
+  },
+  "MILCERY": {
+    "en": "Milcery",
+    "zh": "奶油猫"
+  },
+  "MILOTIC": {
+    "en": "Milotic",
+    "zh": "美纳斯"
+  },
+  "MILTANK": {
+    "en": "Miltank",
+    "zh": "大奶罐"
+  },
+  "MIMEJR": {
+    "en": "Mime Jr.",
+    "zh": "魔墙人偶"
+  },
+  "MIMIKYU": {
+    "en": "Mimikyu",
+    "zh": "谜拟丘"
+  },
+  "MINCCINO": {
+    "en": "Minccino",
+    "zh": "奇诺栗鼠"
+  },
+  "MINIOR": {
+    "en": "Minior",
+    "zh": "小陨星"
+  },
+  "MINUN": {
+    "en": "Minun",
+    "zh": "负电拍拍"
+  },
+  "MIRAIDON": {
+    "en": "Miraidon",
+    "zh": "电龙"
+  },
+  "MISDREAVUS": {
+    "en": "Misdreavus",
+    "zh": "梦妖"
+  },
+  "MISMAGIUS": {
+    "en": "Mismagius",
+    "zh": "梦妖魔"
+  },
+  "MOLTRES": {
+    "en": "Moltres",
+    "zh": "火焰鸟"
+  },
+  "MONFERNO": {
+    "en": "Monferno",
+    "zh": "猛火猴"
+  },
+  "MORELULL": {
+    "en": "Morelull",
+    "zh": "荧光鱼"
+  },
+  "MORGREM": {
+    "en": "Morgrem",
+    "zh": "恶鬼"
+  },
+  "MORPEKO": {
+    "en": "Morpeko",
+    "zh": "电电鼠"
+  },
+  "MOTHIM": {
+    "en": "Mothim",
+    "zh": "结草贵妇"
+  },
+  "MRMIME": {
+    "en": "Mr. Mime",
+    "zh": "魔墙人偶"
+  },
+  "MRRIME": {
+    "en": "Mr. Rime",
+    "zh": "踏冰人偶"
+  },
+  "MUDBRAY": {
+    "en": "Mudbray",
+    "zh": "泥驴仔"
+  },
+  "MUDKIP": {
+    "en": "Mudkip",
+    "zh": "水跃鱼"
+  },
+  "MUDSDALE": {
+    "en": "Mudsdale",
+    "zh": "泥偶巨人"
+  },
+  "MUK": {
+    "en": "Muk",
+    "zh": "臭臭泥"
+  },
+  "MUNCHLAX": {
+    "en": "Munchlax",
+    "zh": "小卡比兽"
+  },
+  "MUNNA": {
+    "en": "Munna",
+    "zh": "食梦兽"
+  },
+  "MURKROW": {
+    "en": "Murkrow",
+    "zh": "黑暗鸦"
+  },
+  "MUSHARNA": {
+    "en": "Musharna",
+    "zh": "梦梦蚀"
+  },
+  "NACLI": {
+    "en": "Nacli",
+    "zh": "盐石宝"
+  },
+  "NACLSTACK": {
+    "en": "Naclstack",
+    "zh": "盐石垒"
+  },
+  "NAGANADEL": {
+    "en": "Naganadel",
+    "zh": "毒贝比"
+  },
+  "NATU": {
+    "en": "Natu",
+    "zh": "天然鸟"
+  },
+  "NECROZMA": {
+    "en": "Necrozma",
+    "zh": "奈克洛兹玛"
+  },
+  "NICKIT": {
+    "en": "Nickit",
+    "zh": "狐狸鼠"
+  },
+  "NIDOKING": {
+    "en": "Nidoking",
+    "zh": "尼多王"
+  },
+  "NIDOQUEEN": {
+    "en": "Nidoqueen",
+    "zh": "尼多后"
+  },
+  "NIDORANfE": {
+    "en": "Nidoran ♀",
+    "zh": "尼多兰♀"
+  },
+  "NIDORANmA": {
+    "en": "Nidoran ♂",
+    "zh": "尼多郎♂"
+  },
+  "NIDORINA": {
+    "en": "Nidorina",
+    "zh": "尼多娜"
+  },
+  "NIDORINO": {
+    "en": "Nidorino",
+    "zh": "尼多朗"
+  },
+  "NIHILEGO": {
+    "en": "Nihilego",
+    "zh": "虚吾伊德"
+  },
+  "NINCADA": {
+    "en": "Nincada",
+    "zh": "土居忍士"
+  },
+  "NINETALES": {
+    "en": "Ninetales",
+    "zh": "九尾"
+  },
+  "NINJASK": {
+    "en": "Ninjask",
+    "zh": "铁面忍者"
+  },
+  "NOCTOWL": {
+    "en": "Noctowl",
+    "zh": "猫头夜鹰"
+  },
+  "NOIBAT": {
+    "en": "Noibat",
+    "zh": "嗡蝠"
+  },
+  "NOIVERN": {
+    "en": "Noivern",
+    "zh": "音波龙"
+  },
+  "NOSEPASS": {
+    "en": "Nosepass",
+    "zh": "朝北鼻"
+  },
+  "NUMEL": {
+    "en": "Numel",
+    "zh": "呆火驼"
+  },
+  "NUZLEAF": {
+    "en": "Nuzleaf",
+    "zh": "狡猾天狗"
+  },
+  "NYMBLE": {
+    "en": "Nymble",
+    "zh": "小蚱蜢"
+  },
+  "OBSTAGOON": {
+    "en": "Obstagoon",
+    "zh": "流氓鳄"
+  },
+  "OCTILLERY": {
+    "en": "Octillery",
+    "zh": "章鱼桶"
+  },
+  "ODDISH": {
+    "en": "Oddish",
+    "zh": "臭臭花"
+  },
+  "OINKOLOGNE": {
+    "en": "Oinkologne",
+    "zh": "猪鼻怪"
+  },
+  "OMANYTE": {
+    "en": "Omanyte",
+    "zh": "菊石兽"
+  },
+  "OMASTAR": {
+    "en": "Omastar",
+    "zh": "多刺菊石兽"
+  },
+  "ONIX": {
+    "en": "Onix",
+    "zh": "大岩蛇"
+  },
+  "ORANGURU": {
+    "en": "Oranguru",
+    "zh": "智忍者"
+  },
+  "ORBEETLE": {
+    "en": "Orbeetle",
+    "zh": "脑瓜怪"
+  },
+  "ORICORIO": {
+    "en": "Oricorio",
+    "zh": "花舞鸟"
+  },
+  "ORTHWORM": {
+    "en": "Orthworm",
+    "zh": "钻洞虫"
+  },
+  "ORTHWORMs": {
+    "en": "Orthworms",
+    "zh": "钻洞虫"
+  },
+  "OSHAWOTT": {
+    "en": "Oshawott",
+    "zh": "水水獭"
+  },
+  "OVERQWIL": {
+    "en": "Overqwil",
+    "zh": "毒刺鱼"
+  },
+  "PACHIRISU": {
+    "en": "Pachirisu",
+    "zh": "帕奇利兹"
+  },
+  "PALAFIN": {
+    "en": "Palafin",
+    "zh": "鳍鳍鱼"
+  },
+  "PALKIA": {
+    "en": "Palkia",
+    "zh": "帕路奇亚"
+  },
+  "PALOSSAND": {
+    "en": "Palossand",
+    "zh": "沙丘娃"
+  },
+  "PALPITOAD": {
+    "en": "Palpitoad",
+    "zh": "蟾蜍王"
+  },
+  "PANCHAM": {
+    "en": "Pancham",
+    "zh": "顽皮熊猫"
+  },
+  "PANGORO": {
+    "en": "Pangoro",
+    "zh": "流氓熊猫"
+  },
+  "PANPOUR": {
+    "en": "Panpour",
+    "zh": "冷水猴"
+  },
+  "PANSAGE": {
+    "en": "Pansage",
+    "zh": "叶子猴"
+  },
+  "PANSEAR": {
+    "en": "Pansear",
+    "zh": "火炎猴"
+  },
+  "PARAS": {
+    "en": "Paras",
+    "zh": "派拉斯"
+  },
+  "PARASECT": {
+    "en": "Parasect",
+    "zh": "派拉斯特"
+  },
+  "PASSIMIAN": {
+    "en": "Passimian",
+    "zh": "投摔怪"
+  },
+  "PATRAT": {
+    "en": "Patrat",
+    "zh": "探探鼠"
+  },
+  "PAWMI": {
+    "en": "Pawmi",
+    "zh": "电鼠"
+  },
+  "PAWMO": {
+    "en": "Pawmo",
+    "zh": "电鼠"
+  },
+  "PAWMOT": {
+    "en": "Pawmot",
+    "zh": "电鼠"
+  },
+  "PAWNIARD": {
+    "en": "Pawniard",
+    "zh": "驹刀小兵"
+  },
+  "PELIPPER": {
+    "en": "Pelipper",
+    "zh": "大嘴鸥"
+  },
+  "PERRSERKER": {
+    "en": "Perrserker",
+    "zh": "维京猫"
+  },
+  "PERSIAN": {
+    "en": "Persian",
+    "zh": "猫老大"
+  },
+  "PETILIL": {
+    "en": "Petilil",
+    "zh": "百合苗"
+  },
+  "PHANPY": {
+    "en": "Phanpy",
+    "zh": "小顿甲"
+  },
+  "PHANTUMP": {
+    "en": "Phantump",
+    "zh": "小木灵"
+  },
+  "PHEROMOSA": {
+    "en": "Pheromosa",
+    "zh": "费洛美螂"
+  },
+  "PHIONE": {
+    "en": "Phione",
+    "zh": "玛纳霏"
+  },
+  "PICHU": {
+    "en": "Pichu",
+    "zh": "皮丘"
+  },
+  "PIDGEOT": {
+    "en": "Pidgeot",
+    "zh": "大比鸟"
+  },
+  "PIDGEOTTO": {
+    "en": "Pidgeotto",
+    "zh": "比比鸟"
+  },
+  "PIDGEY": {
+    "en": "Pidgey",
+    "zh": "波波"
+  },
+  "PIDOVE": {
+    "en": "Pidove",
+    "zh": "豆豆鸽"
+  },
+  "PIGNITE": {
+    "en": "Pignite",
+    "zh": "炒炒猪"
+  },
+  "PIKACHU": {
+    "en": "Pikachu",
+    "zh": "皮卡丘"
+  },
+  "PIKACHU_female": {
+    "en": "Pikachu ♀",
+    "zh": "皮卡丘"
+  },
+  "PIKIPEK": {
+    "en": "Pikipek",
+    "zh": "小笃鸟"
+  },
+  "PILOSWINE": {
+    "en": "Piloswine",
+    "zh": "长毛猪"
+  },
+  "PINCURCHIN": {
+    "en": "Pincurchin",
+    "zh": "电刺鱼"
+  },
+  "PINECO": {
+    "en": "Pineco",
+    "zh": "榛果球"
+  },
+  "PINSIR": {
+    "en": "Pinsir",
+    "zh": "凯罗斯"
+  },
+  "PIPLUP": {
+    "en": "Piplup",
+    "zh": "波加曼"
+  },
+  "PLUSLE": {
+    "en": "Plusle",
+    "zh": "正电拍拍"
+  },
+  "POIPOLE": {
+    "en": "Poipole",
+    "zh": "毒贝比"
+  },
+  "POLITOED": {
+    "en": "Politoed",
+    "zh": "大河马"
+  },
+  "POLIWAG": {
+    "en": "Poliwag",
+    "zh": "角蛙"
+  },
+  "POLIWHIRL": {
+    "en": "Poliwhirl",
+    "zh": "蚊香蝌蚪"
+  },
+  "POLIWRATH": {
+    "en": "Poliwrath",
+    "zh": "蚊香泳士"
+  },
+  "POLTEAGEIST": {
+    "en": "Polteageist",
+    "zh": "茶会鬼"
+  },
+  "PONYTA": {
+    "en": "Ponyta",
+    "zh": "小火马"
+  },
+  "POOCHYENA": {
+    "en": "Poochyena",
+    "zh": "土狼犬"
+  },
+  "POPPLIO": {
+    "en": "Popplio",
+    "zh": "球球海狮"
+  },
+  "PORYGON": {
+    "en": "Porygon",
+    "zh": "多边兽"
+  },
+  "PORYGON2": {
+    "en": "Porygon2",
+    "zh": "多边兽2型"
+  },
+  "PORYGONZ": {
+    "en": "Porygonz",
+    "zh": "多边兽Z"
+  },
+  "PRIMARINA": {
+    "en": "Primarina",
+    "zh": "西狮海壬"
+  },
+  "PRIMEAPE": {
+    "en": "Primeape",
+    "zh": "怪力"
+  },
+  "PRINPLUP": {
+    "en": "Prinplup",
+    "zh": "双冠企鹅"
+  },
+  "PROBOPASS": {
+    "en": "Probopass",
+    "zh": "大朝北鼻"
+  },
+  "PSYDUCK": {
+    "en": "Psyduck",
+    "zh": "可达鸭"
+  },
+  "PUMPKABOO": {
+    "en": "Pumpkaboo",
+    "zh": "南瓜精"
+  },
+  "PUPITAR": {
+    "en": "Pupitar",
+    "zh": "铁忍者"
+  },
+  "PURRLOIN": {
+    "en": "Purrloin",
+    "zh": "扒手猫"
+  },
+  "PURUGLY": {
+    "en": "Purugly",
+    "zh": "胖胖猫"
+  },
+  "PYROAR": {
+    "en": "Pyroar",
+    "zh": "火炎狮"
+  },
+  "PYROAR_female": {
+    "en": "Pyroar ♀",
+    "zh": "火炎狮"
+  },
+  "PYUKUMUKU": {
+    "en": "Pyukumuku",
+    "zh": "皮球鱼"
+  },
+  "QUAGSIRE": {
+    "en": "Quagsire",
+    "zh": "沼王"
+  },
+  "QUAQUAVAL": {
+    "en": "Quaquaval",
+    "zh": "涌泉鸭"
+  },
+  "QUAXLY": {
+    "en": "Quaxly",
+    "zh": "润水鸭"
+  },
+  "QUAXWELL": {
+    "en": "Quaxwell",
+    "zh": "润水蛙"
+  },
+  "QUILAVA": {
+    "en": "Quilava",
+    "zh": "火岩鼠"
+  },
+  "QUILLADIN": {
+    "en": "Quilladin",
+    "zh": "布里卡龙"
+  },
+  "QWILFISH": {
+    "en": "Qwilfish",
+    "zh": "千针鱼"
+  },
+  "RABOOT": {
+    "en": "Raboot",
+    "zh": "格斗蛙"
+  },
+  "RABSCA": {
+    "en": "Rabsca",
+    "zh": "太阳光蝶"
+  },
+  "RAICHU": {
+    "en": "Raichu",
+    "zh": "雷丘"
+  },
+  "RAIKOU": {
+    "en": "Raikou",
+    "zh": "雷公"
+  },
+  "RALTS": {
+    "en": "Ralts",
+    "zh": "拉鲁拉丝"
+  },
+  "RAMPARDOS": {
+    "en": "Rampardos",
+    "zh": "战槌龙"
+  },
+  "RAPIDASH": {
+    "en": "Rapidash",
+    "zh": "烈焰马"
+  },
+  "RATICATE": {
+    "en": "Raticate",
+    "zh": "拉达"
+  },
+  "RATTATA": {
+    "en": "Rattata",
+    "zh": "小拉达"
+  },
+  "RAYQUAZA": {
+    "en": "Rayquaza",
+    "zh": "烈空坐"
+  },
+  "REGICE": {
+    "en": "Regice",
+    "zh": "雷吉艾斯"
+  },
+  "REGIDRAGO": {
+    "en": "Regidrago",
+    "zh": "雷吉铎拉戈"
+  },
+  "REGIELEKI": {
+    "en": "Regieleki",
+    "zh": "雷吉艾勒奇"
+  },
+  "REGIGIGAS": {
+    "en": "Regigigas",
+    "zh": "雷吉奇卡斯"
+  },
+  "REGIROCK": {
+    "en": "Regirock",
+    "zh": "雷吉洛克"
+  },
+  "REGISTEEL": {
+    "en": "Registeel",
+    "zh": "雷吉斯奇鲁"
+  },
+  "RELICANTH": {
+    "en": "Relicanth",
+    "zh": "祖先龟"
+  },
+  "RELLOR": {
+    "en": "Rellor",
+    "zh": "堆堆螨"
+  },
+  "REMORAID": {
+    "en": "Remoraid",
+    "zh": "铁炮鱼"
+  },
+  "RESHIRAM": {
+    "en": "Reshiram",
+    "zh": "莱希拉姆"
+  },
+  "REUNICLUS": {
+    "en": "Reuniclus",
+    "zh": "格斗水母"
+  },
+  "REVAVROOM": {
+    "en": "Revavroom",
+    "zh": "噪音怪"
+  },
+  "RHYDON": {
+    "en": "Rhydon",
+    "zh": "钻角犀兽"
+  },
+  "RHYHORN": {
+    "en": "Rhyhorn",
+    "zh": "独角犀牛"
+  },
+  "RHYPERIOR": {
+    "en": "Rhyperior",
+    "zh": "战槌龙"
+  },
+  "RIBOMBEE": {
+    "en": "Ribombee",
+    "zh": "蝶结萌虻"
+  },
+  "RILLABOOM": {
+    "en": "Rillaboom",
+    "zh": "鼓击蛙"
+  },
+  "RIOLU": {
+    "en": "Riolu",
+    "zh": "利欧路"
+  },
+  "ROARINGMOON": {
+    "en": "Roaringmoon",
+    "zh": "咆哮月"
+  },
+  "ROCKRUFF": {
+    "en": "Rockruff",
+    "zh": "岩狗狗"
+  },
+  "ROGGENROLA": {
+    "en": "Roggenrola",
+    "zh": "石丸子"
+  },
+  "ROLYCOLY": {
+    "en": "Rolycoly",
+    "zh": "煤炭龟"
+  },
+  "ROOKIDEE": {
+    "en": "Rookidee",
+    "zh": "稚山雀"
+  },
+  "ROSELIA": {
+    "en": "Roselia",
+    "zh": "毒蔷薇"
+  },
+  "ROSERADE": {
+    "en": "Roserade",
+    "zh": "罗丝雷朵"
+  },
+  "ROTOM": {
+    "en": "Rotom",
+    "zh": "洛托姆"
+  },
+  "ROWLET": {
+    "en": "Rowlet",
+    "zh": "木木枭"
+  },
+  "RUFFLET": {
+    "en": "Rufflet",
+    "zh": "毛头小鹰"
+  },
+  "RUNERIGUS": {
+    "en": "Runerigus",
+    "zh": "符咒棺"
+  },
+  "SABLEYE": {
+    "en": "Sableye",
+    "zh": "勾魂眼"
+  },
+  "SALAMENCE": {
+    "en": "Salamence",
+    "zh": "暴飞龙"
+  },
+  "SALANDIT": {
+    "en": "Salandit",
+    "zh": "夜盗火蜥"
+  },
+  "SALAZZLE": {
+    "en": "Salazzle",
+    "zh": "焰后蜥"
+  },
+  "SAMUROTT": {
+    "en": "Samurott",
+    "zh": "大剑鬼"
+  },
+  "SANDACONDA": {
+    "en": "Sandaconda",
+    "zh": "沙鳞蛇"
+  },
+  "SANDILE": {
+    "en": "Sandile",
+    "zh": "黑眼鳄"
+  },
+  "SANDSHREW": {
+    "en": "Sandshrew",
+    "zh": "穿山鼠"
+  },
+  "SANDSLASH": {
+    "en": "Sandslash",
+    "zh": "穿山王"
+  },
+  "SANDYGAST": {
+    "en": "Sandygast",
+    "zh": "沙丘娃"
+  },
+  "SANDYSHOCKS": {
+    "en": "Sandyshocks",
+    "zh": "沙电怪"
+  },
+  "SAWK": {
+    "en": "Sawk",
+    "zh": "投摔怪"
+  },
+  "SAWSBUCK": {
+    "en": "Sawsbuck",
+    "zh": "食叶兽"
+  },
+  "SCATTERBUG": {
+    "en": "Scatterbug",
+    "zh": "结草儿"
+  },
+  "SCEPTILE": {
+    "en": "Sceptile",
+    "zh": "蜥蜴王"
+  },
+  "SCIZOR": {
+    "en": "Scizor",
+    "zh": "巨钳螳螂"
+  },
+  "SCOLIPEDE": {
+    "en": "Scolipede",
+    "zh": "盖盖虫"
+  },
+  "SCORBUNNY": {
+    "en": "Scorbunny",
+    "zh": "炎兔儿"
+  },
+  "SCOVILLAIN": {
+    "en": "Scovillain",
+    "zh": "辣椒怪"
+  },
+  "SCRAFTY": {
+    "en": "Scrafty",
+    "zh": "头巾混混"
+  },
+  "SCRAGGY": {
+    "en": "Scraggy",
+    "zh": "滑滑小子"
+  },
+  "SCREAMTAIL": {
+    "en": "Screamtail",
+    "zh": "尖叫尾"
+  },
+  "SCYTHER": {
+    "en": "Scyther",
+    "zh": "飞天螳螂"
+  },
+  "SEADRA": {
+    "en": "Seadra",
+    "zh": "海刺龙"
+  },
+  "SEAKING": {
+    "en": "Seaking",
+    "zh": "金鱼王"
+  },
+  "SEALEO": {
+    "en": "Sealeo",
+    "zh": "海魔狮"
+  },
+  "SEEDOT": {
+    "en": "Seedot",
+    "zh": "橡实果"
+  },
+  "SEEL": {
+    "en": "Seel",
+    "zh": "小海狮"
+  },
+  "SEISMITOAD": {
+    "en": "Seismitoad",
+    "zh": "震震蟾"
+  },
+  "SENTRET": {
+    "en": "Sentret",
+    "zh": "尾立"
+  },
+  "SERPERIOR": {
+    "en": "Serperior",
+    "zh": "君主蛇"
+  },
+  "SERVINE": {
+    "en": "Servine",
+    "zh": "藤藤蛇"
+  },
+  "SEVIPER": {
+    "en": "Seviper",
+    "zh": "毒蛇王"
+  },
+  "SEWADDLE": {
+    "en": "Sewaddle",
+    "zh": "豆豆蛾"
+  },
+  "SHARPEDO": {
+    "en": "Sharpedo",
+    "zh": "巨牙鲨"
+  },
+  "SHAYMIN": {
+    "en": "Shaymin",
+    "zh": "谢米"
+  },
+  "SHEDINJA": {
+    "en": "Shedinja",
+    "zh": "脱壳忍者"
+  },
+  "SHELGON": {
+    "en": "Shelgon",
+    "zh": "甲壳龙"
+  },
+  "SHELLDER": {
+    "en": "Shellder",
+    "zh": "大舌贝"
+  },
+  "SHELLOS": {
+    "en": "Shellos",
+    "zh": "大舌贝"
+  },
+  "SHELMET": {
+    "en": "Shelmet",
+    "zh": "头盖虫"
+  },
+  "SHIELDON": {
+    "en": "Shieldon",
+    "zh": "盾甲龙"
+  },
+  "SHIFTRY": {
+    "en": "Shiftry",
+    "zh": "长毛狗"
+  },
+  "SHIINOTIC": {
+    "en": "Shiinotic",
+    "zh": "菌丝怪"
+  },
+  "SHINX": {
+    "en": "Shinx",
+    "zh": "小猫怪"
+  },
+  "SHROODLE": {
+    "en": "Shroodle",
+    "zh": "涂鸦鼠"
+  },
+  "SHROOMISH": {
+    "en": "Shroomish",
+    "zh": "蘑蘑菇"
+  },
+  "SHUCKLE": {
+    "en": "Shuckle",
+    "zh": "壶壶"
+  },
+  "SHUPPET": {
+    "en": "Shuppet",
+    "zh": "怨影娃"
+  },
+  "SIGILYPH": {
+    "en": "Sigilyph",
+    "zh": "象征鸟"
+  },
+  "SILCOON": {
+    "en": "Silcoon",
+    "zh": "甲壳茧"
+  },
+  "SILICOBRA": {
+    "en": "Silicobra",
+    "zh": "沙蛇"
+  },
+  "SILVALLY": {
+    "en": "Silvally",
+    "zh": "银伴战兽"
+  },
+  "SIMIPOUR": {
+    "en": "Simipour",
+    "zh": "冷水猴"
+  },
+  "SIMISAGE": {
+    "en": "Simisage",
+    "zh": "叶子猴"
+  },
+  "SIMISEAR": {
+    "en": "Simisear",
+    "zh": "火炎猴"
+  },
+  "SINISTEA": {
+    "en": "Sinistea",
+    "zh": "恶茶杯"
+  },
+  "SIRFETCHD": {
+    "en": "Sirfetch'd",
+    "zh": "大葱鸭"
+  },
+  "SIZZLIPEDE": {
+    "en": "Sizzlipede",
+    "zh": "火脚虫"
+  },
+  "SKARMORY": {
+    "en": "Skarmory",
+    "zh": "盔甲鸟"
+  },
+  "SKELEDIRGE": {
+    "en": "Skeledirge",
+    "zh": "骷髅鳄"
+  },
+  "SKIDDO": {
+    "en": "Skiddo",
+    "zh": "坐骑小羊"
+  },
+  "SKIPLOOM": {
+    "en": "Skiploom",
+    "zh": "苗苗钓瓶"
+  },
+  "SKITTY": {
+    "en": "Skitty",
+    "zh": "粉红猫"
+  },
+  "SKORUPI": {
+    "en": "Skorupi",
+    "zh": "毒蝎"
+  },
+  "SKRELP": {
+    "en": "Skrelp",
+    "zh": "海草蛇"
+  },
+  "SKUNTANK": {
+    "en": "Skuntank",
+    "zh": "臭鼬怪"
+  },
+  "SKWOVET": {
+    "en": "Skwovet",
+    "zh": "贪吃鼠"
+  },
+  "SLAKING": {
+    "en": "Slaking",
+    "zh": "懒人獭"
+  },
+  "SLAKOTH": {
+    "en": "Slakoth",
+    "zh": "懒人猴"
+  },
+  "SLIGGOO": {
+    "en": "Sliggoo",
+    "zh": "黏美儿"
+  },
+  "SLITHERWING": {
+    "en": "Slitherwing",
+    "zh": "爬翼"
+  },
+  "SLOWBRO": {
+    "en": "Slowbro",
+    "zh": "呆壳兽"
+  },
+  "SLOWKING": {
+    "en": "Slowking",
+    "zh": "呆壳兽"
+  },
+  "SLOWPOKE": {
+    "en": "Slowpoke",
+    "zh": "呆呆兽"
+  },
+  "SLUGMA": {
+    "en": "Slugma",
+    "zh": "熔岩虫"
+  },
+  "SLURPUFF": {
+    "en": "Slurpuff",
+    "zh": "胖甜妮"
+  },
+  "SMEARGLE": {
+    "en": "Smeargle",
+    "zh": "图图犬"
+  },
+  "SMOLIV": {
+    "en": "Smoliv",
+    "zh": "橄榄猫"
+  },
+  "SMOOCHUM": {
+    "en": "Smoochum",
+    "zh": "迷唇娃"
+  },
+  "SNEASEL": {
+    "en": "Sneasel",
+    "zh": "狃拉"
+  },
+  "SNEASLER": {
+    "en": "Sneasler",
+    "zh": "恋大河童"
+  },
+  "SNIVY": {
+    "en": "Snivy",
+    "zh": "藤藤蛇"
+  },
+  "SNOM": {
+    "en": "Snom",
+    "zh": "雪吞虫"
+  },
+  "SNORLAX": {
+    "en": "Snorlax",
+    "zh": "卡比兽"
+  },
+  "SNORUNT": {
+    "en": "Snorunt",
+    "zh": "雪童子"
+  },
+  "SNOVER": {
+    "en": "Snover",
+    "zh": "雪笠怪"
+  },
+  "SNUBBULL": {
+    "en": "Snubbull",
+    "zh": "布鲁"
+  },
+  "SOBBLE": {
+    "en": "Sobble",
+    "zh": "泪眼蜥"
+  },
+  "SOLGALEO": {
+    "en": "Solgaleo",
+    "zh": "索尔迦雷欧"
+  },
+  "SOLOSIS": {
+    "en": "Solosis",
+    "zh": "单卵细胞球"
+  },
+  "SOLROCK": {
+    "en": "Solrock",
+    "zh": "太阳岩"
+  },
+  "SPEAROW": {
+    "en": "Spearow",
+    "zh": "烈雀"
+  },
+  "SPECTRIER": {
+    "en": "Spectrier",
+    "zh": "雪暴马"
+  },
+  "SPEWPA": {
+    "en": "Spewpa",
+    "zh": "结草贵妇"
+  },
+  "SPHEAL": {
+    "en": "Spheal",
+    "zh": "海豹球"
+  },
+  "SPIDOPS": {
+    "en": "Spidops",
+    "zh": "蜘蛛猫"
+  },
+  "SPINARAK": {
+    "en": "Spinarak",
+    "zh": "线球"
+  },
+  "SPINDA": {
+    "en": "Spinda",
+    "zh": "飘飘球"
+  },
+  "SPIRITOMB": {
+    "en": "Spiritomb",
+    "zh": "花岩怪"
+  },
+  "SPOINK": {
+    "en": "Spoink",
+    "zh": "跳跳猪"
+  },
+  "SPRIGATITO": {
+    "en": "Sprigatito",
+    "zh": "新叶喵"
+  },
+  "SPRITZEE": {
+    "en": "Spritzee",
+    "zh": "泡泡蛙"
+  },
+  "SQUAWKABILLY": {
+    "en": "Squawkabilly",
+    "zh": "鸣叫鹰"
+  },
+  "SQUIRTLE": {
+    "en": "Squirtle",
+    "zh": "杰尼龟"
+  },
+  "STAKATAKA": {
+    "en": "Stakataka",
+    "zh": "垒垒石"
+  },
+  "STANTLER": {
+    "en": "Stantler",
+    "zh": "惊角鹿"
+  },
+  "STARAPTOR": {
+    "en": "Staraptor",
+    "zh": "姆克鹰"
+  },
+  "STARAVIA": {
+    "en": "Staravia",
+    "zh": "姆克儿"
+  },
+  "STARLY": {
+    "en": "Starly",
+    "zh": "姆克鸟"
+  },
+  "STARMIE": {
+    "en": "Starmie",
+    "zh": "宝石海星"
+  },
+  "STARYU": {
+    "en": "Staryu",
+    "zh": "海星星"
+  },
+  "STEELIX": {
+    "en": "Steelix",
+    "zh": "大钢蛇"
+  },
+  "STEELIX_female": {
+    "en": "Steelix ♀",
+    "zh": "大钢蛇"
+  },
+  "STEENEE": {
+    "en": "Steenee",
+    "zh": "舞台百合"
+  },
+  "STONJOURNER": {
+    "en": "Stonjourner",
+    "zh": "石脑"
+  },
+  "STOUTLAND": {
+    "en": "Stoutland",
+    "zh": "毛头犬"
+  },
+  "STUFFUL": {
+    "en": "Stufful",
+    "zh": "童偶熊"
+  },
+  "STUNFISK": {
+    "en": "Stunfisk",
+    "zh": "拖拖蚓"
+  },
+  "STUNKY": {
+    "en": "Stunky",
+    "zh": "臭鼬怪"
+  },
+  "SUDOWOODO": {
+    "en": "Sudowoodo",
+    "zh": "树才怪"
+  },
+  "SUICUNE": {
+    "en": "Suicune",
+    "zh": "水君"
+  },
+  "SUNFLORA": {
+    "en": "Sunflora",
+    "zh": "向日花怪"
+  },
+  "SUNKERN": {
+    "en": "Sunkern",
+    "zh": "向日种子"
+  },
+  "SURSKIT": {
+    "en": "Surskit",
+    "zh": "溜溜糖球"
+  },
+  "SWABLU": {
+    "en": "Swablu",
+    "zh": "青绵鸟"
+  },
+  "SWADLOON": {
+    "en": "Swadloon",
+    "zh": "结草衣"
+  },
+  "SWALOT": {
+    "en": "Swalot",
+    "zh": "吞食兽"
+  },
+  "SWAMPERT": {
+    "en": "Swampert",
+    "zh": "巨沼怪"
+  },
+  "SWANNA": {
+    "en": "Swanna",
+    "zh": "天鹅宝宝"
+  },
+  "SWELLOW": {
+    "en": "Swellow",
+    "zh": "大嘴雀"
+  },
+  "SWINUB": {
+    "en": "Swinub",
+    "zh": "小山猪"
+  },
+  "SWIRLIX": {
+    "en": "Swirlix",
+    "zh": "棉花糖"
+  },
+  "SWOOBAT": {
+    "en": "Swoobat",
+    "zh": "音波龙"
+  },
+  "SYLVEON": {
+    "en": "Sylveon",
+    "zh": "妖精伊布"
+  },
+  "TADBULB": {
+    "en": "Tadbulb",
+    "zh": "灯泡蝌蚪"
+  },
+  "TAILLOW": {
+    "en": "Taillow",
+    "zh": "傲骨燕"
+  },
+  "TALONFLAME": {
+    "en": "Talonflame",
+    "zh": "烈箭鹰"
+  },
+  "TANDEMAUS": {
+    "en": "Tandemaus",
+    "zh": "并列鼠"
+  },
+  "TANGELA": {
+    "en": "Tangela",
+    "zh": "蔓藤怪"
+  },
+  "TANGROWTH": {
+    "en": "Tangrowth",
+    "zh": "巨蔓藤"
+  },
+  "TAPUBULU": {
+    "en": "Tapubulu",
+    "zh": "卡璞哞哞"
+  },
+  "TAPUFINI": {
+    "en": "Tapufini",
+    "zh": "卡璞鳍鳍"
+  },
+  "TAPUKOKO": {
+    "en": "Tapukoko",
+    "zh": "卡璞鸣鸣"
+  },
+  "TAPULELE": {
+    "en": "Tapulele",
+    "zh": "卡璞茨茨"
+  },
+  "TAROUNTULA": {
+    "en": "Tarountula",
+    "zh": "蜘蛛"
+  },
+  "TATSUGIRI": {
+    "en": "Tatsugiri",
+    "zh": "寿司鳄"
+  },
+  "TAUROS": {
+    "en": "Tauros",
+    "zh": "肯泰罗"
+  },
+  "TEDDIURSA": {
+    "en": "Teddiursa",
+    "zh": "圈圈熊"
+  },
+  "TENTACOOL": {
+    "en": "Tentacool",
+    "zh": "玛瑙水母"
+  },
+  "TENTACRUEL": {
+    "en": "Tentacruel",
+    "zh": "毒刺水母"
+  },
+  "TEPIG": {
+    "en": "Tepig",
+    "zh": "暖暖猪"
+  },
+  "TERRAKION": {
+    "en": "Terrakion",
+    "zh": "代拉基翁"
+  },
+  "THIEVUL": {
+    "en": "Thievul",
+    "zh": "狐大盗"
+  },
+  "THROH": {
+    "en": "Throh",
+    "zh": "投射鬼"
+  },
+  "THUNDURUS": {
+    "en": "Thundurus",
+    "zh": "雷电云"
+  },
+  "THWACKEY": {
+    "en": "Thwackey",
+    "zh": "敲鼓猴"
+  },
+  "TIMBURR": {
+    "en": "Timburr",
+    "zh": "搬运小匠"
+  },
+  "TINGLU": {
+    "en": "Tinglu",
+    "zh": "古鼎鹿"
+  },
+  "TINKATINK": {
+    "en": "Tinkatink",
+    "zh": "铁匠鼠"
+  },
+  "TINKATON": {
+    "en": "Tinkaton",
+    "zh": "铁匠鼠"
+  },
+  "TINKATUFF": {
+    "en": "Tinkatuff",
+    "zh": "铁匠鼠"
+  },
+  "TIRTOUGA": {
+    "en": "Tirtouga",
+    "zh": "原盖海龟"
+  },
+  "TOEDSCOOL": {
+    "en": "Toedscool",
+    "zh": "陆地水母"
+  },
+  "TOEDSCRUEL": {
+    "en": "Toedscruel",
+    "zh": "陆地水母"
+  },
+  "TOGEDEMARU": {
+    "en": "Togedemaru",
+    "zh": "托戈德玛"
+  },
+  "TOGEKISS": {
+    "en": "Togekiss",
+    "zh": "波克基斯"
+  },
+  "TOGEPI": {
+    "en": "Togepi",
+    "zh": "波克比"
+  },
+  "TOGETIC": {
+    "en": "Togetic",
+    "zh": "波克基古"
+  },
+  "TORCHIC": {
+    "en": "Torchic",
+    "zh": "火稚鸡"
+  },
+  "TORKOAL": {
+    "en": "Torkoal",
+    "zh": "煤炭龟"
+  },
+  "TORNADUS": {
+    "en": "Tornadus",
+    "zh": "龙卷云"
+  },
+  "TORRACAT": {
+    "en": "Torracat",
+    "zh": "炽炎咆哮虎"
+  },
+  "TORTERRA": {
+    "en": "Torterra",
+    "zh": "土台龟"
+  },
+  "TOTODILE": {
+    "en": "Totodile",
+    "zh": "小锯鳄"
+  },
+  "TOUCANNON": {
+    "en": "Toucannon",
+    "zh": "大嘴鸟"
+  },
+  "TOXAPEX": {
+    "en": "Toxapex",
+    "zh": "毒藻龙"
+  },
+  "TOXEL": {
+    "en": "Toxel",
+    "zh": "毒电幼童"
+  },
+  "TOXICROAK": {
+    "en": "Toxicroak",
+    "zh": "毒骷蛙"
+  },
+  "TOXTRICITY": {
+    "en": "Toxtricity",
+    "zh": "毒电蜥"
+  },
+  "TRANQUILL": {
+    "en": "Tranquill",
+    "zh": "灰羽鸽"
+  },
+  "TRAPINCH": {
+    "en": "Trapinch",
+    "zh": "大颚蚁"
+  },
+  "TREECKO": {
+    "en": "Treecko",
+    "zh": "木守宫"
+  },
+  "TREVENANT": {
+    "en": "Trevenant",
+    "zh": "南瓜怪人"
+  },
+  "TROPIUS": {
+    "en": "Tropius",
+    "zh": "热带龙"
+  },
+  "TRUBBISH": {
+    "en": "Trubbish",
+    "zh": "破破袋"
+  },
+  "TRUMBEAK": {
+    "en": "Trumbeak",
+    "zh": "啄啄鸟"
+  },
+  "TSAREENA": {
+    "en": "Tsareena",
+    "zh": "裙儿小姐"
+  },
+  "TURTONATOR": {
+    "en": "Turtonator",
+    "zh": "爆焰龟兽"
+  },
+  "TURTWIG": {
+    "en": "Turtwig",
+    "zh": "草苗龟"
+  },
+  "TYMPOLE": {
+    "en": "Tympole",
+    "zh": "音波蝌蚪"
+  },
+  "TYNAMO": {
+    "en": "Tynamo",
+    "zh": "电电鱼"
+  },
+  "TYPENULL": {
+    "en": "Typenull",
+    "zh": "属性空"
+  },
+  "TYPHLOSION": {
+    "en": "Typhlosion",
+    "zh": "火暴兽"
+  },
+  "TYRANITAR": {
+    "en": "Tyranitar",
+    "zh": "班基拉斯"
+  },
+  "TYRANTRUM": {
+    "en": "Tyrantrum",
+    "zh": "暴龙"
+  },
+  "TYROGUE": {
+    "en": "Tyrogue",
+    "zh": "迷唇娃"
+  },
+  "TYRUNT": {
+    "en": "Tyrunt",
+    "zh": "宝宝暴龙"
+  },
+  "UMBREON": {
+    "en": "Umbreon",
+    "zh": "月亮伊布"
+  },
+  "UNFEZANT": {
+    "en": "Unfezant",
+    "zh": "首席天鹅"
+  },
+  "UNFEZANT_female": {
+    "en": "Unfezant ♀",
+    "zh": "首席天鹅"
+  },
+  "UNOWN": {
+    "en": "Unown",
+    "zh": "未知图腾"
+  },
+  "URSALUNA": {
+    "en": "Ursaluna",
+    "zh": "月月熊"
+  },
+  "URSARING": {
+    "en": "Ursaring",
+    "zh": "圈圈熊"
+  },
+  "URSHIFU": {
+    "en": "Urshifu",
+    "zh": "武道熊师"
+  },
+  "UXIE": {
+    "en": "Uxie",
+    "zh": "由克希"
+  },
+  "VANILLISH": {
+    "en": "Vanillish",
+    "zh": "双倍冰"
+  },
+  "VANILLITE": {
+    "en": "Vanillite",
+    "zh": "迷你冰"
+  },
+  "VANILLUXE": {
+    "en": "Vanilluxe",
+    "zh": "双倍多多冰"
+  },
+  "VAPOREON": {
+    "en": "Vaporeon",
+    "zh": "水伊布"
+  },
+  "VAROOM": {
+    "en": "Varoom",
+    "zh": "噪音怪"
+  },
+  "VELUZA": {
+    "en": "Veluza",
+    "zh": "锯鲨"
+  },
+  "VENIPEDE": {
+    "en": "Venipede",
+    "zh": "车轮球"
+  },
+  "VENOMOTH": {
+    "en": "Venomoth",
+    "zh": "摩鲁蛾"
+  },
+  "VENONAT": {
+    "en": "Venonat",
+    "zh": "毛球"
+  },
+  "VENUSAUR": {
+    "en": "Venusaur",
+    "zh": "妙蛙花"
+  },
+  "VENUSAUR_female": {
+    "en": "Venusaur ♀",
+    "zh": "妙蛙花"
+  },
+  "VESPIQUEN": {
+    "en": "Vespiquen",
+    "zh": "蜂女王"
+  },
+  "VIBRAVA": {
+    "en": "Vibrava",
+    "zh": "双翼龙"
+  },
+  "VICTINI": {
+    "en": "Victini",
+    "zh": "比克提尼"
+  },
+  "VICTREEBEL": {
+    "en": "Victreebel",
+    "zh": "大食花"
+  },
+  "VIGOROTH": {
+    "en": "Vigoroth",
+    "zh": "提布吼"
+  },
+  "VIKAVOLT": {
+    "en": "Vikavolt",
+    "zh": "锹农炮虫"
+  },
+  "VILEPLUME": {
+    "en": "Vileplume",
+    "zh": "霸王花"
+  },
+  "VIRIZION": {
+    "en": "Virizion",
+    "zh": "毕力吉翁"
+  },
+  "VIVILLON": {
+    "en": "Vivillon",
+    "zh": "粉蝶蛹"
+  },
+  "VOLBEAT": {
+    "en": "Volbeat",
+    "zh": "电萤虫"
+  },
+  "VOLCANION": {
+    "en": "Volcanion",
+    "zh": "波尔凯尼恩"
+  },
+  "VOLCARONA": {
+    "en": "Volcarona",
+    "zh": "火神蛾"
+  },
+  "VOLTORB": {
+    "en": "Voltorb",
+    "zh": "霹雳电球"
+  },
+  "VULLABY": {
+    "en": "Vullaby",
+    "zh": "秃鹰丫头"
+  },
+  "VULPIX": {
+    "en": "Vulpix",
+    "zh": "六尾"
+  },
+  "WAILMER": {
+    "en": "Wailmer",
+    "zh": "吼吼鲸"
+  },
+  "WAILORD": {
+    "en": "Wailord",
+    "zh": "吼鲸王"
+  },
+  "WALKINGWAKE": {
+    "en": "Walkingwake",
+    "zh": "行走瀑"
+  },
+  "WALREIN": {
+    "en": "Walrein",
+    "zh": "帝牙海狮"
+  },
+  "WARTORTLE": {
+    "en": "Wartortle",
+    "zh": "卡咪龟"
+  },
+  "WATCHOG": {
+    "en": "Watchog",
+    "zh": "探探鼠"
+  },
+  "WATTREL": {
+    "en": "Wattrel",
+    "zh": "电鸟"
+  },
+  "WEAVILE": {
+    "en": "Weavile",
+    "zh": "玛狃拉"
+  },
+  "WEEDLE": {
+    "en": "Weedle",
+    "zh": "独角虫"
+  },
+  "WEEPINBELL": {
+    "en": "Weepinbell",
+    "zh": "口呆花"
+  },
+  "WEEZING": {
+    "en": "Weezing",
+    "zh": "双弹瓦斯"
+  },
+  "WHIMSICOTT": {
+    "en": "Whimsicott",
+    "zh": "风妖精"
+  },
+  "WHIRLIPEDE": {
+    "en": "Whirlipede",
+    "zh": "车轮虫"
+  },
+  "WHISCASH": {
+    "en": "Whiscash",
+    "zh": "鲶鱼王"
+  },
+  "WHISMUR": {
+    "en": "Whismur",
+    "zh": "吼爆蛋"
+  },
+  "WIGGLYTUFF": {
+    "en": "Wigglytuff",
+    "zh": "胖可丁"
+  },
+  "WIGLETT": {
+    "en": "Wiglett",
+    "zh": "沙鳅"
+  },
+  "WIMPOD": {
+    "en": "Wimpod",
+    "zh": "小笃儿"
+  },
+  "WINGULL": {
+    "en": "Wingull",
+    "zh": "长翅鸥"
+  },
+  "WISHIWASHI": {
+    "en": "Wishiwashi",
+    "zh": "弱丁鱼"
+  },
+  "WOBBUFFET": {
+    "en": "Wobbuffet",
+    "zh": "果然翁"
+  },
+  "WOBBUFFET_female": {
+    "en": "Wobbuffet ♀",
+    "zh": "果然翁"
+  },
+  "WOCHIEN": {
+    "en": "Wochien",
+    "zh": "毒薯"
+  },
+  "WOOBAT": {
+    "en": "Woobat",
+    "zh": "探探鼠"
+  },
+  "WOOLOO": {
+    "en": "Wooloo",
+    "zh": "毛羊"
+  },
+  "WOOPER": {
+    "en": "Wooper",
+    "zh": "乌波"
+  },
+  "WORMADAM": {
+    "en": "Wormadam",
+    "zh": "结草贵妇"
+  },
+  "WUGTRIO": {
+    "en": "Wugtrio",
+    "zh": "三连鱼"
+  },
+  "WURMPLE": {
+    "en": "Wurmple",
+    "zh": "刺尾虫"
+  },
+  "WYNAUT": {
+    "en": "Wynaut",
+    "zh": "小果然"
+  },
+  "WYRDEER": {
+    "en": "Wyrdeer",
+    "zh": "雪鹿"
+  },
+  "XATU": {
+    "en": "Xatu",
+    "zh": "天然鸟"
+  },
+  "XERNEAS": {
+    "en": "Xerneas",
+    "zh": "哲尔尼亚斯"
+  },
+  "XURKITREE": {
+    "en": "Xurkitree",
+    "zh": "电电树"
+  },
+  "YAMASK": {
+    "en": "Yamask",
+    "zh": "哭哭面具"
+  },
+  "YAMPER": {
+    "en": "Yamper",
+    "zh": "来电汪"
+  },
+  "YANMA": {
+    "en": "Yanma",
+    "zh": "蜻蜻蜓"
+  },
+  "YANMEGA": {
+    "en": "Yanmega",
+    "zh": "蜻蜻蜓"
+  },
+  "YUNGOOS": {
+    "en": "Yungoos",
+    "zh": "贪吃鼬"
+  },
+  "YVELTAL": {
+    "en": "Yveltal",
+    "zh": "伊裴尔塔尔"
+  },
+  "ZACIAN": {
+    "en": "Zacian",
+    "zh": "苍响"
+  },
+  "ZAMAZENTA": {
+    "en": "Zamazenta",
+    "zh": "藏玛然特"
+  },
+  "ZANGOOSE": {
+    "en": "Zangoose",
+    "zh": "猫鼬斩"
+  },
+  "ZAPDOS": {
+    "en": "Zapdos",
+    "zh": "闪电鸟"
+  },
+  "ZARUDE": {
+    "en": "Zarude",
+    "zh": "萨戮德"
+  },
+  "ZEBSTRIKA": {
+    "en": "Zebstrika",
+    "zh": "雷电斑马"
+  },
+  "ZEKROM": {
+    "en": "Zekrom",
+    "zh": "莱希拉姆"
+  },
+  "ZERAORA": {
+    "en": "Zeraora",
+    "zh": "捷拉奥拉"
+  },
+  "ZIGZAGOON": {
+    "en": "Zigzagoon",
+    "zh": "蛇纹熊"
+  },
+  "ZOROARK": {
+    "en": "Zoroark",
+    "zh": "索罗亚克"
+  },
+  "ZORUA": {
+    "en": "Zorua",
+    "zh": "索罗亚"
+  },
+  "ZUBAT": {
+    "en": "Zubat",
+    "zh": "超音蝠"
+  },
+  "ZWEILOUS": {
+    "en": "Zweilous",
+    "zh": "双首暴龙"
+  },
+  "ZYGARDE": {
+    "en": "Zygarde",
+    "zh": "基格尔德"
+  }
+}

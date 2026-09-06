@@ -12,6 +12,7 @@ import com.lollipop.tamagotchi.domain.model.Personality
 import com.lollipop.tamagotchi.domain.model.PetPlugins
 import com.lollipop.tamagotchi.domain.model.PetPosition
 import com.lollipop.tamagotchi.domain.model.PetProfile
+import com.lollipop.tamagotchi.domain.model.PetDisplayName
 import com.lollipop.tamagotchi.domain.model.Traits
 import org.json.JSONArray
 import org.json.JSONObject
@@ -24,7 +25,8 @@ import org.json.JSONObject
  * - 容错补默认：缺失/损坏字段一律回落中性默认（属性取注册表建档默认、FSM→IDLE、
  *   traits→0.5 中性、flavor→BALANCED、cooldowns/stats/plugins→空），杜绝坏档崩溃。
  * - 只写已注册属性键；未知键忽略（属性注册表驱动）。
- * - petId/petName 是档的身份，缺失视为坏档，由 [PetStore.load] 兜底返回无档。
+ * - petId 是档的身份，缺失视为坏档，由 [PetStore.load] 兜底返回无档；
+ *   displayName（双语言名）随档持久化，缺译名时回退美化英文名。
  *
  * JSON 键与 doc/01 §9 逐字对齐（feed_until / sick_total / activity… 小写下划线）。
  */
@@ -39,7 +41,8 @@ internal object PetProfileCodec {
         val root = JSONObject()
         root.put("schemaVersion", profile.schemaVersion)
         root.put("petId", profile.petId)
-        root.put("petName", profile.petName)
+        root.put("displayName_zh", profile.displayName.zh)
+        root.put("displayName_en", profile.displayName.en)
         root.put("createdAt", profile.createdAt)
         root.put("lastSettledAt", profile.lastSettledAt)
 
@@ -119,19 +122,26 @@ internal object PetProfileCodec {
     // ---- 解码（JSON 字符串 → PetProfile） ----
 
     /**
-     * 容错解码：身份缺失（petId/petName 为空）返回 null，其余字段逐项回落默认。
+     * 容错解码：身份缺失（petId 为空）返回 null，其余字段逐项回落默认。
      * JSON 语法损坏抛 [Exception]，由 [PetStore.load] 统一兜底为无档。
      */
     fun fromJson(raw: String): PetProfile? {
         val root = JSONObject(raw)
         val petId = root.optString("petId").trim()
-        val petName = root.optString("petName").trim()
-        if (petId.isEmpty() || petName.isEmpty()) return null
+        val displayZh = root.optString("displayName_zh", "").trim()
+        val displayEn = root.optString("displayName_en", "").trim()
+        val displayName = if (displayZh.isNotBlank() || displayEn.isNotBlank()) {
+            PetDisplayName(zh = displayZh, en = displayEn)
+        } else {
+            // 旧档（v2 单字符串 petName）兼容：回退美化英文名，中文环境亦降级英文（可接受）
+            PetDisplayName(zh = "", en = PetDisplayName.enOf(petId))
+        }
+        if (petId.isEmpty()) return null
 
         return PetProfile(
             schemaVersion = root.optInt("schemaVersion", PetProfile.SCHEMA_VERSION),
             petId = petId,
-            petName = petName,
+            displayName = displayName,
             createdAt = root.optLong("createdAt", 0L),
             lastSettledAt = root.optLong("lastSettledAt", 0L),
             attributes = attributesFromJson(root.optJSONObject("attributes")),

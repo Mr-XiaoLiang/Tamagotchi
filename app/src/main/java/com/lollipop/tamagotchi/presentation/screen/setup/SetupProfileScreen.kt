@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
+import com.lollipop.tamagotchi.presentation.i18n.PokemonNames
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalDensity
@@ -183,7 +184,7 @@ private fun PetRow(
         PetPortrait(file = pet.defaultFile, pool = pool, size = 26.dp)
         Spacer(Modifier.width(10.dp))
         Text(
-            pet.displayName,
+            PokemonNames.display(pet.id, PokemonNames.isZh()),
             color = ColorToken.Accent,
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
@@ -221,7 +222,7 @@ private fun SetupDetailContent(
         ) {
             BackArrow(onBack)
             Text(
-                pet.displayName,
+                PokemonNames.display(pet.id, PokemonNames.isZh()),
                 color = ColorToken.Accent,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,

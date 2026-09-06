@@ -60,7 +60,7 @@ data class PetPlugins(
 data class PetProfile(
     val schemaVersion: Int = SCHEMA_VERSION,
     val petId: String,
-    val petName: String,
+    val displayName: PetDisplayName,
     val createdAt: Long,
     val lastSettledAt: Long,
     val attributes: AttributeMap,
@@ -84,12 +84,12 @@ data class PetProfile(
          */
         fun new(
             petId: String,
-            petName: String,
+            displayName: PetDisplayName,
             personality: Personality,
             now: Long,
         ): PetProfile = PetProfile(
             petId = petId,
-            petName = petName,
+            displayName = displayName,
             createdAt = now,
             lastSettledAt = now,
             attributes = AttributeRegistry.initialSnapshot(),

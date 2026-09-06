@@ -31,6 +31,7 @@ import com.lollipop.tamagotchi.presentation.component.RoundEdgeSpace
 import com.lollipop.tamagotchi.presentation.component.roundEdgeFade
 import com.lollipop.tamagotchi.presentation.component.roundSafeInset
 import com.lollipop.tamagotchi.presentation.theme.ColorToken
+import com.lollipop.tamagotchi.presentation.i18n.PokemonNames
 
 /**
  * 过往页（M15.S2，doc/04 §3.3 / 09 §5.5）：列出换宠归档的宠物快照，
@@ -137,7 +138,7 @@ private fun TombRow(
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(
-            tomb.profile.petName,
+            tomb.profile.displayName.resolve(PokemonNames.isZh()),
             color = ColorToken.Accent,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,

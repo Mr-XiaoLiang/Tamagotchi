@@ -32,6 +32,7 @@ import com.lollipop.tamagotchi.presentation.base.BaseActivity
 import com.lollipop.tamagotchi.presentation.boot.BootLog
 import com.lollipop.tamagotchi.presentation.boot.BootStage
 import com.lollipop.tamagotchi.presentation.screen.setup.SetupProfileScreen
+import com.lollipop.tamagotchi.presentation.i18n.PokemonNames
 import com.lollipop.tamagotchi.presentation.screen.OnlineEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -238,7 +239,7 @@ private fun EntryFlow(
             onConfirm = { pet, personality ->
                 val created = PetProfile.new(
                     petId = pet.id,
-                    petName = pet.displayName,
+                    displayName = PokemonNames.lookup(pet.id),
                     personality = personality,
                     now = System.currentTimeMillis(),
                 )

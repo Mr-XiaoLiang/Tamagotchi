@@ -42,6 +42,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import com.lollipop.tamagotchi.presentation.i18n.PokemonNames
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -1263,7 +1264,7 @@ private fun FeedPage(
                 MiniChevron(dir = ChevronDir.Left, tint = ColorToken.Accent, size = 20.dp)
             }
             Text(
-                stringResource(R.string.feed_title, profile.petName),
+                stringResource(R.string.feed_title, profile.displayName.resolve(PokemonNames.isZh())),
                 color = ColorToken.Accent,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -1312,7 +1313,7 @@ private fun ToyPage(
                 MiniChevron(dir = ChevronDir.Left, tint = ColorToken.Accent, size = 20.dp)
             }
             Text(
-                stringResource(R.string.toy_title, profile.petName),
+                stringResource(R.string.toy_title, profile.displayName.resolve(PokemonNames.isZh())),
                 color = ColorToken.Accent,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,

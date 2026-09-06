@@ -17,6 +17,7 @@ import com.lollipop.tamagotchi.presentation.theme.TamagotchiTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.lollipop.tamagotchi.presentation.i18n.PokemonNames
 
 /**
  * Activity 基座（doc/08 §2）。
@@ -34,6 +35,7 @@ abstract class BaseActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        PokemonNames.init(this)
         root = FrameLayout(this).apply { setBackgroundColor(ColorToken.bg.toArgb()) }
         setContentView(root)
         onBootStart()
