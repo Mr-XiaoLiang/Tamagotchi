@@ -85,6 +85,87 @@ object PetRenderer {
     const val FX_TICKS = 10L
 }
 
+/**
+ * 情绪层总开关（doc/07 §3）：置 false 即整体停用情绪形变（scale/rotate/translate + SICK tint），
+ * **不破坏**任何 FSM 状态、动作演出或气泡浮字——仅退化为「基底帧 + 呼吸」。用于真机/调试关闭表现。
+ */
+object EmotionLayer { var enabled = true }
+
+/** 情绪枚举（doc/07 §3）：无表情素材，用传统拉伸/倾斜表达情绪。 */
+private enum class Emotion {
+    NONE, HAPPY, SAD, ANGRY, TIRED, SICK, CURIOUS, SHY, STARTLED,
+}
+
+/** 一次情绪形变参数（围绕模型中心施加，doc/07 §3）。 */
+private data class PoseTransform(
+    val scaleX: Float = 1f,
+    val scaleY: Float = 1f,
+    val rotationDeg: Float = 0f,
+    val offsetX: Float = 0f,
+    val offsetY: Float = 0f,
+) {
+    companion object { val IDENTITY = PoseTransform() }
+}
+
+/** 动作短演出 → 情绪（层2 由动作触发的临时情绪；其余动作态由基底/脚本处理）。 */
+private fun fxEmotion(kind: FxKind): Emotion = when (kind) {
+    FxKind.EXCITED -> Emotion.HAPPY
+    FxKind.AFFECTION -> Emotion.SHY
+    FxKind.TREATED -> Emotion.NONE
+    FxKind.EATING -> Emotion.NONE
+}
+
+/** FSM 持久状态 → 情绪（doc/07 §3 触发场景）。 */
+private fun stateEmotion(state: PetState): Emotion = when (state) {
+    PetState.SAD -> Emotion.SAD
+    PetState.SICK -> Emotion.SICK
+    PetState.SLEEPING -> Emotion.TIRED
+    else -> Emotion.NONE
+}
+
+/**
+ * 情绪 → 参数化形变脚本（doc/07 §3）：纯数值（amplitude/period），不新增状态机逻辑。
+ * [tick] 为主循环相位（250ms/tick）。[side] = 模型边长（px），用于把比例换算成位移。
+ */
+private fun emotionTransform(e: Emotion, tick: Long, side: Float): PoseTransform {
+    val p = tick.toDouble()
+    val TAU = 2.0 * PI
+    return when (e) {
+        Emotion.NONE -> PoseTransform.IDENTITY
+        // HAPPY 蹦跳：纵 scale 1→1.25 交替上弹（约 750ms/跳），~2.5s 演出含 2~3 跳
+        Emotion.HAPPY -> {
+            val bounce = abs(sin(p / 3.0 * TAU)).toFloat()
+            PoseTransform(scaleX = 1f, scaleY = 1f + 0.25f * bounce, offsetY = -side * 0.12f * bounce)
+        }
+        // SAD 压扁：横 1.2 / 纵 0.8，低频下沉
+        Emotion.SAD -> PoseTransform(scaleX = 1.2f, scaleY = 0.8f, offsetY = side * 0.05f)
+        // ANGRY 横向抽动：±2% 快速抖动（250ms 周期）
+        Emotion.ANGRY -> {
+            val j = sin(p / 1.0 * TAU).toFloat()
+            PoseTransform(scaleX = 1f + 0.02f * j, offsetX = side * 0.02f * j)
+        }
+        // TIRED 瞌睡点头：绕中心 ±4°，约 800ms 周期
+        Emotion.TIRED -> PoseTransform(rotationDeg = (sin(p / 3.2 * TAU) * 4.0).toFloat())
+        // SICK 微弱战栗 + 变暗（tint 由绘制层叠加）
+        Emotion.SICK -> {
+            val t = sin(p / 2.0 * TAU).toFloat()
+            PoseTransform(scaleY = 1f + 0.02f * t, offsetX = side * 0.01f * t)
+        }
+        // CURIOUS 前倾歪头：固定 8° + 向屏前探 4%
+        Emotion.CURIOUS -> PoseTransform(rotationDeg = 8f, offsetX = side * 0.06f)
+        // SHY 侧头躲闪：偏移出再快速回正
+        Emotion.SHY -> {
+            val d = sin(p / 4.0 * TAU).toFloat()
+            PoseTransform(offsetX = side * 0.07f * d)
+        }
+        // STARTLED 受惊跳起（预留随机惊吓事件触发）
+        Emotion.STARTLED -> {
+            val b = abs(sin(p / 3.0 * TAU)).toFloat()
+            PoseTransform(scaleY = 1f + 0.3f * b, offsetY = -side * 0.12f * b)
+        }
+    }
+}
+
 /** 动作短演出类别（doc/02 §1.1：短动作态 EATING/EXCITED 不落持久快照，表现层临时演出）。 */
 enum class FxKind { EATING, EXCITED, AFFECTION, TREATED }
 
@@ -253,24 +334,33 @@ fun PetLivingSprite(
         } else {
             cos(2.0 * PI * frame.tick / (PetRenderer.BREATH_TICKS_HALF * 2)).toFloat()
         }
-        // 短演出姿态叠加：EXCITED=蹦跳、EATING=低头小幅度快伏（进食近似）、
-        // AFFECTION/TREATED=轻微摇摆（歪头/放松，素材无亲昵帧，M10 复核）；均叠加在呼吸之上。
-        var extraY = 0f
-        var sway = 0f
+        // ── 层2 情绪修饰（doc/07 §3）：由 state（SAD/SICK/SLEEPING→TIRED）或
+        //    动作短演出（EXCITED→HAPPY / AFFECTION→SHY）派生；SICK 附灰 tint。
+        //    可由 [EmotionLayer.enabled] 整体停用，不破坏状态/演出。
+        val emotion = if (inFx) {
+            fxEmotion(activeFx!!.fx.kind)
+        } else {
+            stateEmotion(pose.state)
+        }
+        val et = if (EmotionLayer.enabled) emotionTransform(emotion, frame.tick, dstSide) else PoseTransform.IDENTITY
+        // ── 层3 短脚本：动作专属小动效（与情绪层正交）；EATING 低头咀嚼、TREATED 轻微摇摆 ──
+        var scriptExtraY = 0f
+        var scriptSway = 0f
         if (inFx) {
             when (activeFx!!.fx.kind) {
-                FxKind.EXCITED -> extraY = -abs(sin(fxPhase * 2.0 * PI)).toFloat() * dstSide * 0.16f
-                FxKind.EATING -> extraY = sin(fxPhase * 4.0 * PI).toFloat() * dstSide * 0.03f
-                FxKind.AFFECTION -> sway = sin(fxPhase * 2.0 * PI).toFloat() * 4f
-                FxKind.TREATED -> sway = sin(fxPhase * 2.0 * PI).toFloat() * 2.5f
+                FxKind.EATING -> scriptExtraY = sin(fxPhase * 4.0 * PI).toFloat() * dstSide * 0.04f
+                FxKind.TREATED -> scriptSway = sin(fxPhase * 2.0 * PI).toFloat() * 3f
+                else -> Unit
             }
         }
-        val yOff = breath * PetRenderer.IDLE_AMP_PX + extraY
+        val yOff = breath * PetRenderer.IDLE_AMP_PX + scriptExtraY
+        // 模型目标矩形（中心化；垂直位移/情绪形变由下方 withTransform 统一施加，模型不越屏由
+        // 映射扣半径 + 屏圆 clip 保证，doc/07 §9「形变垫层」——形变仅放大整体、不裁源图）
         val dst = Rect(
             left = cx - dstSide / 2f,
-            top = cy - dstSide / 2f + yOff,
+            top = cy - dstSide / 2f,
             right = cx + dstSide / 2f,
-            bottom = cy + dstSide / 2f + yOff,
+            bottom = cy + dstSide / 2f,
         )
         // 层1 帧用法（doc/07 §4）：WALKING 用 FSM 帧循环，其余基底用帧 0；演出沿用静止基底帧
         val dir = if (sleeping || inFx) {
@@ -280,21 +370,45 @@ fun PetLivingSprite(
         }
         val srcCol = if (!inFx && pose.state == PetState.WALKING) pose.frame else 0
         val frameSrc = SpriteSheetDecoder.frameRect(dir, srcCol)
-        if (abs(sway) > 0.01f) {
-            // 亲昵/治愈摇摆：绕模型中心小幅旋转
-            rotate(degrees = sway, pivot = Offset(cx, cy + yOff / 2f)) {
-                drawPetFrame(image = sheet, src = frameSrc, dst = dst)
-            }
-        } else {
+        // 情绪 + 脚本统一变换：绕模型中心 scale→rotate→整体位移（doc/07 §3 的 Save/Load 等价）
+        val totalRotation = et.rotationDeg + scriptSway
+        // TIRED 点头绕「脚底中心」，其余情绪绕模型中心（doc/07 §3）
+        val rotPivotY = if (emotion == Emotion.TIRED && EmotionLayer.enabled) cy + dstSide / 2f else cy
+        withTransform({
+            translate(left = et.offsetX, top = yOff + et.offsetY)
+            rotate(degrees = totalRotation, pivot = Offset(cx, rotPivotY))
+            scale(scaleX = et.scaleX, scaleY = et.scaleY, pivot = Offset(cx, cy))
+        }) {
             drawPetFrame(image = sheet, src = frameSrc, dst = dst)
+            // SICK 灰 tint：Multiply 仅作用于不透明像素，透明留白不受影响（doc/07 §3）
+            if (emotion == Emotion.SICK && EmotionLayer.enabled) {
+                drawRect(
+                    color = Color(0xFF8C8C8C),
+                    topLeft = dst.topLeft,
+                    size = dst.size,
+                    alpha = 0.35f,
+                    blendMode = BlendMode.Multiply,
+                )
+            }
+            // 睡眠「闭眼」暗罩（素材无睡姿帧；rotate 躺姿留真机复核）
+            if (sleeping) {
+                drawCircle(
+                    color = ColorToken.bg.copy(alpha = PetRenderer.SLEEP_DIM_ALPHA),
+                    radius = dstSide / 2f,
+                    center = Offset(cx, cy),
+                )
+            }
+            // 层3 装饰：食物包 / 药丸 / 亲昵爱心（随宠物，简单矢量，doc/07 §4）
+            if (inFx) {
+                drawScriptDecor(
+                    kind = activeFx!!.fx.kind,
+                    cx = cx,
+                    cy = cy,
+                    side = dstSide,
+                )
+            }
         }
         if (sleeping) {
-            // 近似「闭眼」的暗罩（素材无睡姿帧；rotate 躺姿留 M10 真机复核）
-            drawCircle(
-                color = ColorToken.bg.copy(alpha = PetRenderer.SLEEP_DIM_ALPHA),
-                radius = dstSide / 2f,
-                center = Offset(cx, cy + yOff / 2f),
-            )
             drawSleepZzz(
                 textMeasurer = textMeasurer,
                 tick = frame.tick,
@@ -304,7 +418,7 @@ fun PetLivingSprite(
             )
         }
         if (inFx) {
-            // 气泡 + 数值浮字（随宠物走，doc/06 §7/§8；文字不透明 ≥11sp）
+            // 气泡 + 数值浮字（不随宠物形变，doc/06 §7/§8；文字不透明 ≥11sp）
             drawActionFx(
                 textMeasurer = textMeasurer,
                 fx = activeFx!!.fx,
@@ -413,6 +527,58 @@ private fun DrawScope.drawActionFx(
             )
             drawText(layout, topLeft = Offset(x, y))
         }
+    }
+}
+
+/**
+ * 层3 短脚本装饰（doc/07 §4）：随宠物绘制的简单矢量小物件，不依赖表情素材。
+ * - EATING：嘴前食物包（圆角方块）；TREATED：药丸（胶囊）；AFFECTION：亲昵爱心；
+ *   EXCITED 蹦跳由情绪层承担，无需额外装饰。随宠物整体形变（同 withTransform）一致运动。
+ */
+private fun DrawScope.drawScriptDecor(
+    kind: FxKind,
+    cx: Float,
+    cy: Float,
+    side: Float,
+) {
+    val r = side * 0.16f
+    when (kind) {
+        FxKind.EATING -> {
+            // 食物包：嘴前（右上方）小圆角方块
+            val fx = cx + side * 0.22f
+            val fy = cy - side * 0.18f
+            drawRoundRect(
+                color = ColorToken.FoodBalanced,
+                topLeft = Offset(fx - r, fy - r),
+                size = Size(r * 2, r * 2),
+                cornerRadius = CornerRadius(r * 0.4f, r * 0.4f),
+            )
+        }
+        FxKind.TREATED -> {
+            // 药丸：胶囊（左上）
+            val px = cx - side * 0.24f
+            val py = cy - side * 0.16f
+            drawRoundRect(
+                color = ColorToken.Health,
+                topLeft = Offset(px - r, py - r * 0.6f),
+                size = Size(r * 2, r * 1.2f),
+                cornerRadius = CornerRadius(r * 0.6f, r * 0.6f),
+            )
+        }
+        FxKind.AFFECTION -> {
+            // 亲昵爱心（右上），简单心形 path
+            val hx = cx + side * 0.24f
+            val hy = cy - side * 0.20f
+            val s = r * 0.9f
+            val heart = Path().apply {
+                moveTo(hx, hy + s * 0.3f)
+                cubicTo(hx - s, hy - s * 0.6f, hx - s * 0.5f, hy - s * 1.1f, hx, hy - s * 0.3f)
+                cubicTo(hx + s * 0.5f, hy - s * 1.1f, hx + s, hy - s * 0.6f, hx, hy + s * 0.3f)
+                close()
+            }
+            drawPath(heart, ColorToken.Mood)
+        }
+        FxKind.EXCITED -> Unit
     }
 }
 

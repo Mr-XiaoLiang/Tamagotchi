@@ -64,9 +64,9 @@ data class ActionResult(
  * 动作可用条件 + 数值规则（doc/01 §6.3/§7/§10）。
  *
  * 可用性（条件表）：
- * - 喂食：`now >= feed_until` 且 `satiation < 95`（冷却 2h）；
- * - 玩耍：`now >= play_until` 且 `mood < 90`（冷却 1h）；
- * - 抚摸：`now >= pet_until`（冷却 10min，无条件属性限制）；
+ * - 喂食：`now >= feed_until` 且 `satiation < 95`（冷却 5s，防连点 + 缓冲）；
+ * - 玩耍：`now >= play_until` 且 `mood < 90`（冷却 5s）；
+ * - 抚摸：`now >= pet_until`（冷却 5s，无条件属性限制）；
  * - 治疗：`fsmState == SICK`（无冷却字段，治愈即不可用）。
  *
  * 数值规则：
@@ -76,9 +76,10 @@ data class ActionResult(
  */
 object ActionRule {
 
-    const val FEED_COOLDOWN_MS: Long = 2 * 60 * 60 * 1000L
-    const val PLAY_COOLDOWN_MS: Long = 1 * 60 * 60 * 1000L
-    const val PET_COOLDOWN_MS: Long = 10 * 60 * 1000L
+    /** 动作最小间隔：统一 5s，仅防连点 + 留一点缓冲（doc/01 §10；原 2h/1h/10min 已放宽）。 */
+    const val FEED_COOLDOWN_MS: Long = 5 * 1000L
+    const val PLAY_COOLDOWN_MS: Long = 5 * 1000L
+    const val PET_COOLDOWN_MS: Long = 5 * 1000L
 
     /** 口味契合加成（doc/01 §7：额外 +10%）。 */
     const val FLAVOR_BONUS: Float = 1.1f
@@ -153,7 +154,7 @@ object PetActions {
 
     /**
      * 喂食（选一种食物，doc/01 §7）：sat/mood 按口味契合 ×1.1 后走边际收益；
-     * health 照类型表固定；hyg 附 -4。冷却 2h。成功 stats.feed +1。
+     * health 照类型表固定；hyg 附 -4。冷却 5s。成功 stats.feed +1。
      */
     fun onFeed(
         profile: PetProfile,
@@ -180,7 +181,7 @@ object PetActions {
     }
 
     /**
-     * 玩耍：mood +15（边际）、health +2、hyg -2、int +1（边际，学习型）。冷却 1h。
+     * 玩耍：mood +15（边际）、health +2、hyg -2、int +1（边际，学习型）。冷却 5s。
      * 成功 stats.play +1。
      */
     fun onPlay(
@@ -205,7 +206,7 @@ object PetActions {
             now + ActionRule.PLAY_COOLDOWN_MS, EventLogType.ACTION_PLAY, log, null)
     }
 
-    /** 抚摸：mood +5（边际，轻互动）。冷却 10min。成功 stats.pet +1。 */
+    /** 抚摸：mood +5（边际，轻互动）。冷却 5s。成功 stats.pet +1。 */
     fun onPet(
         profile: PetProfile,
         now: Long,
