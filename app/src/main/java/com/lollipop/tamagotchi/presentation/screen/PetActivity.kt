@@ -16,6 +16,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.lollipop.tamagotchi.core.attribute.FoodType
 import com.lollipop.tamagotchi.core.attribute.PlayType
+import com.lollipop.tamagotchi.core.attribute.ToyType
 import com.lollipop.tamagotchi.data.store.PetStore
 import com.lollipop.tamagotchi.data.time.SystemClock
 import com.lollipop.tamagotchi.domain.engine.ActionType
@@ -157,7 +158,7 @@ private fun EntryFlow(
      * M6.S2 动作执行：domain [PetActions] 纯函数 → Default 存档 → 主线程 apply profile
      * + 上抛 [ActionEvent]（成功才置位；被 UI 判定的冷却/属性满/熟睡不会走到这里）。
      */
-    fun performAction(type: ActionType, food: FoodType?) {
+    fun performAction(type: ActionType, food: FoodType?, toy: ToyType? = null) {
         scope.launch {
             val cur = profile ?: return@launch
             val now = clock.nowMillis()
@@ -168,6 +169,7 @@ private fun EntryFlow(
                         cur, now,
                         style = PlayType.entries[(now / 1000).toInt().mod(PlayType.entries.size)],
                         log = sessionLog,
+                        toy = toy,
                     )
                     ActionType.PET -> PetActions.onPet(cur, now, sessionLog)
                     ActionType.HEAL -> PetActions.onHeal(cur, now, sessionLog)
@@ -263,7 +265,7 @@ private fun EntryFlow(
             } else {
                 null
             },
-            onAction = { type, food -> performAction(type, food) },
+            onAction = { type, food, toy -> performAction(type, food, toy) },
             actionEvent = lastActionEvent,
             onlineEvent = onlineEvent,
             onlineReview = onlineReview,

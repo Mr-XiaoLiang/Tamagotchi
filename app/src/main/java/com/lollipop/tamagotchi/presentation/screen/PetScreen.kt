@@ -133,6 +133,9 @@ import com.lollipop.tamagotchi.core.attribute.FoodType
 import com.lollipop.tamagotchi.core.behavior.PetState
 import com.lollipop.tamagotchi.domain.engine.ActionDenied
 import com.lollipop.tamagotchi.domain.engine.ActionHint
+import com.lollipop.tamagotchi.core.attribute.ToyType
+import com.lollipop.tamagotchi.core.attribute.ToyUnlock
+import com.lollipop.tamagotchi.domain.toy.ToyRules
 import com.lollipop.tamagotchi.domain.engine.ActionResult
 import com.lollipop.tamagotchi.domain.engine.ActionRule
 import com.lollipop.tamagotchi.domain.engine.ActionType
@@ -143,6 +146,7 @@ import com.lollipop.tamagotchi.domain.log.EventLog
 import com.lollipop.tamagotchi.presentation.render.FxFloat
 import com.lollipop.tamagotchi.presentation.render.FxKind
 import com.lollipop.tamagotchi.presentation.render.PetFx
+import com.lollipop.tamagotchi.presentation.render.toEmotion
 import com.lollipop.tamagotchi.presentation.ui.MiniProgressRing
 import com.lollipop.tamagotchi.presentation.ui.RingProgressBar
 import com.lollipop.tamagotchi.presentation.ui.drawAttributeGlyph
@@ -181,8 +185,8 @@ data class OnlineEvent(
     val petEvent: EventEngine.PetEvent,
 )
 
-/** 操作面板页内子级：动作列表 ⇄ 食物选择（投喂子页）。 */
-private enum class ActionPage { Actions, Feed }
+/** 操作面板页内子级：动作列表 ⇄ 食物选择（投喂子页）⇄ 玩具选择（M13 子页）。 */
+private enum class ActionPage { Actions, Feed, Toy }
 
 /** 主屏顶内「状态图标区」图标种类（doc/06 §3.1：饥饿/不开心/脏/病，异常才亮）。 */
 private enum class StatusIconKind { HUNGRY, SAD, DIRTY, SICK, KNOWLEDGE }
@@ -205,7 +209,7 @@ fun PetScreen(
     onTimeTravel: ((hours: Long) -> Unit)? = null,
     onResetProfile: (() -> Unit)? = null,
     /** M6.S2：请求执行动作（投喂需 [FoodType]；EntryFlow 执行、存档、上抛 [actionEvent]）。 */
-    onAction: (type: ActionType, food: FoodType?) -> Unit = { _, _ -> },
+    onAction: (type: ActionType, food: FoodType?, toy: ToyType?) -> Unit = { _, _, _ -> },
     /** M6.S2：最近一次动作执行事件（成功才非空，[ActionEvent.id] 单调自增）。 */
     actionEvent: ActionEvent? = null,
     /** M9.S2：最近一次在线随机事件（命中风波自增号，[OnlineEvent.nonce] 单调自增）。 */
@@ -663,7 +667,7 @@ private fun BoxScope.OverlayLayer(
     reveal: () -> Float,
     sheetExtent: SnapshotStateMap<Panel, Int>,
     onDismiss: () -> Unit,
-    onAction: (type: ActionType, food: FoodType?) -> Unit,
+    onAction: (type: ActionType, food: FoodType?, toy: ToyType?) -> Unit,
     onShowStatus: () -> Unit,
 ) {
     val edge = when (p) {
@@ -1058,7 +1062,7 @@ private fun DrawScope.drawStatusIcon(kind: StatusIconKind, tint: Color) {
 private fun ColumnScope.ActionPanelBody(
     onDismiss: () -> Unit,
     profile: PetProfile,
-    onAction: (type: ActionType, food: FoodType?) -> Unit,
+    onAction: (type: ActionType, food: FoodType?, toy: ToyType?) -> Unit,
     onShowStatus: () -> Unit,
 ) {
     DismissStrip(dir = ChevronDir.Down, onDismiss)
@@ -1082,13 +1086,20 @@ private fun ColumnScope.ActionPanelBody(
                 nowMs = nowMs,
                 onShowStatus = onShowStatus,
                 onOpenFeed = { page = ActionPage.Feed },
+                onOpenToy = { page = ActionPage.Toy },
                 onAction = onAction,
+            )
+        } else if (page == ActionPage.Toy) {
+            ToyPage(
+                profile = profile,
+                onBack = { page = ActionPage.Actions },
+                onPick = { onAction(ActionType.PLAY, null, it) },
             )
         } else {
             FeedPage(
                 profile = profile,
                 onBack = { page = ActionPage.Actions },
-                onPick = { onAction(ActionType.FEED, it) },
+                onPick = { onAction(ActionType.FEED, it, null) },
             )
         }
     }
@@ -1101,7 +1112,8 @@ private fun ActionListPage(
     nowMs: Long,
     onShowStatus: () -> Unit,
     onOpenFeed: () -> Unit,
-    onAction: (type: ActionType, food: FoodType?) -> Unit,
+    onOpenToy: () -> Unit,
+    onAction: (type: ActionType, food: FoodType?, toy: ToyType?) -> Unit,
 ) {
     RoundList {
         RoundEdgeSpace(48.dp)
@@ -1129,14 +1141,14 @@ private fun ActionListPage(
                 title = stringResource(R.string.action_play),
                 denied = playDenied,
                 dotColor = ColorToken.Mood,
-                onClick = { onAction(ActionType.PLAY, null) },
+                onClick = onOpenToy,
             )
             RoundListSpacer()
             ActionRow(
                 title = stringResource(R.string.action_pet),
                 denied = petDenied,
                 dotColor = ColorToken.Health,
-                onClick = { onAction(ActionType.PET, null) },
+                onClick = { onAction(ActionType.PET, null, null) },
             )
             // 学习：智力只增不减，随时可学（冷却 1h；冷却空心只读，M12）
             val studyDenied = ActionRule.studyDenied(profile, nowMs)
@@ -1145,7 +1157,7 @@ private fun ActionListPage(
                 title = stringResource(R.string.action_study),
                 denied = studyDenied,
                 dotColor = ColorToken.Knowledge,
-                onClick = { onAction(ActionType.STUDY, null) },
+                onClick = { onAction(ActionType.STUDY, null, null) },
             )
             // 清洁：仅「脏了」（hygiene < 告警阈值）才出现；冷却空心只读（M11）
             if (profile.attributes[AttributeId.HYGIENE] < LOW_VALUE_WARN) {
@@ -1154,13 +1166,13 @@ private fun ActionListPage(
                     title = stringResource(R.string.action_clean),
                     denied = cleanDenied,
                     dotColor = ColorToken.Hygiene,
-                    onClick = { onAction(ActionType.CLEAN, null) },
+                    onClick = { onAction(ActionType.CLEAN, null, null) },
                 )
             }
             // 治疗：仅 SICK 才出现（不 SICK 不占位，引擎同条件拦截）
             if (profile.fsmState == PetState.SICK) {
                 RoundListSpacer()
-                PillItem(stringResource(R.string.action_heal), filled = true, onClick = { onAction(ActionType.HEAL, null) })
+                PillItem(stringResource(R.string.action_heal), filled = true, onClick = { onAction(ActionType.HEAL, null, null) })
             }
         }
         RoundEdgeSpace(48.dp)
@@ -1212,6 +1224,67 @@ private fun FeedPage(
                 color = foodTint(food.flavor),
                 onClick = { onPick(food) },
             )
+        }
+        RoundEdgeSpace(48.dp)
+    }
+}
+
+/** 操作面板 · 玩具选择子页（M13：玩具差异化，已解锁实心可选、未解锁空心带来源）。 */
+@Composable
+private fun ToyPage(
+    profile: PetProfile,
+    onBack: () -> Unit,
+    onPick: (ToyType) -> Unit,
+) {
+    RoundList {
+        RoundEdgeSpace(48.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            val metrics = screenMetrics()
+            Box(
+                modifier = Modifier
+                    .size(metrics.dp(34.dp))
+                    .clip(CircleShape)
+                    .clickable(onClick = onBack),
+                contentAlignment = Alignment.Center,
+            ) {
+                MiniChevron(dir = ChevronDir.Left, tint = ColorToken.Accent, size = 20.dp)
+            }
+            Text(
+                stringResource(R.string.toy_title, profile.petName),
+                color = ColorToken.Accent,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(start = 6.dp),
+            )
+        }
+        RoundListSpacer()
+        ToyType.entries.forEachIndexed { index, toy ->
+            if (index > 0) RoundListSpacer()
+            val unlocked = ToyRules.isUnlocked(toy, profile)
+            if (unlocked) {
+                PillItem(
+                    text = "${toy.icon} ${toy.label} · ${toy.vibe.label}",
+                    filled = true,
+                    color = ColorToken.Mood,
+                    onClick = { onPick(toy) },
+                )
+            } else {
+                val reason = when (val u = toy.unlock) {
+                    ToyUnlock.Default -> ""
+                    is ToyUnlock.ByKnowledge -> stringResource(R.string.toy_locked_knowledge, u.knowledge)
+                    is ToyUnlock.ByMilestone -> stringResource(R.string.toy_locked_milestone, u.count)
+                    ToyUnlock.ByEvent -> stringResource(R.string.toy_locked_event)
+                }
+                PillItem(
+                    text = "${toy.icon} ${toy.label} · $reason",
+                    filled = false,
+                )
+            }
         }
         RoundEdgeSpace(48.dp)
     }
@@ -1304,7 +1377,8 @@ private fun ActionResult.toPetFx(nonce: Long, ctx: Context): PetFx {
             val sign = if (d > 0) "+" else "-"
             FxFloat(text = "$sign${abs(d).roundToInt()} ${ctx.getString(id.labelRes)}", color = attributeColor(id))
         }
-    return PetFx(nonce = nonce, kind = kind, bubble = bubble, floats = floats)
+    val emotion = if (hint == ActionHint.EXCITED) toy?.vibe?.toEmotion() else null
+    return PetFx(nonce = nonce, kind = kind, bubble = bubble, floats = floats, emotion = emotion)
 }
 
 /** 在线事件气泡 id → 字符串资源（M9，doc/03 §4；无匹配回落 ev_idle_pass）。 */

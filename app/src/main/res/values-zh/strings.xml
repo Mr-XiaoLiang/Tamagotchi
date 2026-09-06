@@ -23,6 +23,10 @@
     <string name="action_study">学习</string>
 
     <string name="feed_title">选择食物 · %1$s</string>
+    <string name="toy_title">选择玩具 · %1$s</string>
+    <string name="toy_locked_knowledge">知识达 %1$d 解锁</string>
+    <string name="toy_locked_milestone">玩耍 %1$d 次解锁</string>
+    <string name="toy_locked_event">随机事件掉落</string>
     <string name="feed_match">契合</string>
 
     <string name="food_berries">树果餐</string>

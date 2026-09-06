@@ -23,6 +23,10 @@
     <string name="action_study">Study</string>
 
     <string name="feed_title">Pick food · %1$s</string>
+    <string name="toy_title">Pick a toy · %1$s</string>
+    <string name="toy_locked_knowledge">Unlocks at knowledge %1$d</string>
+    <string name="toy_locked_milestone">Unlocks at %1$d plays</string>
+    <string name="toy_locked_event">Random event drop</string>
     <string name="feed_match">Match</string>
 
     <string name="food_berries">Berries</string>

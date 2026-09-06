@@ -6,6 +6,7 @@ import com.lollipop.tamagotchi.core.attribute.AttributeMap
 import com.lollipop.tamagotchi.core.attribute.AttributeRegistry
 import com.lollipop.tamagotchi.core.attribute.FoodType
 import com.lollipop.tamagotchi.core.attribute.PlayType
+import com.lollipop.tamagotchi.core.attribute.ToyType
 import com.lollipop.tamagotchi.core.behavior.PetState
 import com.lollipop.tamagotchi.domain.log.EventLog
 import com.lollipop.tamagotchi.domain.log.EventLogType
@@ -59,6 +60,8 @@ data class ActionResult(
     val hint: ActionHint,
     val cooldownUntil: Long?,
     val note: String? = null,
+    /** 触发动作所用的玩具（玩耍专属；表现层据此选玩具情绪类别，doc/09 §5.1）。 */
+    val toy: ToyType? = null,
     /** 学习解锁档位（智力跨越该阈值时非 null，供 UI 弹「学会新招」气泡；doc/01 §4.1）。 */
     val unlockTier: Int? = null,
 )
@@ -243,15 +246,21 @@ object PetActions {
         now: Long,
         style: PlayType = PlayType.DEFAULT,
         log: SessionLog? = null,
+        toy: ToyType? = null,
     ): ActionResult? {
         if (ActionRule.playDenied(profile, now) != null) return null
         val cur = profile.attributes
         val traits = profile.personality.traits
+        // 选了玩具 → 用玩具数值档（doc/09 §5.1：玩具差异化收益）；否则用基础玩耍方式。
+        val baseMood = toy?.moodDelta ?: style.moodDelta
+        val baseHealth = toy?.healthCost ?: style.healthCost
+        val baseHyg = toy?.hygieneCost ?: style.hygieneCost
+        val baseSat = toy?.satCost ?: style.satCost
         val moodGain = ActionRule.diminishedGain(
-            traitScale(style.moodDelta, traits.temper, TEMPER_SLOPE), cur[MOOD])
-        val dHealth = -traitScale(style.healthCost, traits.activity, ACTIVITY_SLOPE)
-        val dHyg = -style.hygieneCost.toFloat()
-        val dSat = -style.satCost.toFloat()
+            traitScale(baseMood, traits.temper, TEMPER_SLOPE), cur[MOOD])
+        val dHealth = -traitScale(baseHealth, traits.activity, ACTIVITY_SLOPE)
+        val dHyg = -baseHyg
+        val dSat = -baseSat
         val dInt = -PlayType.KNOWLEDGE_COST * (1f - traits.curiosity)  // 好奇→玩耍也在琢磨，知识损耗随好奇减免
         val attrs = cur
             .set(MOOD, cur[MOOD] + jitter(moodGain))
@@ -266,7 +275,8 @@ object PetActions {
             milestones = bump(profile.milestones) { it.copy(play = it.play + 1) },
         )
         return finish(profile, now, after, ActionHint.EXCITED,
-            now + ActionRule.PLAY_COOLDOWN_MS, EventLogType.ACTION_PLAY, log, style.label)
+            now + ActionRule.PLAY_COOLDOWN_MS, EventLogType.ACTION_PLAY, log, toy?.label ?: style.label,
+            toy = toy)
     }
 
     /** 抚摸：心情↑（边际，随急躁放大、随粘人放大）；无副作用；冷却 5s。成功 stats.pet +1。 */
@@ -399,6 +409,7 @@ object PetActions {
         type: EventLogType,
         log: SessionLog?,
         note: String?,
+        toy: ToyType? = null,
         unlockTier: Int? = null,
     ): ActionResult {
         val attrsBefore = before.attributes
@@ -418,7 +429,7 @@ object PetActions {
             ),
         )
         return ActionResult(profile = after, delta = delta, hint = hint,
-            cooldownUntil = cooldownUntil, note = note, unlockTier = unlockTier)
+            cooldownUntil = cooldownUntil, note = note, toy = toy, unlockTier = unlockTier)
     }
 
     private const val PET_MOOD_GAIN = 5f

@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.lollipop.tamagotchi.core.attribute.ToyVibe
 import com.lollipop.tamagotchi.core.behavior.PetState
 import com.lollipop.tamagotchi.core.motion.NormalizedPos
 import com.lollipop.tamagotchi.domain.engine.BehaviorFSM
@@ -92,8 +93,15 @@ object PetRenderer {
 object EmotionLayer { var enabled = true }
 
 /** 情绪枚举（doc/07 §3）：无表情素材，用传统拉伸/倾斜表达情绪。 */
-private enum class Emotion {
+enum class Emotion {
     NONE, HAPPY, SAD, ANGRY, TIRED, SICK, CURIOUS, SHY, STARTLED,
+}
+
+/** 玩具情绪类别 → 表现层情绪（M13.S2：差异化玩耍表现，doc/09 §5.1）。 */
+fun ToyVibe.toEmotion(): Emotion = when (this) {
+    ToyVibe.LIVELY -> Emotion.HAPPY    // 活泼 → 蹦跳
+    ToyVibe.GENTLE -> Emotion.SHY      // 温顺 → 侧头躲闪
+    ToyVibe.FOCUSED -> Emotion.CURIOUS // 专注 → 前倾歪头思考
 }
 
 /** 一次情绪形变参数（围绕模型中心施加，doc/07 §3）。 */
@@ -187,6 +195,8 @@ data class PetFx(
     val kind: FxKind,
     val bubble: String,
     val floats: List<FxFloat> = emptyList(),
+    /** 玩具情绪类别覆盖（M13.S2）：非 null 时替换默认动作情绪（如 EXCITED→HAPPY 默认改为 CURIOUS/SHY）。 */
+    val emotion: Emotion? = null,
 )
 
 /** 短演出运行记录：仅内存，随 tick 相位推进（running 停时不动）。 */
@@ -349,7 +359,7 @@ fun PetLivingSprite(
         //    动作短演出（EXCITED→HAPPY / AFFECTION→SHY）派生；SICK 附灰 tint。
         //    可由 [EmotionLayer.enabled] 整体停用，不破坏状态/演出。
         val emotion = if (inFx) {
-            fxEmotion(activeFx!!.fx.kind)
+            activeFx!!.fx.emotion ?: fxEmotion(activeFx!!.fx.kind)
         } else {
             stateEmotion(pose.state)
         }
