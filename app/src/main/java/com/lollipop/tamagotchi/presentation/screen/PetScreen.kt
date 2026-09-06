@@ -145,6 +145,7 @@ import com.lollipop.tamagotchi.presentation.render.FxKind
 import com.lollipop.tamagotchi.presentation.render.PetFx
 import com.lollipop.tamagotchi.presentation.ui.MiniProgressRing
 import com.lollipop.tamagotchi.presentation.ui.RingProgressBar
+import com.lollipop.tamagotchi.presentation.ui.drawAttributeGlyph
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -184,7 +185,7 @@ data class OnlineEvent(
 private enum class ActionPage { Actions, Feed }
 
 /** 主屏顶内「状态图标区」图标种类（doc/06 §3.1：饥饿/不开心/脏/病，异常才亮）。 */
-private enum class StatusIconKind { HUNGRY, SAD, DIRTY, SICK }
+private enum class StatusIconKind { HUNGRY, SAD, DIRTY, SICK, INTELLIGENCE }
 
 /**
  * 主屏四区 + 三 overlay 路由（doc/06 §1/§2/§5，Task.md M1.S2）。
@@ -533,6 +534,7 @@ fun PetScreen(
                 RingProgressBar(
                     outerRadius = ringOuter,
                     values = AttributeRegistry.main.map { profile.attributes[it.id] },
+                    attributes = AttributeRegistry.main.map { it.id },
                 )
             }
 
@@ -866,7 +868,8 @@ private fun ColumnScope.StatusPanelBody(
                     // 右留白 11dp = 环外缘到行上下边距（46 行高 − 24 环径）/ 2，
                     // 使环与胶囊右端半圆同圆心（同心内嵌观感）。
                     contentPadding = PaddingValues(start = 18.dp, end = 11.dp),
-                    icon = { ColorDot(if (warn) ColorToken.Warn else color) },
+                    // 行首图标与首页环状状态条同源字形 + 同色（低值预警转 Warn），便于按形状对照
+                    icon = { AttributeIcon(meta.id, if (warn) ColorToken.Warn else color) },
                     trailing = {
                         MiniProgressRing(value = value, color = color, warn = warn)
                     },
@@ -931,12 +934,14 @@ private fun StatusIconButton(kind: StatusIconKind, onClick: () -> Unit) {
         StatusIconKind.SAD -> ColorToken.Mood
         StatusIconKind.DIRTY -> ColorToken.Hygiene
         StatusIconKind.SICK -> ColorToken.Health
+        StatusIconKind.INTELLIGENCE -> ColorToken.Intelligence
     }
     val description = when (kind) {
         StatusIconKind.HUNGRY -> stringResource(R.string.status_icon_hungry)
         StatusIconKind.SAD -> stringResource(R.string.status_icon_sad)
         StatusIconKind.DIRTY -> stringResource(R.string.status_icon_dirty)
         StatusIconKind.SICK -> stringResource(R.string.status_icon_sick)
+        StatusIconKind.INTELLIGENCE -> stringResource(R.string.status_icon_intelligence)
     }
     val cd = stringResource(R.string.status_icon_cd, description)
     val metrics = screenMetrics()
@@ -954,7 +959,17 @@ private fun StatusIconButton(kind: StatusIconKind, onClick: () -> Unit) {
     }
 }
 
-/** 状态图标字形（碗=饿 / 云=不开心 / 水滴=脏 / 圆角十字=病），单色随属性色。 */
+/** 状态面板行首图标：复用首页主环同源字形（碗/气球/十字…，见 [drawAttributeGlyph]），
+ * 尺寸与首页一致（22dp），颜色随属性（低值预警转 Warn），各图标基于同一 side 盒居中绘制、视觉大小统一，便于对照。 */
+@Composable
+private fun AttributeIcon(id: AttributeId, tint: Color) {
+    val metrics = screenMetrics()
+    Canvas(Modifier.size(metrics.dp(22.dp))) {
+        drawAttributeGlyph(id = id, center = Offset(size.width / 2f, size.height / 2f), tint = tint, side = size.width)
+    }
+}
+
+/** 状态图标字形（碗=饿 / 云=不开心 / 水滴=脏 / 圆角十字=病 / 四角星=智力），单色随属性色。 */
 private fun DrawScope.drawStatusIcon(kind: StatusIconKind, tint: Color) {
     val l = size.width
     val strokeW = l * 0.13f
@@ -1008,6 +1023,24 @@ private fun DrawScope.drawStatusIcon(kind: StatusIconKind, tint: Color) {
                 size = Size(l * 0.16f, l * 0.48f),
                 cornerRadius = CornerRadius(r, r),
             )
+        }
+        StatusIconKind.INTELLIGENCE -> {
+            // 四角星（智慧/聪慧；面板属性图标专属，首页状态条不出现，仅用于状态面板对照）
+            val cx = l * 0.5f
+            val cy = l * 0.5f
+            val outer = l * 0.42f
+            val inner = l * 0.17f
+            val star = Path().apply {
+                for (i in 0..7) {
+                    val ang = kotlin.math.PI / 2 * i
+                    val rad = if (i % 2 == 0) outer else inner
+                    val x = cx + rad * kotlin.math.cos(ang).toFloat()
+                    val y = cy - rad * kotlin.math.sin(ang).toFloat()
+                    if (i == 0) moveTo(x, y) else lineTo(x, y)
+                }
+                close()
+            }
+            drawPath(star, tint)
         }
     }
 }
@@ -1083,6 +1116,7 @@ private fun ActionListPage(
             val feedDenied = ActionRule.feedDenied(profile, nowMs)
             val playDenied = ActionRule.playDenied(profile, nowMs)
             val petDenied = ActionRule.petDenied(profile, nowMs)
+            val cleanDenied = ActionRule.cleanDenied(profile, nowMs)
             // 投喂（可执行 → 进入食物子页；冷却/吃饱 → 空心只读）
             ActionRow(
                 title = stringResource(R.string.action_feed),
@@ -1104,6 +1138,16 @@ private fun ActionListPage(
                 dotColor = ColorToken.Health,
                 onClick = { onAction(ActionType.PET, null) },
             )
+            // 清洁：仅「脏了」（hygiene < 告警阈值）才出现；冷却空心只读（M11）
+            if (profile.attributes[AttributeId.HYGIENE] < LOW_VALUE_WARN) {
+                RoundListSpacer()
+                ActionRow(
+                    title = stringResource(R.string.action_clean),
+                    denied = cleanDenied,
+                    dotColor = ColorToken.Hygiene,
+                    onClick = { onAction(ActionType.CLEAN, null) },
+                )
+            }
             // 治疗：仅 SICK 才出现（不 SICK 不占位，引擎同条件拦截）
             if (profile.fsmState == PetState.SICK) {
                 RoundListSpacer()
@@ -1243,12 +1287,14 @@ private fun ActionResult.toPetFx(nonce: Long, ctx: Context): PetFx {
         ActionHint.EXCITED -> FxKind.EXCITED
         ActionHint.AFFECTION -> FxKind.AFFECTION
         ActionHint.TREATED -> FxKind.TREATED
+        ActionHint.CLEANING -> FxKind.CLEANING
     }
     val bubble = when (hint) {
         ActionHint.EATING -> if (note != null) ctx.getString(R.string.fx_eat_note, note) else ctx.getString(R.string.fx_eat)
         ActionHint.EXCITED -> ctx.getString(R.string.fx_excited)
         ActionHint.AFFECTION -> ctx.getString(R.string.fx_affection)
         ActionHint.TREATED -> ctx.getString(R.string.fx_treated)
+        ActionHint.CLEANING -> ctx.getString(R.string.fx_clean)
     }
     // 属性浮字：正值在前、负值（如喂食附带的清洁 −4）随后；四舍五入为整数展示
     val floats = AttributeRegistry.all

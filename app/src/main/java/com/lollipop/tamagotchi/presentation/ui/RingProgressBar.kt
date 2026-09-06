@@ -19,6 +19,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.lollipop.tamagotchi.presentation.theme.ColorToken
+import androidx.compose.ui.graphics.Path
+import com.lollipop.tamagotchi.core.attribute.AttributeId
 import kotlin.math.PI
 import kotlin.math.atan
 import kotlin.math.cos
@@ -40,12 +42,14 @@ fun RingProgressBar(
     modifier: Modifier = Modifier,
     values: List<Float> = listOf(68f, 74f, 81f),
     colors: List<Color> = listOf(ColorToken.Satiation, ColorToken.Mood, ColorToken.Health),
+    attributes: List<AttributeId> = listOf(AttributeId.SATIATION, AttributeId.MOOD, AttributeId.HEALTH),
     strokeWidth: Dp = 6.dp,
     iconSize: Dp = 12.dp,
     iconGap: Dp = 4.dp,
 ) {
     val n = values.size
     require(n == colors.size) { "主环弧段与配色数量一致" }
+    require(n == attributes.size) { "主环弧段与属性数量一致" }
     require(n >= 1) { "主环至少一段" }
 
     val canvasSize = outerRadius * 2
@@ -106,8 +110,8 @@ fun RingProgressBar(
                 }
                 // 段界小图标（绘于段起点）
                 val rad = boundary * PI / 180.0
-                drawMiniGlyph(
-                    index = i,
+                drawAttributeGlyph(
+                    id = attributes[i],
                     center = Offset(
                         center.x + (cos(rad) * iconR).toFloat(),
                         center.y + (sin(rad) * iconR).toFloat(),
@@ -175,14 +179,18 @@ fun MiniProgressRing(
     }
 }
 
-/** 段起点小图标（碗 / 气球 / 十字），极简几何占位，M3+ 换规范图标素材。 */
-private fun DrawScope.drawMiniGlyph(index: Int, center: Offset, tint: Color, side: Float) {
+/**
+ * 段起点小图标（碗=饱腹 / 气球=心情 / 十字=健康 / 水滴=清洁 / 五角星=智力），
+ * 极简几何占位，与状态面板共用同一套字形：统一 [side] 盒、居中绘制，保证各图标视觉大小一致，
+ * 便于用户按形状对照（doc/06 §3.1）。M3+ 若接入规范图标素材，仅需在此替换几何实现。
+ */
+internal fun DrawScope.drawAttributeGlyph(id: AttributeId, center: Offset, tint: Color, side: Float) {
     val left = center.x - side / 2f
     val top = center.y - side / 2f
     val w = side
-    when (index) {
-        // 碗（饱腹）：侧视碗沿线 + 下弧
-        0 -> {
+    when (id) {
+        // 碗（饱腹）：碗口线 + 下弧
+        AttributeId.SATIATION -> {
             val lineW = w * 0.16f
             drawLine(
                 color = tint,
@@ -202,7 +210,7 @@ private fun DrawScope.drawMiniGlyph(index: Int, center: Offset, tint: Color, sid
             )
         }
         // 气球（心情）：圆 + 两撇绳
-        1 -> {
+        AttributeId.MOOD -> {
             val lineW = w * 0.12f
             drawCircle(
                 color = tint,
@@ -226,7 +234,7 @@ private fun DrawScope.drawMiniGlyph(index: Int, center: Offset, tint: Color, sid
             )
         }
         // 十字（健康）
-        else -> {
+        AttributeId.HEALTH -> {
             val lineW = w * 0.16f
             drawLine(
                 color = tint,
@@ -242,6 +250,34 @@ private fun DrawScope.drawMiniGlyph(index: Int, center: Offset, tint: Color, sid
                 strokeWidth = lineW,
                 cap = StrokeCap.Round,
             )
+        }
+        // 水滴（清洁；面板专属，主环无此段）
+        AttributeId.HYGIENE -> {
+            val path = Path().apply {
+                moveTo(center.x, top + w * 0.12f)
+                cubicTo(left + w * 0.04f, top + w * 0.52f, left + w * 0.20f, top + w * 0.90f, center.x, top + w * 0.90f)
+                cubicTo(left + w * 0.80f, top + w * 0.90f, left + w * 0.96f, top + w * 0.52f, center.x, top + w * 0.12f)
+                close()
+            }
+            drawPath(path, tint)
+        }
+        // 五角星（智力；面板专属，主环无此段）
+        AttributeId.INTELLIGENCE -> {
+            val outer = w * 0.40f
+            val inner = w * 0.17f
+            val cx = center.x
+            val cy = center.y
+            val star = Path().apply {
+                for (i in 0 until 10) {
+                    val ang = -Math.PI / 2 + Math.PI / 5 * i
+                    val rad = if (i % 2 == 0) outer else inner
+                    val x = (cx + rad * Math.cos(ang)).toFloat()
+                    val y = (cy + rad * Math.sin(ang)).toFloat()
+                    if (i == 0) moveTo(x, y) else lineTo(x, y)
+                }
+                close()
+            }
+            drawPath(star, tint)
         }
     }
 }

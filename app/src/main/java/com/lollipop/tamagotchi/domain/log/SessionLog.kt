@@ -19,6 +19,7 @@ enum class EventLogType {
     ACTION_PLAY,
     ACTION_PET,
     ACTION_HEAL,
+    ACTION_CLEAN,
     RANDOM_EVENT,
     STATE_CHANGE,
     WAKE,

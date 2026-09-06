@@ -85,6 +85,7 @@ internal object PetProfileCodec {
         .put("play", m.play)
         .put("pet", m.pet)
         .put("heal", m.heal)
+        .put("clean", m.clean)
         .put("sick_total", m.sickTotal)
         .put("days_together", m.daysTogether)
 
@@ -186,6 +187,7 @@ internal object PetProfileCodec {
             play = obj.optLong("play", 0L),
             pet = obj.optLong("pet", 0L),
             heal = obj.optLong("heal", 0L),
+            clean = obj.optLong("clean", 0L),
             sickTotal = obj.optLong("sick_total", 0L),
             daysTogether = obj.optLong("days_together", 0L),
         )

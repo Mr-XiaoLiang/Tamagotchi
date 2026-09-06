@@ -9,6 +9,7 @@
     <string name="status_icon_sad">不开心</string>
     <string name="status_icon_dirty">脏</string>
     <string name="status_icon_sick">生病</string>
+    <string name="status_icon_intelligence">智力</string>
     <string name="status_icon_cd">%1$s（点按查看状态）</string>
 
     <string name="actions_title">操作</string>
@@ -16,6 +17,7 @@
     <string name="action_sleeping">呼噜中… 醒来后再来照顾</string>
     <string name="action_feed">投喂</string>
     <string name="action_play">玩耍</string>
+    <string name="action_clean">清洁</string>
     <string name="action_pet">抚摸</string>
     <string name="action_heal">治疗</string>
     <string name="actions_note">冷却 / 属性满自动只读 · 喂食需选口味（契合 +10%）</string>
@@ -51,6 +53,7 @@
     <string name="fx_excited">开心得蹦起来！</string>
     <string name="fx_affection">亲昵地蹭蹭你！</string>
     <string name="fx_treated">病好起来啦！</string>
+    <string name="fx_clean">洗得干干净净！</string>
 
 
     <string name="quick_edit">编辑</string>

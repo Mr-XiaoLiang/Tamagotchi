@@ -16,14 +16,14 @@ import com.lollipop.tamagotchi.domain.model.PetProfile
  * 玩家动作类型（doc/01 §10 面板动作集）。M1–M10 主链只实现四种：
  * 喂食（选食物）/ 玩耍 / 抚摸 / 治疗；清洁/学习随 M11/M12（doc/09 §5.2/§5.3）。
  */
-enum class ActionType { FEED, PLAY, PET, HEAL }
+enum class ActionType { FEED, PLAY, PET, HEAL, CLEAN }
 
 /**
  * 动作 FSM 提示（doc/02 §1.1）：喂食 → EATING、玩耍 → EXCITED 是短状态（2~3s 后回落）；
  * 抚摸「亲昵」与治疗无独立 PetState（doc/02 §1.1 注释：以短动作动画+气泡在现有状态上叠加）。
  * M6.S1 只出提示；表现层（M6.S2）据此播放，不把短态落持久快照（防冷启卡死锁态）。
  */
-enum class ActionHint { EATING, EXCITED, AFFECTION, TREATED }
+enum class ActionHint { EATING, EXCITED, AFFECTION, TREATED, CLEANING }
 
 /** 动作不可执行的展示原因（doc/06 §8.3：面板空心胶囊 = 只读信息位）。 */
 sealed interface ActionDenied {
@@ -80,6 +80,7 @@ object ActionRule {
     const val FEED_COOLDOWN_MS: Long = 5 * 1000L
     const val PLAY_COOLDOWN_MS: Long = 5 * 1000L
     const val PET_COOLDOWN_MS: Long = 5 * 1000L
+    const val CLEAN_COOLDOWN_MS: Long = 5 * 1000L
 
     /** 口味契合加成（doc/01 §7：额外 +10%）。 */
     const val FLAVOR_BONUS: Float = 1.1f
@@ -115,6 +116,9 @@ object ActionRule {
 
     fun petDenied(profile: PetProfile, now: Long): ActionDenied? =
         cooldown(profile.cooldowns.petUntil, now)
+
+    fun cleanDenied(profile: PetProfile, now: Long): ActionDenied? =
+        cooldown(profile.cooldowns.cleanUntil, now)
 
     fun healDenied(profile: PetProfile): ActionDenied? =
         if (profile.fsmState != PetState.SICK) ActionDenied.NotSick else null
@@ -226,6 +230,27 @@ object PetActions {
     }
 
     /**
+     * 清洁：hygiene +35（clamp 100，doc/01 §4.2）。冷却 5s。成功 stats.clean +1。
+     * 低 hygiene 仅触发轻度表现（M11.S2），domain 层只管数值与冷却。
+     */
+    fun onClean(
+        profile: PetProfile,
+        now: Long,
+        log: SessionLog? = null,
+    ): ActionResult? {
+        if (ActionRule.cleanDenied(profile, now) != null) return null
+        val cur = profile.attributes
+        val attrs = cur.set(HYG, cur[HYG] + CLEAN_HYGIENE_GAIN)
+        val after = profile.copy(
+            attributes = attrs,
+            cooldowns = profile.cooldowns.copy(cleanUntil = now + ActionRule.CLEAN_COOLDOWN_MS),
+            milestones = bump(profile.milestones) { it.copy(clean = it.clean + 1) },
+        )
+        return finish(profile, now, after, ActionHint.CLEANING,
+            now + ActionRule.CLEAN_COOLDOWN_MS, EventLogType.ACTION_CLEAN, log, null)
+    }
+
+    /**
      * 治疗：仅 SICK 可用；health +40（固定，doc/01 §6.2/§10）并结束 SICK（→ IDLE）。
      * 无冷却字段（治愈即不可再点）。成功 stats.heal +1。
      */
@@ -297,4 +322,5 @@ object PetActions {
     private const val PLAY_HYGIENE_COST = -2f
     private const val PLAY_INT_GAIN = 1f
     private const val PET_MOOD_GAIN = 5f
+    private const val CLEAN_HYGIENE_GAIN = 35f
 }

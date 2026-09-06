@@ -37,6 +37,7 @@ data class Milestones(
     val play: Long = 0L,
     val pet: Long = 0L,
     val heal: Long = 0L,
+    val clean: Long = 0L,
     val sickTotal: Long = 0L,
     val daysTogether: Long = 0L,
 )

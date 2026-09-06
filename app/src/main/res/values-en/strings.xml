@@ -9,6 +9,7 @@
     <string name="status_icon_sad">Unhappy</string>
     <string name="status_icon_dirty">Dirty</string>
     <string name="status_icon_sick">Sick</string>
+    <string name="status_icon_intelligence">Intelligence</string>
     <string name="status_icon_cd">%1$s (tap to view status)</string>
 
     <string name="actions_title">Actions</string>
@@ -16,6 +17,7 @@
     <string name="action_sleeping">Zzz… wake up to care</string>
     <string name="action_feed">Feed</string>
     <string name="action_play">Play</string>
+    <string name="action_clean">Clean</string>
     <string name="action_pet">Pet</string>
     <string name="action_heal">Heal</string>
     <string name="actions_note">Cooldown / full attr → read-only · feeding needs a flavor (match +10%)</string>
@@ -51,6 +53,7 @@
     <string name="fx_excited">So happy!</string>
     <string name="fx_affection">Snuggles you!</string>
     <string name="fx_treated">Feeling better!</string>
+    <string name="fx_clean">All clean!</string>
 
 
     <string name="quick_edit">Edit</string>

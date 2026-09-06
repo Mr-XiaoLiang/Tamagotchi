@@ -164,6 +164,7 @@ private fun EntryFlow(
                     ActionType.PLAY -> PetActions.onPlay(cur, now, sessionLog)
                     ActionType.PET -> PetActions.onPet(cur, now, sessionLog)
                     ActionType.HEAL -> PetActions.onHeal(cur, now, sessionLog)
+                    ActionType.CLEAN -> PetActions.onClean(cur, now, sessionLog)
                 }
                 if (r != null) store.save(r.profile)
                 r

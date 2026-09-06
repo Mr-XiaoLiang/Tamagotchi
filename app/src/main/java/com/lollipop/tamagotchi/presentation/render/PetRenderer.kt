@@ -113,6 +113,7 @@ private fun fxEmotion(kind: FxKind): Emotion = when (kind) {
     FxKind.AFFECTION -> Emotion.SHY
     FxKind.TREATED -> Emotion.NONE
     FxKind.EATING -> Emotion.NONE
+    FxKind.CLEANING -> Emotion.NONE
 }
 
 /** FSM 持久状态 → 情绪（doc/07 §3 触发场景）。 */
@@ -167,7 +168,7 @@ private fun emotionTransform(e: Emotion, tick: Long, side: Float): PoseTransform
 }
 
 /** 动作短演出类别（doc/02 §1.1：短动作态 EATING/EXCITED 不落持久快照，表现层临时演出）。 */
-enum class FxKind { EATING, EXCITED, AFFECTION, TREATED }
+enum class FxKind { EATING, EXCITED, AFFECTION, TREATED, CLEANING }
 
 /** 浮字条目：属性变化反馈（如「+12 饱腹」），颜色随属性语义色。 */
 data class FxFloat(
@@ -267,22 +268,31 @@ fun PetLivingSprite(
         }
     }
 
-    // fx 新指令（nonce 变化即重启）：running 中从当前 tick 起记一次演出；running=false
-    // （面板覆盖/后台）时不启动，恢复后由 running 键变化重入本效应再启动。
-    // 已播放的 nonce 记入 [lastFxNonce]：面板反复开合（running 反复 true）时，同一动作演出只播一次，
-    // 避免「喂一次 → 每次开关面板都重弹饱食/清洁浮字」的复播问题。
+    // fx 装填与「开演」解耦，消除首条演出偶发丢失（doc/06 §6 反馈竞态）：
+    // 旧实现用 LaunchedEffect(fx, running) 且内部 !running 直接 return —— 首次交互面板是开着的
+    // （running=false），fx 抵达即被吞，需等 closeSheet() 把 running 翻转为真、该 effect 因 key 变化
+    // 重入补写 fxRun；这条「等翻转再补播」的链路在重组时序上偶发漏跑，表现为「点了没反应」。
+    // 现改为：fx 抵达即按 nonce 去重入队 [pendingFx]（与 running 无关，必定装填）；
+    // 真正开演交给下方 tick 循环在 running 时消费 [pendingFx]。已消费即清空，面板反复开合不重播。
     var lastFxNonce by remember { mutableStateOf(-1L) }
-    LaunchedEffect(fx, running) {
-        if (fx == null || !running) return@LaunchedEffect
+    var pendingFx by remember { mutableStateOf<PetFx?>(null) }
+    LaunchedEffect(fx) {
+        if (fx == null) return@LaunchedEffect
         if (fx.nonce == lastFxNonce) return@LaunchedEffect
         lastFxNonce = fx.nonce
-        fxRun = FxRun(fx, startTick = living.tick)
+        pendingFx = fx
     }
 
     LaunchedEffect(fsm, running, profile) {
         if (!running) return@LaunchedEffect
         while (true) {
             val now = System.currentTimeMillis()
+            // running 才开演；消费排队的 fx（仅当无进行中演出时），避免面板覆盖/后台时抢演
+            val due = pendingFx
+            if (due != null && fxRun == null) {
+                pendingFx = null
+                fxRun = FxRun(due, startTick = living.tick)
+            }
             val run = fxRun
             if (run != null && !run.progress(living.tick).isNaN()) {
                 // 短演出：冻结 FSM（行为不推进、不移动），沿当前坐标原地演出；
@@ -577,6 +587,18 @@ private fun DrawScope.drawScriptDecor(
                 close()
             }
             drawPath(heart, ColorToken.Mood)
+        }
+        FxKind.CLEANING -> {
+            // 泡泡：嘴前几颗小圆（M11.S2 占位视觉，真机定稿）
+            val bx = cx + side * 0.20f
+            val by = cy - side * 0.16f
+            repeat(3) { i ->
+                drawCircle(
+                    color = ColorToken.Hygiene,
+                    radius = r * (0.5f - i * 0.12f),
+                    center = Offset(bx + i * side * 0.06f, by - i * side * 0.05f),
+                )
+            }
         }
         FxKind.EXCITED -> Unit
     }

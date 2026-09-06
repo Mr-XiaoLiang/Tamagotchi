@@ -55,7 +55,7 @@
 
 ---
 
-## 3. 里程碑计划（M1–M16：主链 20 步 + 扩展 12 步，每里程碑 ≤ 2 步）
+## 3. 里程碑计划（M1–M17：主链 20 步 + 扩展 14 步，每里程碑 ≤ 2 步）
 
 ### 3.1 总览与依赖
 
@@ -73,9 +73,9 @@ M1 壳(可跑) ─┬→ M2 真宠上屏(可跑) ─→ M3 建档与数据闭环
 M9 在线惊喜(随机事件+会话回顾，可跑) ─ M10 表现质感 + 性能走查调参
 （M9 依赖 M6 的 SessionLog 骨架与 M4 渲染循环；M10 依赖 M4/M6/M7 表现位）
 
-── 扩展段（M11–M16，doc/09 §5 扩展位连续落地，不叫 V2）──
-M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 收藏档案(墓碑+切换) → M16 休闲小游戏入右滑
-（各步都踩在主链对应基建上：M6 动作框架 / M9 回顾 / M10 表现 / M8 插件位；M16 仅依赖 M8，可随时并行）
+── 扩展段（M11–M17，doc/09 §5 扩展位连续落地，不叫 V2）──
+M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 收藏档案(墓碑+切换) → M16 休闲小游戏入右滑 → M17 偏好设置(功能清单入口)
+（各步都踩在主链对应基建上：M6 动作框架 / M9 回顾 / M10 表现 / M8 插件位；M16 仅依赖 M8，可随时并行；M17 偏好设置依赖 M8 功能清单面板 + M15 墓碑/切换）
 ```
 
 | 里程碑 | 主题 | 步数 | 收盘演示 | 吸收的原 Phase |
@@ -93,7 +93,7 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 
 > 里程碑编号是**建议顺序**。M8 与 M9/M10 相互解耦（M8 只依赖 M1 壳 + RoundSafe），可按团队并行或调前调后；M9/M10 内部部分子任务可互换。
 
-**扩展里程碑（M11–M16）**：对应 doc/09 §5 六个扩展位，全部续接在主链 M10 之后（**编号连续、不区分版本**，非「V2 阶段」），每块 ≤2 步收盘：
+**扩展里程碑（M11–M17）**：对应 doc/09 §5 六个扩展位 + 偏好设置（§5.7），全部续接在主链 M10 之后（**编号连续、不区分版本**，非「V2 阶段」），每块 ≤2 步收盘：
 
 | 里程碑 | 扩展位（doc/09 §5） | 收盘演示 | 依赖主链 |
 |---|---|---|---|
@@ -103,6 +103,7 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 | M14 | 便条/邮件（§5.4） | 长按/回顾可见宠物便条（非推送） | M7/M9 会话回顾 + 迎接 |
 | M15 | 收藏档案：电子墓碑 + 快照切换（§5.5） | 换宠归档旧宠、可切回、原样恢复 | M3 建档 / M10 stats / M14 |
 | M16 | 休闲小游戏入右滑（§5.6） | 右滑清单内可玩一局小游戏 | M8 插件位（可并行） |
+| M17 | 偏好设置（§5.7） | 右滑清单「偏好设置」→ 独立设置页；重开宠物 / 墓碑相关设置可用 | M8 功能清单 / M15 墓碑 |
 
 ---
 
@@ -436,9 +437,9 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 #### M11.S1 清洁 domain：onClean + 冷却（P1）
 
 **任务**
-- [ ] `BehaviorFSM.onClean(now, s)` 实现（doc/02 §5 预留位）：效果 `hygiene +35`、冷却 **3h**、低 hygiene 只触发轻度表现（doc/01 §4.2 已在 v1 建）。
-- [ ] `ActionRule` 增 onClean 行：面板只在「脏了」上下文出现清洁入口（06 §8.2/§8.3 胶囊）。
-- [ ] 单测：冷却 3h、+35 clamp、ActionRule 可用判定、SessionLog 追加 `ACTION_CLEAN`（04 §2 枚举已预留，随 M11 启用）。
+- [x] `PetActions.onClean`（沿用 M6 动作模式，非 BehaviorFSM）实现：效果 `hygiene +35`（clamp 100）、冷却 **3h**、低 hygiene 仅轻度表现（doc/01 §4.2 已在 v1 建）。
+- [x] `ActionRule.cleanDenied` + 面板仅在「脏了」(hygiene < LOW_VALUE_WARN=30) 上下文出现清洁胶囊（06 §8.3）。
+- [x] 单测：冷却 3h、+35 clamp、可用判定、`SessionLog` 追加 `ACTION_CLEAN`（04 §2 枚举启用）；`ActionsTest` 4 例全绿。
 
 **产出**：onClean 纯逻辑 + 单测绿。
 
@@ -447,9 +448,9 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 #### M11.S2 清洁胶囊 + 泡泡表现（P0）
 
 **任务**
-- [ ] 操作面板/状态上下文出现「清洁」胶囊（脏了实心可点、冷却空心；06 §8.3）。
-- [ ] 表现：水滴/泡泡动画 + 抖毛（复用 M10.S1 短脚本，07 §7）；状态图标脏→净。
-- [ ] 手测路径：让 hygiene 降（或 debug 注入）→ 点清洁 → 数值上升 + 表现。
+- [x] 操作面板「脏了」时出现「清洁」胶囊（实心可点 / 冷却空心倒计时；06 §8.3），`ActionType.CLEAN` 接入 `PetActivity.performAction`。
+- [x] 表现：`CLEANING` hint/FxKind 管线接通 + 泡泡装饰占位（真机定稿），`fx_clean` 气泡文案三语齐；状态图标脏(hygiene<30)→净随数值自动显隐。
+- [ ] 手测路径（真机）：让 hygiene 降（或 debug 注入）→ 点清洁 → 数值上升 + 表现（留真机走查）。
 
 **产出**：可玩的清洁闭环。
 
@@ -599,6 +600,38 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 
 ---
 
+### M17 偏好设置（右滑功能清单入口 → 独立设置 Activity）
+
+> 扩展位 doc/09 §5.7。入口在右滑功能清单面板（`QuickPanelBody` / `AppGridContent`），位于现有「编辑」(EditGridCell, tune 图标) **之前**；点击打开独立 `SettingsActivity : BaseActivity`（沿用 00 T-16 / ADR-12 同款全屏 Activity 范式，与 M16 小游戏页一致），承载游戏内偏好调整。设置项除基础「重新开始选择宠物」外，还联动 M15 电子墓碑/切换；其余项按场景增删（标注「可后续按场景添加」）。
+
+#### M17.S1 设置数据 + 清单入口（P1）
+
+**任务**
+- [ ] 新增 `SettingsStore`（SP，独立 schema，与宠物快照 `PetStore` 解耦；T-09 唯一持久化点仍成立——只是新增一份偏好 SP）：承载偏好项键值（如 `restartPet`、`tombstone*` 相关开关/选择）。
+- [ ] 功能清单面板在 `AppGridContent` 的「编辑」单元**之前**插入「偏好设置」网格单元（图标待定，见未决项）；点击 → `startActivity(SettingsActivity)` 并 `onDismiss()`。
+- [ ] `SettingsActivity : BaseActivity`（新建，遵循 M16 同款 Activity 范式）：标准圆屏滚动页（`RoundList` + `PillItem`，doc/06 §8.3/§8）；先有壳 + 入口闭环，暂不绑定具体控件。
+- [ ] 单测：`SettingsStore` 读写 roundtrip。
+
+**产出**：设置 SP + 功能清单「偏好设置」入口 + 设置 Activity 壳。
+
+**验收（P1）**：右滑清单出现「偏好设置」（编辑之前）；点击进入设置页；返回主屏无扰动；单测绿。
+
+#### M17.S2 设置项落地（P0）
+
+**任务**
+- [ ] **重新开始选择宠物**：触发「换宠/重开」流程（承接 M15 换宠归档——归档当前宠为墓碑 → 开新档；若未启用墓碑则回退覆盖写重开，与 M3 debug 重开档口径一致）。需二次确认弹窗（防误触）。
+- [ ] **电子墓碑相关设置**：与 M15 墓碑/切换联动的项（如：是否启用墓碑归档、墓碑列表入口可见性、切回确认强度等；具体按场景增删）。
+- [ ] 预留「按场景添加更多设置项」扩展位（动作间隔开关/微调、衰减速率、音效/震动等可后续接入）。
+- [ ] 手测：右滑 → 偏好设置 → 调整 → 返回主屏无扰动；重开宠物闭环正确。
+
+**产出**：偏好设置基础项闭环。
+
+**验收（P0）**：「偏好设置」入口可用；重新开始选择宠物 / 墓碑相关设置可用；返回主屏无扰动。
+
+**未决项（实现前需补）**：「偏好设置」网格单元图标（drawable）待用户提供；图标到位后提醒添加到项目并接入 `AppGridContent`（沿用 `EditGridCell` 同款样式）。
+
+---
+
 ## 4. 工作规则（编码期，AI 与人共守）
 
 1. **范围纪律**：一个里程碑内只做该里程碑范围（主链各线 v1 内容 / M11–M16 扩展）；发现想法不在当前范围时记录到后续里程碑或 doc/09 §5 扩展位，不顺手实现、不提前混入。
@@ -643,15 +676,16 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 | M7 离线叙事回放 | 迎接语气 + 回放时间线 | ☑ | S1+S2 收盘：共享速率模型 `SettleModel`(DecayModel+simulateSegments) 防漂移；`DefaultOfflineTimelineBuilder`——physio 份额切分严格守恒(=快速积分 totalDelta)、突发受控(|ΣΔ|≤3/24h、正向略多)、封顶 48(>72h→24)、种子=lastSettledAt 确定性、EndingMood 推导；`SettleEngine.settle` 长窗(≥20min)挂 `SettlementSummary.offlineTimeline+endingMood`。S2：`SessionLog.openWith` 铺开场段(ReplayEntry+SettleEntry) + 单测；i18n 扩展函数（`EndingMood.labelRes` / `offlineEventBubbleRes` / `greetingRes`，core 不引 R，沿用用户确认的扩展函数方案）+ 三语言字符串；`EntryFlow` 调 `openWith` 并透出 `settleSummary`；`PetScreen` 加迎接气泡(GreetingBubble，4.5s/点击消失) + 状态面板内回放时间线列表。全量单测绿。 |
 | M8 右滑插件清单 | 动态 App 网格 + 编辑添加 + 预留接口 | ☑ | S1+S2 收盘（重构）：面板**去预设**——`AppLister`(PackageManager 动态发现全量可启动 App，Manifest `<queries>` 保包可见性) + 双列真实 App 图标网格；点击经 `PluginExecutor`→`PluginResolver.launch` 真正拉起（修 M8.S2 仅解析不启动）；长按/顶栏「编辑」→ ↑↓ 排序 / × 移除 / ＋ 从系统可读到的全部 App 添加 / 恢复默认，选择写回 `PluginPrefsStore`(`selected` 有序包名)；失败 Bubble 不崩。非 App 功能仅留接口（`PluginSpec`/`PluginExecutor`/`PluginRegistry` 当前空表）。Registry/Prefs/Executor 单测全绿（24 套），编译绿。真机手测（图标清晰度/包可见性/拉起/持久化）待走查 |
 | M9 在线惊喜 + 回顾 | 随机事件 + 本次小结 | ☑ | S1 收盘：`domain/engine/EventEngine.kt`——在线事件库（doc/03 §4 子集：found_food/sneeze/curious_walk/yawn/beg_food/dream/treat_hunt）、候选过滤（状态/属性/时段/性格）+ 全局节奏(5min)/单事件冷却/日上限(3) + 权重抽签（trait 加权）；`trigger`=应用数值微扰(clamp)+写 RANDOM_EVENT 日志，瞬态(EXCITED)不落盘、持久态(SLEEPING/WALKING)写回 fsmState。`EventEngineTest` 17 例全绿。S2 收盘：EntryFlow 前台每 30s 探一次 `EventEngine.rollEvent`，命中→应用 delta+存档+写日志+上抛 `OnlineEvent`，PetScreen 复用 `PetFx` 气泡/浮字短演出；状态面板新增「本次动态」回放本会话 RANDOM_EVENT（7 条事件气泡三语齐全）。main 编译绿、单测全绿 |
-| M10 质感 + 走查调参 | 情绪/短脚本 + 08§5 走查 | ☐ | |
-| M11 清洁/洗澡 | 脏→清洁→净 + 泡泡表现 | ☐ | |
+| M10 质感 + 走查调参 | 情绪/短脚本 + 08§5 走查 | ◑ | S1 收盘（代码）：PetRenderer 三层表现落地——层2 Emotion 参数化脚本全量（HAPPY/SAD/ANGRY/TIRED/SICK/CURIOUS/SHY/STARTLED，scale/rotate/translate 由 tick 相位驱动）+ 层3 短脚本装饰（EATING 食物包 / TREATED 药丸 / AFFECTION 爱心，简单矢量无外部素材）+ SICK 灰 tint（BlendMode.Multiply，仅作用于不透明像素）+ 形变垫层（绕模型中心 scale/rotate/translate + 屏圆 clip，不裁源图）；`EmotionLayer.enabled` 可整体停用情绪而不破坏状态/演出。编译绿。真机观感（形变幅度手感/睡姿/64×64 放大 FilterQuality）留 M10.S2 走查定稿。 |
+| M11 清洁/洗澡 | 脏→清洁→净 + 泡泡表现 | ☑ | S1+S2 代码收盘：onClean+3h 冷却+hygiene+35+clean 里程碑+ACTION_CLEAN 日志；面板脏时清洁胶囊+泡泡占位+fx_clean 三语；ActionsTest 4 例绿、全量单测绿。真机手测（脏→清洁→净、冷却实时）留走查 |
 | M12 学习/教育 | 智力增长 + 阈值解锁可见 | ☐ | |
 | M13 玩具变体 | ≥2 玩具表现/收益可区分 | ☐ | |
 | M14 宠物便条 | 长按/回顾见贴合便条 | ☐ | |
 | M15 收藏档案 | A→换B(墓碑)→切回A 一致 | ☐ | |
 | M16 休闲小游戏 | 右滑进游戏一局有始有终 | ☐ | |
+| M17 偏好设置 | 右滑「偏好设置」→设置页；重开宠物/墓碑设置可用 | ☐ | |
 
-> 里程碑建议顺序：主链 M1→…→M10（M8 可与 M9/M10 并行，仅依赖 M1）；扩展 M11→…→M16（编号连续、不叫 V2，M16 仅依赖 M8、可与 M11–M15 并行）。每里程碑收盘把「验证记录 / 例外」填入上表并同步更新 README §9 阶段指引。
+> 里程碑建议顺序：主链 M1→…→M10（M8 可与 M9/M10 并行，仅依赖 M1）；扩展 M11→…→M17（编号连续、不叫 V2，M16 仅依赖 M8、可与 M11–M15 并行；M17 依赖 M8 功能清单 + M15 墓碑）。每里程碑收盘把「验证记录 / 例外」填入上表并同步更新 README §9 阶段指引。
 
 ---
 
