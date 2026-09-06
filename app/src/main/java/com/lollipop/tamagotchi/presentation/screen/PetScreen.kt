@@ -5,8 +5,13 @@ import android.content.pm.ApplicationInfo
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -608,6 +613,18 @@ fun PetScreen(
                 emptyList()
             }
             if (statusIcons.isNotEmpty()) {
+                // 缓慢呼吸闪烁（约 1.6s 一轮，1↔0.3 反向）表示「需要操作」提醒；
+                // 与外层 statusAlpha（进场/淡出）相乘叠加，不影响热区与进场动画。
+                val blinkAlpha by rememberInfiniteTransition(label = "statusIconBlink")
+                    .animateFloat(
+                        initialValue = 1f,
+                        targetValue = 0.3f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(durationMillis = 1600, easing = FastOutSlowInEasing),
+                            repeatMode = RepeatMode.Reverse,
+                        ),
+                        label = "statusIconBlinkAlpha",
+                    )
                 Box(
                     Modifier
                         .align(Alignment.Center)
@@ -616,6 +633,7 @@ fun PetScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Row(
+                        Modifier.alpha(blinkAlpha),
                         horizontalArrangement = Arrangement.spacedBy(2.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -913,12 +931,18 @@ private fun ColumnScope.StatusPanelBody(
                 PanelTitle(stringResource(R.string.replay_title))
                 settleTimeline.forEach { ev ->
                     RoundListSpacer()
+                    val bubbleRes = offlineEventBubbleRes(ev.eventId) ?: R.string.ev_idle_pass
+                    val bubbleText = if (ev.place != null) {
+                        val placeName = if (PokemonNames.isZh()) ev.place.zh ?: ev.place.en else ev.place.en
+                        stringResource(bubbleRes, placeName)
+                    } else {
+                        stringResource(bubbleRes)
+                    }
                     PillItem(
-                        stringResource(offlineEventBubbleRes(ev.eventId) ?: R.string.ev_idle_pass),
+                        bubbleText,
                         filled = false,
                         contentPadding = PaddingValues(start = 18.dp, end = 11.dp),
-                        icon = { ColorDot(if (ev.highlight) ColorToken.Accent else ColorToken.Text2) },
-                        trailing = null,
+                        maxLines = Int.MAX_VALUE,
                         onClick = null,
                     )
                 }
@@ -933,8 +957,7 @@ private fun ColumnScope.StatusPanelBody(
                         stringResource(eventBubbleRes(log.note ?: "") ?: R.string.ev_idle_pass),
                         filled = false,
                         contentPadding = PaddingValues(start = 18.dp, end = 11.dp),
-                        icon = { ColorDot(ColorToken.Accent) },
-                        trailing = null,
+                        maxLines = Int.MAX_VALUE,
                         onClick = null,
                     )
                 }
@@ -991,12 +1014,15 @@ private fun attributeColor(id: AttributeId): Color = when (id) {
  */
 @Composable
 private fun StatusIconButton(kind: StatusIconKind, onClick: () -> Unit) {
-    val tint = when (kind) {
-        StatusIconKind.HUNGRY -> ColorToken.Satiation
-        StatusIconKind.SAD -> ColorToken.Mood
-        StatusIconKind.DIRTY -> ColorToken.Hygiene
-        StatusIconKind.SICK -> ColorToken.Health
-        StatusIconKind.KNOWLEDGE -> ColorToken.Knowledge
+    // 与状态面板行首、主环进度条同源字形（drawAttributeGlyph）：直接用对应属性图标，
+    // 不再另画一套（原 drawStatusIcon 的云/四角星等与之不一致，已移除）。
+    // 颜色取「低值预警」同款 Warn（与状态面板低值行、迷你环预警同色），统一提醒语义。
+    val id = when (kind) {
+        StatusIconKind.HUNGRY -> AttributeId.SATIATION
+        StatusIconKind.SAD -> AttributeId.MOOD
+        StatusIconKind.DIRTY -> AttributeId.HYGIENE
+        StatusIconKind.SICK -> AttributeId.HEALTH
+        StatusIconKind.KNOWLEDGE -> AttributeId.KNOWLEDGE
     }
     val description = when (kind) {
         StatusIconKind.HUNGRY -> stringResource(R.string.status_icon_hungry)
@@ -1015,9 +1041,7 @@ private fun StatusIconButton(kind: StatusIconKind, onClick: () -> Unit) {
             .semantics { contentDescription = cd },
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(Modifier.size(metrics.dp(22.dp))) {
-            drawStatusIcon(kind = kind, tint = tint)
-        }
+        AttributeIcon(id, ColorToken.Warn)
     }
 }
 
@@ -1031,81 +1055,7 @@ private fun AttributeIcon(id: AttributeId, tint: Color) {
     }
 }
 
-/** 状态图标字形（碗=饿 / 云=不开心 / 水滴=脏 / 圆角十字=病 / 四角星=知识），单色随属性色。 */
-private fun DrawScope.drawStatusIcon(kind: StatusIconKind, tint: Color) {
-    val l = size.width
-    val strokeW = l * 0.13f
-    when (kind) {
-        StatusIconKind.HUNGRY -> {
-            // 碗：碗口线 + 碗身下半弧
-            drawLine(
-                color = tint,
-                start = Offset(l * 0.14f, l * 0.36f),
-                end = Offset(l * 0.86f, l * 0.36f),
-                strokeWidth = strokeW,
-            )
-            drawArc(
-                color = tint,
-                startAngle = 0f,
-                sweepAngle = 180f,
-                useCenter = false,
-                topLeft = Offset(l * 0.14f, l * 0.32f),
-                size = Size(l * 0.72f, l * 0.72f),
-                style = Stroke(width = strokeW),
-            )
-        }
-        StatusIconKind.SAD -> {
-            // 云：三圆簇（不开心）
-            drawCircle(tint, radius = l * 0.21f, center = Offset(l * 0.5f, l * 0.64f))
-            drawCircle(tint, radius = l * 0.17f, center = Offset(l * 0.32f, l * 0.5f))
-            drawCircle(tint, radius = l * 0.17f, center = Offset(l * 0.68f, l * 0.5f))
-        }
-        StatusIconKind.DIRTY -> {
-            // 水滴（脏）
-            val path = Path().apply {
-                moveTo(l * 0.5f, l * 0.1f)
-                cubicTo(l * 0.04f, l * 0.52f, l * 0.2f, l * 0.9f, l * 0.5f, l * 0.9f)
-                cubicTo(l * 0.8f, l * 0.9f, l * 0.96f, l * 0.52f, l * 0.5f, l * 0.1f)
-                close()
-            }
-            drawPath(path, tint)
-        }
-        StatusIconKind.SICK -> {
-            // 圆角十字（病）
-            val r = l * 0.12f
-            drawRoundRect(
-                color = tint,
-                topLeft = Offset(l * 0.26f, l * 0.42f),
-                size = Size(l * 0.48f, l * 0.16f),
-                cornerRadius = CornerRadius(r, r),
-            )
-            drawRoundRect(
-                color = tint,
-                topLeft = Offset(l * 0.42f, l * 0.26f),
-                size = Size(l * 0.16f, l * 0.48f),
-                cornerRadius = CornerRadius(r, r),
-            )
-        }
-        StatusIconKind.KNOWLEDGE -> {
-            // 四角星（智慧/聪慧；面板属性图标专属，首页状态条不出现，仅用于状态面板对照）
-            val cx = l * 0.5f
-            val cy = l * 0.5f
-            val outer = l * 0.42f
-            val inner = l * 0.17f
-            val star = Path().apply {
-                for (i in 0..7) {
-                    val ang = kotlin.math.PI / 2 * i
-                    val rad = if (i % 2 == 0) outer else inner
-                    val x = cx + rad * kotlin.math.cos(ang).toFloat()
-                    val y = cy - rad * kotlin.math.sin(ang).toFloat()
-                    if (i == 0) moveTo(x, y) else lineTo(x, y)
-                }
-                close()
-            }
-            drawPath(star, tint)
-        }
-    }
-}
+
 
 /**
  * 操作面板（底）：对侧（顶部）固定收起条 + 滚动列表；页内两级（动作列表 ⇄ 食物选择）。

@@ -7,12 +7,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -44,22 +46,28 @@ fun PillItem(
     trailing: (@Composable () -> Unit)? = null,
     contentPadding: PaddingValues = PaddingValues(horizontal = 18.dp),
     textAlign: TextAlign = TextAlign.Start,
+    maxLines: Int = 1,
     onClick: (() -> Unit)? = null,
 ) {
     val bg = if (filled) (color ?: ColorToken.PillFilled) else Color.Transparent
     val borderColor = if (filled) Color.Transparent else (color ?: ColorToken.PillOutline)
     val textColor = if (filled) ColorToken.OnAccent else (color ?: ColorToken.Text2)
-    val shape = CircleShape
+    // 多行日志（maxLines>1）改用圆角矩形，避免高个子被 CircleShape 裁成椭圆切角；
+    // 单行维持胶囊形（doc/06 §8.3）。
+    val single = maxLines == 1
+    val shape = if (single) CircleShape else RoundedCornerShape(23.dp)
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(46.dp)
+            .then(if (single) Modifier.height(46.dp) else Modifier.defaultMinSize(minHeight = 46.dp))
             .clip(shape)
             .background(bg)
             .border(if (filled) 0.dp else 2.dp, borderColor, shape)
             .clickable(enabled = onClick != null, onClick = { onClick?.invoke() })
-            .padding(contentPadding),
+            .padding(contentPadding)
+            // 多行：补上下内边距，避免换行后文字紧贴边框（单行固定 46dp 居中已自带间距）
+            .then(if (single) Modifier else Modifier.padding(vertical = 11.dp)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
@@ -71,7 +79,7 @@ fun PillItem(
             color = textColor,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
-            maxLines = 1,
+            maxLines = maxLines,
             overflow = TextOverflow.Ellipsis,
             textAlign = textAlign,
             modifier = Modifier.weight(1f),

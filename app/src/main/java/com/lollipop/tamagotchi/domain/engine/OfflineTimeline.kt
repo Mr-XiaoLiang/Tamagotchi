@@ -106,6 +106,9 @@ class DefaultOfflineTimelineBuilder(
         // 4) 突发扰动（正负受控，净值 ≤ budget）
         insertSudden(events, pCount, traits, rng, suddenBudget, cap)
 
+        // 4.5) 户外出行事件（离线够久才可能出门，见 insertOuting）
+        insertOuting(events, rng, start, elapsedMs, traits, cap)
+
         // 5) 按时间排序
         events.sortBy { it.ts }
 
@@ -203,6 +206,64 @@ class DefaultOfflineTimelineBuilder(
             )
             made++
         }
+    }
+
+    // ── 户外出行事件（doc 任务：离线够久 → 去宝可梦地名玩）─────────
+
+    private val OUTING_MIN_HOURS = 2f
+    private val OUTING_BASE_CHANCE = 0.7f
+
+    private data class OutingScenario(val id: String, val delta: Map<AttributeId, Float>)
+
+    private val OUTING_SCENARIOS = listOf(
+        OutingScenario("outing_explore", mapOf(AttributeId.MOOD to +2f)),
+        OutingScenario("outing_picnic", mapOf(AttributeId.SATIATION to +4f, AttributeId.MOOD to +2f)),
+        OutingScenario("outing_mud", mapOf(AttributeId.HYGIENE to -3f, AttributeId.MOOD to +2f)),
+        OutingScenario("outing_friends", mapOf(AttributeId.MOOD to +3f, AttributeId.KNOWLEDGE to +1f)),
+        OutingScenario("outing_lost", mapOf(AttributeId.MOOD to -2f, AttributeId.SATIATION to -1f)),
+        OutingScenario("outing_tired", mapOf(AttributeId.SATIATION to -2f, AttributeId.MOOD to +1f)),
+        OutingScenario("outing_find", mapOf(AttributeId.KNOWLEDGE to +2f, AttributeId.MOOD to +1f)),
+    )
+
+    /**
+     * 插入一段「出门远行」高亮事件：离线够久（≥ [OUTING_MIN_HOURS]）才可能发生，
+     * 且按性格好动度概率触发；出行发生在白天段，地名从 [PokemonPlaces] 随机抽。
+     * 出行是叙事性高亮（不改变真实快照，与突发扰动同属展示层），幅度保持温和。
+     */
+    private fun insertOuting(
+        events: MutableList<OfflineEvent>,
+        rng: java.util.Random,
+        start: Long,
+        elapsedMs: Long,
+        traits: com.lollipop.tamagotchi.domain.model.Traits,
+        cap: Int,
+    ) {
+        val elapsedHours = elapsedMs / DecayModel.HOUR_MS
+        // 「去外面玩」要消耗大量离线时间：离线不够久就不包含户外事件
+        if (elapsedHours < OUTING_MIN_HOURS) return
+        // 好动性格更爱出门；概率性，不是每次久离都出门
+        val chance = OUTING_BASE_CHANCE * (0.6f + 0.8f * traits.activity)
+        if (rng.nextFloat() >= chance) return
+        if (events.size + 1 > cap) return
+
+        val place = PokemonPlaces.pick(rng)
+        val scenario = OUTING_SCENARIOS[rng.nextInt(OUTING_SCENARIOS.size)]
+        // 出门在白天段；全是夜晚则退化为窗口内随机点
+        val dayCandidates = events.filter { !DecayModel.isNight(it.ts, zoneId) }
+        val ts = if (dayCandidates.isNotEmpty()) {
+            dayCandidates[rng.nextInt(dayCandidates.size)].ts
+        } else {
+            start + (rng.nextFloat() * elapsedMs).toLong()
+        }
+        events += OfflineEvent(
+            ts = ts,
+            kind = OfflineKind.OUTING,
+            eventId = scenario.id,
+            bubbleId = scenario.id,
+            delta = AttributeDelta.of(*scenario.delta.toList().toTypedArray()),
+            highlight = true,
+            place = place,
+        )
     }
 
     // ── 结尾基调（doc/03 §7.6）────────────────────────────────

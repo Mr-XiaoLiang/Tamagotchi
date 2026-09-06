@@ -83,6 +83,13 @@ fun offlineEventBubbleRes(eventId: String): Int? = when (eventId) {
     "nice_dream" -> R.string.ev_nice_dream
     "spooked_noise" -> R.string.ev_spooked_noise
     "knock_bowl" -> R.string.ev_knock_bowl
+    "outing_explore" -> R.string.ev_outing_explore
+    "outing_picnic" -> R.string.ev_outing_picnic
+    "outing_mud" -> R.string.ev_outing_mud
+    "outing_friends" -> R.string.ev_outing_friends
+    "outing_lost" -> R.string.ev_outing_lost
+    "outing_tired" -> R.string.ev_outing_tired
+    "outing_find" -> R.string.ev_outing_find
     else -> null
 }
 

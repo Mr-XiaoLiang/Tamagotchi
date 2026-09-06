@@ -100,6 +100,15 @@
     <string name="ev_spooked_noise">Startled by a loud noise</string>
     <string name="ev_knock_bowl">Knocked the bowl over</string>
 
+    <!-- 户外出行事件（doc 任务：去宝可梦地名玩，%s = 地名） -->
+    <string name="ev_outing_explore">Strolled through %s, eyes sparkling</string>
+    <string name="ev_outing_picnic">Picnicked at %s and found yummy berries</string>
+    <string name="ev_outing_mud">Got muddy playing by the water at %s</string>
+    <string name="ev_outing_friends">Met other Pokémon at %s and made friends</string>
+    <string name="ev_outing_lost">Wandered off and got a little lost in %s</string>
+    <string name="ev_outing_tired">Ran around %s until totally worn out</string>
+    <string name="ev_outing_find">Found a curious souvenir at %s</string>
+
     <string name="greet_back">You\'re back!</string>
     <string name="greet_miss">Missed you—where\'d you go?</string>
     <string name="greet_wait">Waited so long~</string>

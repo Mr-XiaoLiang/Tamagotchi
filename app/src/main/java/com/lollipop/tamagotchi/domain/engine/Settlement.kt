@@ -8,7 +8,7 @@ import com.lollipop.tamagotchi.core.attribute.AttributeDelta
  * M5.S1 仅为 [SettlementSummary] 的契约占位：快速积分不铺时间线，字段恒 null；
  * 长离线铺排（生成器 + 事件库 + 结尾基调推导）在 M7 由 OfflineTimelineBuilder 落地。
  */
-enum class OfflineKind { PHYSIO, SUDDEN }
+enum class OfflineKind { PHYSIO, SUDDEN, OUTING }
 
 /** 会话结尾基调（doc/03 §7.6）：M7 由时间线末尾事件推导，交给迎接语气 / 会话回顾。 */
 enum class EndingMood { JOYFUL, GRUMBLING, NEEDY, SLEEPY, SICKLY }
@@ -21,6 +21,8 @@ data class OfflineEvent(
     val bubbleId: String,
     val delta: AttributeDelta,
     val highlight: Boolean,
+    /** 户外出行事件携带的目的地（[com.lollipop.tamagotchi.domain.engine.PokemonPlaces]）；非出行事件为 null。 */
+    val place: Place? = null,
 )
 
 /**
