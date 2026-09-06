@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -82,6 +83,8 @@ fun SetupProfileScreen(
 ) {
     val ctx = LocalContext.current
     val pool = remember(ctx) { SpriteThumbPool(ctx.assets) }
+    // 屏退出即整体回收缩略池：建档页离开后不再需要任何缩略图（子 PetPortrait 先 unpin、此后再全量 clear，顺序安全）
+    DisposableEffect(pool) { onDispose { pool.clear() } }
     val pets = remember(ctx) { SpriteRepository(ctx.assets).listPets() }
     var selected by remember { mutableStateOf<PetEntry?>(null) }
     var personality by remember { mutableStateOf<Personality?>(null) }
@@ -329,29 +332,55 @@ private fun TraitBars(traits: Traits) {
 /**
  * 建档/预览共用的 1-Bitmap/宠 LRU 池（整表 256×256，帧 0 裁剪展示）。
  * 上限 12 张表；逐出即 recycle。解码在 IO 线程串行执行（内部锁），可见行懒加载。
+ *
+ * **Pin 保护（曾 CRASH：`Canvas: trying to use a recycled bitmap`）**：
+ * LazyColumn 会保留滚出可视区的行（key 缓存），其 PetPortrait 仍持有位图引用；
+ * 若池按纯 LRU 逐出该位图并 recycle，回滚显示时 drawImage 即崩。
+ * 因此组合存续期间由 [pin]/[unpin] 计数锁定——池只回收非 Pin 项；
+ * 全部 Pin 时允许短暂超 cap（同时组合的宠数量上界很小，内存可控）。
  */
 private class SpriteThumbPool(
     private val assets: AssetManager,
     private val cap: Int = 12,
 ) {
     private val cache = object : LinkedHashMap<String, Bitmap>(cap, 0.75f, true) {}
+    /** file → 仍在组合中引用它的 PetPortrait 数量。 */
+    private val pinned = HashMap<String, Int>()
     private val lock = Any()
+
+    /** 进入组合时持有该宠位图（PetPortrait 组合期调用，可与 [unpin] 嵌套计数）。 */
+    fun pin(file: String) = synchronized(lock) {
+        pinned[file] = (pinned[file] ?: 0) + 1
+    }
+
+    /** 离开组合时释放持有（与 [pin] 对称）。 */
+    fun unpin(file: String) = synchronized(lock) {
+        val n = (pinned[file] ?: 1) - 1
+        if (n <= 0) pinned.remove(file) else pinned[file] = n
+    }
 
     fun get(file: String): Bitmap? = synchronized(lock) {
         cache[file]?.let { return it }
-        if (cache.size >= cap) {
-            val eldest = cache.entries.iterator()
-            if (eldest.hasNext()) {
-                val evict = eldest.next()
-                eldest.remove()
-                evict.value.recycle()
-            }
+        // 只逐出非 Pin 项；全被 Pin 时放行（短暂超 cap），绝不回收仍在绘制中的位图
+        val itr = cache.entries.iterator()
+        while (cache.size >= cap && itr.hasNext()) {
+            val entry = itr.next()
+            if ((pinned[entry.key] ?: 0) > 0) continue
+            itr.remove()
+            entry.value.recycle()
         }
         val decoded = runCatching {
             assets.open("sprite/$file").use { BitmapFactory.decodeStream(it) }
         }.getOrNull()
         if (decoded != null) cache[file] = decoded
         decoded
+    }
+
+    /** 整屏退出时清空并回收全部剩余位图（子组合已先 unpin，此处为最后兜底）。 */
+    fun clear() = synchronized(lock) {
+        cache.values.forEach { it.recycle() }
+        cache.clear()
+        pinned.clear()
     }
 }
 
@@ -363,11 +392,16 @@ private fun PetPortrait(
     size: Dp,
 ) {
     var sheet by remember(file) { mutableStateOf<Bitmap?>(null) }
+    // 组合存续即 Pin：保证池不回收本肖像持有的位图（先于下方 LaunchedEffect 解码执行）。
+    DisposableEffect(file) {
+        pool.pin(file)
+        onDispose { pool.unpin(file) }
+    }
     // 懒解码：进入可视区触发一次；滑走后命中 LRU 不重复解码
     LaunchedEffect(file) {
         sheet = withContext(Dispatchers.IO) { pool.get(file) }
     }
-    val image = sheet?.asImageBitmap()
+    val image = sheet?.let { if (it.isRecycled) null else it.asImageBitmap() }
     val px = with(LocalDensity.current) { size.toPx().roundToInt() }
     Box(Modifier.size(size), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
