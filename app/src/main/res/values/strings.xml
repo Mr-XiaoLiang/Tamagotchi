@@ -22,12 +22,10 @@
     <string name="action_pet">抚摸</string>
     <string name="action_heal">治疗</string>
     <string name="action_study">学习</string>
-    <string name="actions_note">冷却 / 属性满自动只读 · 喂食需选口味（契合 +10%）</string>
 
     <!-- 投喂子页 -->
     <string name="feed_title">选择食物 · %1$s</string>
     <string name="feed_match">契合</string>
-    <string name="feed_note">契合口味（性格档案）额外 +10% 收益</string>
 
     <!-- 食物 / 口味 -->
     <string name="food_berries">树果餐</string>

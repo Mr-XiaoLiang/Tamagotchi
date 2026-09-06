@@ -7,7 +7,7 @@ package com.lollipop.tamagotchi.core.attribute
  * 实际生效还会叠加：Trait 线性缩放（急躁放大心情、好动放大健康损耗）、
  * 当前值边际递减（心情增益）、以及每次随机浮动（±JITTER）。
  *
- * 知识代价固定为 [KNOWLEDGE_COST]（不变笨，仅被玩消耗，不被动衰减）。
+ * 知识代价固定为 [KNOWLEDGE_COST]（学识为累积量，仅被玩消耗，不随时间长被动衰减）。
  */
 enum class PlayType(
     val label: String,
@@ -25,7 +25,7 @@ enum class PlayType(
     /** 逗弄：轻互动，消耗低、心情涨少。 */
     NUDGE("逗弄", 10f, 1f, 2f, 2f),
 
-    /** 知识固定代价（所有玩法一致，doc/01 §4.1：不变笨）。 */
+    /** 知识固定代价（所有玩法一致，doc/01 §4.1：学识仅被玩消耗，不随时间长被动衰减）。 */
     ;
 
     companion object {

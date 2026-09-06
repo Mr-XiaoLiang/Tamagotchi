@@ -460,14 +460,14 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 
 ### M12 学习/教育：智力增长与解锁（可玩）
 
-> 扩展位 doc/09 §5.2。`intelligence` 属性 v1 已建（01 §4.1），本里程碑接 onStudy 并落地「增长即解锁」正向内容。
+> 扩展位 doc/09 §5.2。`knowledge` 属性 v1 已建（01 §4.1，原 `intelligence` 重命名为知识；`learner` 固定特质 = 智力/学习速度），本里程碑接 onStudy 并落地「增长即解锁」正向内容。
 
 #### M12.S1 学习 domain：onStudy + 解锁表（P1）
 
 **任务**
-- [ ] `BehaviorFSM.onStudy(now, s)`：`intelligence +5`、`mood +5`、`sat -3`、冷却 **1h**、`learner` trait 加权（01 §4.1 / 02 §4）。
+- [x] `BehaviorFSM.onStudy(now, s)`：`knowledge +5`（受 `learner` 加权）、`mood -5`、`sat -3`、冷却 **5s**（与喂/玩/抚/清洁统一）；玩耍消耗 `knowledge`（−2 固定），形成「学↔玩」拉锯（01 §4.1 / 02 §4）。
 - [ ] 智力解锁表（01 §4.1）：阈值 → 解锁新互动气泡 / 玩具类型（M13 消费）/ 事件池条目扩容（03 §7）；纯正向、无惩罚。
-- [ ] 单测：冷却 1h、trait 加权、阈值解锁判定、SessionLog `ACTION_STUDY`。
+- [ ] 单测：冷却 5s、trait 加权、阈值解锁判定、SessionLog `ACTION_STUDY`。
 
 **产出**：onStudy 纯逻辑 + 解锁表 + 单测绿。
 
@@ -678,7 +678,7 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 | M9 在线惊喜 + 回顾 | 随机事件 + 本次小结 | ☑ | S1 收盘：`domain/engine/EventEngine.kt`——在线事件库（doc/03 §4 子集：found_food/sneeze/curious_walk/yawn/beg_food/dream/treat_hunt）、候选过滤（状态/属性/时段/性格）+ 全局节奏(5min)/单事件冷却/日上限(3) + 权重抽签（trait 加权）；`trigger`=应用数值微扰(clamp)+写 RANDOM_EVENT 日志，瞬态(EXCITED)不落盘、持久态(SLEEPING/WALKING)写回 fsmState。`EventEngineTest` 17 例全绿。S2 收盘：EntryFlow 前台每 30s 探一次 `EventEngine.rollEvent`，命中→应用 delta+存档+写日志+上抛 `OnlineEvent`，PetScreen 复用 `PetFx` 气泡/浮字短演出；状态面板新增「本次动态」回放本会话 RANDOM_EVENT（7 条事件气泡三语齐全）。main 编译绿、单测全绿 |
 | M10 质感 + 走查调参 | 情绪/短脚本 + 08§5 走查 | ◑ | S1 收盘（代码）：PetRenderer 三层表现落地——层2 Emotion 参数化脚本全量（HAPPY/SAD/ANGRY/TIRED/SICK/CURIOUS/SHY/STARTLED，scale/rotate/translate 由 tick 相位驱动）+ 层3 短脚本装饰（EATING 食物包 / TREATED 药丸 / AFFECTION 爱心，简单矢量无外部素材）+ SICK 灰 tint（BlendMode.Multiply，仅作用于不透明像素）+ 形变垫层（绕模型中心 scale/rotate/translate + 屏圆 clip，不裁源图）；`EmotionLayer.enabled` 可整体停用情绪而不破坏状态/演出。编译绿。真机观感（形变幅度手感/睡姿/64×64 放大 FilterQuality）留 M10.S2 走查定稿。 |
 | M11 清洁/洗澡 | 脏→清洁→净 + 泡泡表现 | ☑ | S1+S2 代码收盘：onClean+3h 冷却+hygiene+35+clean 里程碑+ACTION_CLEAN 日志；面板脏时清洁胶囊+泡泡占位+fx_clean 三语；ActionsTest 4 例绿、全量单测绿。真机手测（脏→清洁→净、冷却实时）留走查 |
-| M12 学习/教育 | 智力增长 + 阈值解锁可见 | ☐ | |
+| M12 学习/教育 | 知识增长 + 阈值解锁可见 | ☑ | S1+S2 代码收盘：onStudy(knowledge +5×(0.5+learner)加权 / mood −5 / sat −3，冷却 5s，知识可经玩耍主动减) + `Milestones.study` + `ACTION_STUDY` 日志；操作面板「学习」胶囊（冷却 5s 空心只读、可用实心）+ 解锁档位 30/60/90 弹「学会新招」气泡（阈值首版待真机校准）；`ActionsTest` 学习 7 例全绿、全量单测绿。真机手测（学习闭环/解锁气泡观感/思考 pose 细化）留走查 |
 | M13 玩具变体 | ≥2 玩具表现/收益可区分 | ☐ | |
 | M14 宠物便条 | 长按/回顾见贴合便条 | ☐ | |
 | M15 收藏档案 | A→换B(墓碑)→切回A 一致 | ☐ | |

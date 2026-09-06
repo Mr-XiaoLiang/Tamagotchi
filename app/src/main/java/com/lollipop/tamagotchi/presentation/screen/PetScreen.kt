@@ -1163,13 +1163,6 @@ private fun ActionListPage(
                 PillItem(stringResource(R.string.action_heal), filled = true, onClick = { onAction(ActionType.HEAL, null) })
             }
         }
-        RoundListSpacer()
-        Text(
-            stringResource(R.string.actions_note),
-            color = ColorToken.Text2,
-            fontSize = 11.sp,
-            modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
-        )
         RoundEdgeSpace(48.dp)
     }
 }
@@ -1220,13 +1213,6 @@ private fun FeedPage(
                 onClick = { onPick(food) },
             )
         }
-        RoundListSpacer()
-        Text(
-            stringResource(R.string.feed_note),
-            color = ColorToken.Text2,
-            fontSize = 11.sp,
-            modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
-        )
         RoundEdgeSpace(48.dp)
     }
 }

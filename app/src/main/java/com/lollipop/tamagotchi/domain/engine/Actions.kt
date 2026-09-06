@@ -130,7 +130,7 @@ object ActionRule {
     fun studyDenied(profile: PetProfile, now: Long): ActionDenied? =
         cooldown(profile.cooldowns.studyUntil, now)
 
-    /** 学习智力增速受 learner 特质加权（doc/02 §4.4：learnSpeed = (0.5 + learner) × base）。 */
+    /** 学习增益受 learner 倍率系数加权（doc/02 §4.4：learnSpeed = (0.5 + learner) × base，learner 固定 0~1 → 增益 0.5×~1.5×）。 */
     fun studyIntGain(base: Float, learner: Float): Float = base * (0.5f + learner)
 
     fun healDenied(profile: PetProfile): ActionDenied? =
@@ -160,7 +160,9 @@ object ActionRule {
  * 与当前浮动值共同影响，且每次增减带 ±[JITTER] 随机浮动（避免固定参数）：
  * - 喂食：饱腹/心情走「口味×特质×边际递减」；健康按食物表固定；并触发交叉副作用——
  *   同时增饱腹+健康的食物同步降心情（健康餐不开心），增心情的食物同步降健康、并可能降清洁。
- * - 玩耍：心情↑、健康↓、清洁↓、饱食↓、知识小幅↓（不变笨）；不同 [PlayType] 幅度不同。
+ * - 玩耍：心情↑、健康↓、清洁↓、饱食↓、知识小幅↓（学识仅被玩消耗，不随时间长被动衰减）；不同 [PlayType] 幅度不同；
+ *   知识损耗随好奇(curiosity)减免（好奇的宠物玩也在琢磨）。
+ * - 抚摸：心情↑（随急躁放大、随粘人(affinity)放大）；无副作用。
  * - 学习：知识↑（受隐藏智商 learner 加权）、心情↓、饱食↓。
  * - 清洁：清洁↑；health 偏低时顺带补少量健康；耗饱食。
  * - 治疗：健康↑（固定）、耗饱食。
@@ -231,8 +233,9 @@ object PetActions {
     }
 
     /**
-     * 玩耍：心情↑、健康↓、清洁↓、饱食↓；知识小幅↓（不变笨，仅被玩消耗）。不同 [style] 幅度不同
-     * （doc/01 §6.2：翻滚/追尾巴/逗弄）。心情增益随急躁放大、健康损耗随好动放大，全部带随机浮动。
+     * 玩耍：心情↑、健康↓、清洁↓、饱食↓；知识小幅↓（学识仅被玩消耗，不随时间长被动衰减）。不同 [style] 幅度不同
+     * （doc/01 §6.2：翻滚/追尾巴/逗弄）。心情增益随急躁放大、健康损耗随好动放大、知识损耗随好奇减免，
+     * 全部带随机浮动。
      * 冷却 5s。成功 stats.play +1。
      */
     fun onPlay(
@@ -249,7 +252,7 @@ object PetActions {
         val dHealth = -traitScale(style.healthCost, traits.activity, ACTIVITY_SLOPE)
         val dHyg = -style.hygieneCost.toFloat()
         val dSat = -style.satCost.toFloat()
-        val dInt = -PlayType.KNOWLEDGE_COST
+        val dInt = -PlayType.KNOWLEDGE_COST * (1f - traits.curiosity)  // 好奇→玩耍也在琢磨，知识损耗随好奇减免
         val attrs = cur
             .set(MOOD, cur[MOOD] + jitter(moodGain))
             .set(HEALTH, cur[HEALTH] + jitter(dHealth))
@@ -266,7 +269,7 @@ object PetActions {
             now + ActionRule.PLAY_COOLDOWN_MS, EventLogType.ACTION_PLAY, log, style.label)
     }
 
-    /** 抚摸：心情↑（边际，随急躁放大）；冷却 5s。成功 stats.pet +1。 */
+    /** 抚摸：心情↑（边际，随急躁放大、随粘人放大）；无副作用；冷却 5s。成功 stats.pet +1。 */
     fun onPet(
         profile: PetProfile,
         now: Long,
@@ -276,7 +279,8 @@ object PetActions {
         val cur = profile.attributes
         val traits = profile.personality.traits
         val moodGain = ActionRule.diminishedGain(
-            traitScale(PET_MOOD_GAIN, traits.temper, TEMPER_SLOPE), cur[MOOD])
+            traitScale(PET_MOOD_GAIN, traits.temper, TEMPER_SLOPE) * affinityFactor(traits.affinity),
+            cur[MOOD])
         val attrs = cur.set(MOOD, cur[MOOD] + jitter(moodGain))
         val after = withSadRecovery(profile, attrs).copy(
             cooldowns = profile.cooldowns.copy(
@@ -317,7 +321,7 @@ object PetActions {
 
     /**
      * 学习（M12，doc/09 §5.2 / 01 §6.2）：知识↑（受隐藏智商 learner 加权 + 边际递减）、心情↓、饱食↓。
-     * 知识只由学习增长、只被玩耍主动减（doc/01 §4.1，不随时间被动衰减，不变笨）。全部经 [jitter] 浮动。
+     * 知识只由学习增长、只被玩耍主动减（doc/01 §4.1：学识为累积量，不随时间长被动衰减）。全部经 [jitter] 浮动。
      * 冷却 5s。成功 stats.study +1；跨越解锁档 → 弹「学会新招」。
      */
     fun onStudy(
@@ -446,6 +450,7 @@ object PetActions {
     private const val APPETITE_SLOPE = 0.8f   // 饱腹增益随贪吃放大
     private const val TEMPER_SLOPE = 0.4f     // 心情增益/波动随急躁放大
     private const val ACTIVITY_SLOPE = 0.4f   // 玩耍健康损耗随好动放大
+    private const val AFFINITY_SLOPE = 1.0f   // 抚摸心情增益随粘人放大
 
     /** 随机浮动：v × (1 ± JITTER)；effectRng=0.5 时退化为 v（测试用）。 */
     private fun jitter(v: Float): Float = v * (1f + (effectRng() - 0.5f) * 2f * JITTER)
@@ -453,4 +458,8 @@ object PetActions {
     /** 特质线性缩放：trait=0.5 → 系数 1（不动默认值），越高/低越放大/缩小。 */
     private fun traitScale(v: Float, trait: Float, slope: Float): Float =
         v * (1f + slope * (trait - 0.5f))
+
+    /** 抚摸心情增益随粘人(affinity)缩放：affinity=0.5→系数1，越高越放大（粘人更受用），越低越冷淡。 */
+    private fun affinityFactor(affinity: Float): Float =
+        1f + AFFINITY_SLOPE * (affinity - 0.5f)
 }

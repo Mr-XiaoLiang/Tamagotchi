@@ -21,11 +21,9 @@
     <string name="action_pet">Pet</string>
     <string name="action_heal">Heal</string>
     <string name="action_study">Study</string>
-    <string name="actions_note">Cooldown / full attr → read-only · feeding needs a flavor (match +10%)</string>
 
     <string name="feed_title">Pick food · %1$s</string>
     <string name="feed_match">Match</string>
-    <string name="feed_note">Matching flavor (personality) gives +10% bonus</string>
 
     <string name="food_berries">Berries</string>
     <string name="food_meal">Hearty meal</string>

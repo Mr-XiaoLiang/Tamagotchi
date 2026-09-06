@@ -10,7 +10,7 @@ import com.lollipop.tamagotchi.core.attribute.FoodFlavor
  * - appetite   贪吃 ↔ 挑食（饱腹衰减 / 乞食频率 / 口味权重）
  * - curiosity  好奇 ↔ 淡定（随机事件池 / 探索频率）
  * - temper     温和 ↔ 急躁（心情波动幅值 / 情绪表达强度）
- * - learner    聪慧 ↔ 憨直（智力增速 / 互动解锁次数）
+ * - learner    聪慧 ↔ 憨直（学习增速系数：0~1 → 单次学习增益倍率 0.5×~1.5×；亦影响互动解锁次数）
  */
 data class Traits(
     val activity: Float,
@@ -18,6 +18,7 @@ data class Traits(
     val appetite: Float,
     val curiosity: Float,
     val temper: Float,
+    /** 聪慧/智力：固定属性，学习增速的系数（0~1 → 增益倍率 0.5×~1.5×），不随游戏进程变化、永不衰减。 */
     val learner: Float,
 ) {
     init {
