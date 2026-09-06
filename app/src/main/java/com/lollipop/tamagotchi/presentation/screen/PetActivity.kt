@@ -103,12 +103,12 @@ private fun EntryFlow(
     val eventEngine = remember { EventEngine(seed = clock.nowMillis()) }
     // 最近一次在线随机事件（命中风波自增号；供 PetScreen 重启短演出）
     var onlineEvent by remember { mutableStateOf<OnlineEvent?>(null) }
-    var eventSeq by remember { mutableLongStateOf(0L) }
     // M9.S2 会话回顾：本会话命中的在线事件（供状态面板「本次动态」展示）
     var onlineReview by remember { mutableStateOf<List<EventLog>>(emptyList()) }
-    // 最近一次动作执行事件（成功才置位；id 单调自增 → UI 据此重启短演出，见 PetScreen）
+    // 最近一次动作执行事件（成功才置位；[fxSeq] 单调自增、动作与在线事件共用同一序号空间，
+    // 供 PetScreen/PetLivingSprite 按 nonce 去重时全局唯一，避免两类事件序号撞车导致某次演出被误吞）
     var lastActionEvent by remember { mutableStateOf<ActionEvent?>(null) }
-    var actionSeq by remember { mutableLongStateOf(0L) }
+    var fxSeq by remember { mutableLongStateOf(0L) }
     // 上次尝试结算的墙钟（进程内）：用于热恢复节流；冷启动 force 结算不受限。
     var lastSettleWall by remember { mutableLongStateOf(0L) }
     // 最近一次结算摘要（含离线时间线 + 结局基调），供 PetScreen 迎接气泡 / 回放（M7.S2）。
@@ -170,8 +170,8 @@ private fun EntryFlow(
                 r
             } ?: return@launch
             profile = result.profile
-            actionSeq++
-            lastActionEvent = ActionEvent(id = actionSeq, result = result)
+            fxSeq++
+            lastActionEvent = ActionEvent(id = fxSeq, result = result)
         }
     }
 
@@ -223,8 +223,8 @@ private fun EntryFlow(
             ) ?: continue
             withContext(Dispatchers.Default) { store.save(triggered.profile) }
             profile = triggered.profile
-            eventSeq++
-            onlineEvent = OnlineEvent(nonce = eventSeq, petEvent = triggered.event)
+            fxSeq++
+            onlineEvent = OnlineEvent(nonce = fxSeq, petEvent = triggered.event)
             onlineReview = sessionLog.liveLogsSince(0).filter { it.type == EventLogType.RANDOM_EVENT }
         }
     }
