@@ -7,6 +7,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -20,8 +21,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,14 +54,17 @@ import com.lollipop.tamagotchi.data.sprite.SpriteRepository
 import com.lollipop.tamagotchi.data.sprite.SpriteRepository.PetEntry
 import com.lollipop.tamagotchi.presentation.component.RoundEdgeSpace
 import com.lollipop.tamagotchi.presentation.component.roundEdgeFade
+import com.lollipop.tamagotchi.presentation.component.roundSafeInset
+import com.lollipop.tamagotchi.presentation.component.RoundEdgeSpace
 import com.lollipop.tamagotchi.presentation.i18n.PokemonNames
 import com.lollipop.tamagotchi.presentation.render.SpriteSheetDecoder
 import com.lollipop.tamagotchi.presentation.screen.ChevronDir
 import com.lollipop.tamagotchi.presentation.screen.MiniChevron
 import com.lollipop.tamagotchi.presentation.theme.ColorToken
-import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 
 /**
  * 建档屏（M3.S2 · 无档首启 / debug 重开档后进入）：
@@ -67,6 +74,21 @@ import kotlinx.coroutines.withContext
  * - 交互：点宠 → [onPick] 上抛宠物 → 调用方起独立详情 Activity（seed 由详情页生成）；
  *   本屏只负责选宠与滚动位置保留，不持有 / 不传递 seed。
  */
+/**
+ * 列表行：字母分组头 / 宠条目（避免与 androidx.compose.foundation.layout.Row 重名，故取名 PetListRow）。
+ */
+private sealed interface PetListRow {
+    val key: String
+
+    data class Header(val letter: Char) : PetListRow {
+        override val key get() = "h_$letter"
+    }
+
+    data class Pet(val entry: PetEntry) : PetListRow {
+        override val key get() = "p_${entry.id}"
+    }
+}
+
 @Composable
 fun SetupProfileScreen(
     onPick: (pet: PetEntry) -> Unit,
@@ -75,13 +97,32 @@ fun SetupProfileScreen(
     val pool = remember(ctx) { SpriteThumbPool(ctx.assets) }
     // 屏退出即整体回收缩略池：建档页离开后不再需要任何缩略图（子 PetPortrait 先 unpin、此后再全量 clear，顺序安全）
     DisposableEffect(pool) { onDispose { pool.clear() } }
-    // 仅显示基础形态（prev 为空 = 初始形态）；进化后的形态不作为可选新伙伴（doc：进化/退化）。
+    // 仅显示基础形态（prev 为空 = 初始形态）；进化后的形态不作为可选新伙伴（doc：进化/退化）。按 ID 排序。
     val pets = remember(ctx) {
         SpriteRepository(ctx.assets).listPets()
             .filter { !PokemonNames.isForm(it.id) && PokemonNames.isBase(it.id) }
+            .sortedBy { it.id }
+    }
+    // 按 ID 首字母分组：每组头部插一个字母标签行，并建立 字母 → 行下标 索引（26 字母位置索引）。
+    val (rows, letterToRow) = remember(pets) {
+        val list = ArrayList<PetListRow>(pets.size * 2)
+        val map = LinkedHashMap<Char, Int>()
+        var last: Char? = null
+        for (pet in pets) {
+            val c = pet.id.first()
+            if (c != last) {
+                list += PetListRow.Header(c)
+                map[c] = list.lastIndex
+                last = c
+            }
+            list += PetListRow.Pet(pet)
+        }
+        list to map
     }
     // 列表态滚动位置：提升到父组合，进详情再返回时复用同一 LazyListState，保留滚动位置
     val listState = rememberLazyListState()
+    var showIndex by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     Box(
         Modifier
@@ -89,11 +130,23 @@ fun SetupProfileScreen(
             .background(ColorToken.bg),
     ) {
         PetListContent(
-            pets = pets,
+            rows = rows,
             listState = listState,
             pool = pool,
             onSelect = onPick,
+            onShowIndex = { showIndex = true },
         )
+        // 索引字符面板叠加层：不跳转页面、不影响当前列表滚动位置；点字母跳到对应首字母首个宝可梦。
+        if (showIndex) {
+            IndexOverlay(
+                letterToRow = letterToRow,
+                onPick = { c ->
+                    letterToRow[c]?.let { scope.launch { listState.scrollToItem(it) } }
+                    showIndex = false
+                },
+                onDismiss = { showIndex = false },
+            )
+        }
     }
 }
 
@@ -101,19 +154,22 @@ fun SetupProfileScreen(
 
 @Composable
 private fun PetListContent(
-    pets: List<PetEntry>,
+    rows: List<PetListRow>,
     listState: LazyListState,
     pool: SpriteThumbPool,
     onSelect: (PetEntry) -> Unit,
+    onShowIndex: () -> Unit,
 ) {
+    val petCount = rows.count { it is PetListRow.Pet }
     // 圆屏规范 [space、title、item...、space]（doc/06 §8.1）：标题作为内容首元素、初始居中并随滚动上行，
     // 首末 RoundEdgeSpace 留白；行懒加载 + 上下缘 EdgeFade 保证圆形小屏可读。
     LazyColumn(
         state = listState,
         modifier = Modifier
             .fillMaxSize()
-            .roundEdgeFade(),
-        contentPadding = PaddingValues(horizontal = 18.dp),
+            .roundEdgeFade()
+            .padding(horizontal = roundSafeInset()),
+        contentPadding = PaddingValues(horizontal = 0.dp),
     ) {
         item { RoundEdgeSpace() }
         item {
@@ -126,19 +182,110 @@ private fun PetListContent(
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    stringResource(R.string.setup_subtitle, pets.size),
+                    stringResource(R.string.setup_subtitle, petCount),
                     color = ColorToken.Text2,
                     fontSize = 11.sp,
                 )
             }
         }
         item { Spacer(Modifier.height(8.dp)) }
-        items(items = pets, key = { it.id }) { pet ->
-            PetRow(pet = pet, pool = pool, onClick = { onSelect(pet) })
-            Spacer(Modifier.height(4.dp))
+        itemsIndexed(rows, key = { _, r -> r.key }) { _, row ->
+            when (row) {
+                is PetListRow.Header -> {
+                    Spacer(Modifier.height(6.dp))
+                    HeaderRow(letter = row.letter, onClick = onShowIndex)
+                }
+
+                is PetListRow.Pet -> {
+                    PetRow(pet = row.entry, pool = pool, onClick = { onSelect(row.entry) })
+                    Spacer(Modifier.height(4.dp))
+                }
+            }
         }
         item { Spacer(Modifier.height(14.dp)) }
         item { RoundEdgeSpace() }
+    }
+}
+
+/** 分组头：无边框的字母标签，点击弹出索引字符面板叠加层。 */
+@Composable
+private fun HeaderRow(
+    letter: Char,
+    onClick: () -> Unit,
+) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 2.dp),
+    ) {
+        Text(
+            letter.toString(),
+            color = ColorToken.Accent,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+/**
+ * 索引字符面板（叠加层）：展示 26 个字母，点字母跳到对应首字母首个宝可梦（[letterToRow] 命中才响应）；
+ * 无对应宝可梦的字母置灰禁用。点面板外区域关闭。
+ */
+@Composable
+private fun IndexOverlay(
+    letterToRow: Map<Char, Int>,
+    onPick: (Char) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    // 圆屏：整屏半透明蒙版（不缩小）；内部 26 字母按 3 列排布并竖向可滚动，字号放大、热区加大保证可点。
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(ColorToken.bg.copy(alpha = 0.9f))
+            .clickable(onClick = onDismiss),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = roundSafeInset(), vertical = roundSafeInset())
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+            RoundEdgeSpace()
+            for (chunk in ('A'..'Z').chunked(3)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    for (c in chunk) {
+                        val has = letterToRow.containsKey(c)
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .height(40.dp)
+                                .clickable(enabled = has, onClick = { onPick(c) }),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                c.toString(),
+                                color = if (has) ColorToken.Accent else ColorToken.Text2.copy(
+                                    alpha = 0.4f
+                                ),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+                    }
+                    // 末行不足 3 列时补齐空格，保持三列对齐
+                    repeat(3 - chunk.size) {
+                        Box(Modifier.weight(1f).height(40.dp))
+                    }
+                }
+            }
+            RoundEdgeSpace()
+        }
     }
 }
 
@@ -188,6 +335,7 @@ internal class SpriteThumbPool(
     private val cap: Int = 12,
 ) {
     private val cache = object : LinkedHashMap<String, Bitmap>(cap, 0.75f, true) {}
+
     /** file → 仍在组合中引用它的 PetPortrait 数量。 */
     private val pinned = HashMap<String, Int>()
     private val lock = Any()
