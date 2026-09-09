@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lollipop.tamagotchi.R
+import com.lollipop.tamagotchi.data.store.PetState
 import com.lollipop.tamagotchi.data.store.PetStore
 import com.lollipop.tamagotchi.data.store.SettingsStore
 import com.lollipop.tamagotchi.domain.model.PetTomb
@@ -52,10 +53,11 @@ class TombActivity : BaseActivity() {
         }
     }
 
-    /** 切回：过往 → 当前档，重启主屏即打开该宠（doc/08 §3 打开即结算复用）。 */
+    /** 切回：过往 → 当前档，提交中央状态机落档；重启主屏即打开该宠（doc/08 §3 打开即结算复用）。 */
     private fun switchBack(petId: String) {
-        val store = PetStore(this)
-        store.switchTo(petId)
+        PetState.attach(this)
+        val switched = PetStore(this).switchTo(petId) ?: return
+        PetState.set(switched)
         val intent = Intent(this, PetActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         }

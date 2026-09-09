@@ -22,6 +22,16 @@
     <string name="action_heal">Heal</string>
     <string name="action_study">Study</string>
 
+    <!-- 进化 / 退化（M?）：操作列表选项；空链显示「无法…」只读 -->
+    <string name="action_evolve">Evolve</string>
+    <string name="action_devolve">Devolve</string>
+    <string name="action_evolve_none">Cannot evolve</string>
+    <string name="action_devolve_none">Cannot devolve</string>
+    <!-- 形态切换 Activity 标题 / 空态 -->
+    <string name="form_switch_title_evolve">Evolve to</string>
+    <string name="form_switch_title_devolve">Devolve to</string>
+    <string name="form_switch_empty">No available form</string>
+
     <string name="feed_title">Pick food · %1$s</string>
     <string name="toy_title">Pick a toy · %1$s</string>
     <string name="toy_locked_knowledge">Unlocks at knowledge %1$d</string>

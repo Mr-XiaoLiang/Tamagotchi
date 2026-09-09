@@ -65,16 +65,20 @@ class SpriteRepository(private val assets: AssetManager) {
     private var cacheId: String? = null
     private var cacheBmp: Bitmap? = null
 
-    /** 当前宠的 256×256 整表 Bitmap（Bitmap 池仅此 1 张，换宠回收替换）。 */
+    /** 当前宠的 256×256 整表 Bitmap（Bitmap 池仅此 1 张，换宠回收替换）。
+     *  [petId] 即形态主名（可能含 `_N` 后缀，如 `ALCREMIE_2`），直接按 `sprite/<petId>.png` 取精确形态文件。 */
     fun loadSheet(petId: String): Bitmap {
         if (cacheId == petId) return cacheBmp!!
-        val file = listPets().firstOrNull { it.id == petId }?.defaultFile
-            ?: error("sprite 不存在: $petId")
+        val file = "$petId.png"
         val bmp = BitmapFactory.decodeStream(assets.open("sprite/$file"))
-            ?: error("sprite 解码失败: $file")
+            ?: error("sprite 不存在: $file")
         cacheBmp?.recycle()
         cacheBmp = bmp
         cacheId = petId
         return bmp
     }
+
+    /** 精确按形态主名取该形态整表 Bitmap（进化/退化候选列表用；不进缓存池、调用方自行管理生命周期）。 */
+    fun loadFormBitmap(id: String): Bitmap? =
+        runCatching { BitmapFactory.decodeStream(assets.open("sprite/$id.png")) }.getOrNull()
 }

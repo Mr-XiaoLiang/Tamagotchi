@@ -27,7 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lollipop.tamagotchi.R
-import com.lollipop.tamagotchi.data.store.PetStore
+import com.lollipop.tamagotchi.data.store.PetState
 import com.lollipop.tamagotchi.data.store.SettingsStore
 import com.lollipop.tamagotchi.presentation.base.BaseActivity
 import com.lollipop.tamagotchi.presentation.component.PillItem
@@ -65,14 +65,16 @@ class SettingsActivity : BaseActivity() {
     /** 换宠：是否归档取决于偏好（doc/09 §5.7）——开=归档旧宠（可经「过往」切回）+清当前档+重开建档；
      *  关=直接覆盖写重开（与 M3 debug 重开档口径一致）。仅经二次确认后调用（[ConfirmRestartScreen]）。 */
     private fun restartPet() {
-        val petStore = PetStore(this)
+        PetState.attach(this)
         val prefs = SettingsStore(this)
-        val current = petStore.load()
+        val current = PetState.snapshot()
         if (current != null) {
             if (prefs.isArchiveEnabled()) {
-                petStore.archiveCurrent(current, System.currentTimeMillis())
+                // 换宠归档：先写墓碑，再清当前档（archiveAndClear 内含 clear）
+                PetState.archiveAndClear(current, System.currentTimeMillis())
+            } else {
+                PetState.clear()
             }
-            petStore.delete()
         }
         val intent = Intent(this, PetActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)

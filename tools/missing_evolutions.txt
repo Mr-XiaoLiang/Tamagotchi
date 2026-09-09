@@ -1,0 +1,43 @@
+# 进化目标缺失清单（由 tools/verify_evo.py 自动生成）
+# 权威来源：Pokemon-Showdown pokedex.ts（prevo/evos）
+# 含义：以下形态在 assets/sprite/ 中没有对应 png，app 内无法进化/退化到该形态。
+# 已写入 pokemon.json 的进化关系本身与权威库 100% 一致（逻辑无错）。
+
+## 一、缺素材的基础最终进化（主线无法完成，需补图）：3 条
+- 偶叫獒(MASCHIFF) -> 獒教父(mabosstiff)
+- 啃果虫(APPLIN) -> 裹蜜虫(dipplin)
+- 铝钢龙(DURALUDON) -> 铝钢桥龙(archaludon)
+
+## 二、地区/性别/特殊形态变体（主线正常，仅分支无单独形象）：32 条
+- basculinwhitestriped(basculinwhitestriped) -> 幽尾玄鱼(BASCULEGION)
+- corsolagalar(corsolagalar) -> 魔灵珊瑚(CURSOLA)
+- farfetchdgalar(farfetchdgalar) -> 葱游兵(SIRFETCHD)
+- linoonegalar(linoonegalar) -> 堵拦熊(OBSTAGOON)
+- meowthgalar(meowthgalar) -> 喵头目(PERRSERKER)
+- mrmimegalar(mrmimegalar) -> 踏冰人偶(MRRIME)
+- qwilfishhisui(qwilfishhisui) -> 万针鱼(OVERQWIL)
+- sneaselhisui(sneaselhisui) -> 大狃拉(SNEASLER)
+- wooperpaldea(wooperpaldea) -> 土王(CLODSIRE)
+- yamaskgalar(yamaskgalar) -> 迭失板(RUNERIGUS)
+- 一对鼠(TANDEMAUS) -> mausholdfour(mausholdfour)
+- 冰宝(BERGMITE) -> avalugghisui(avalugghisui)
+- 卡拉卡拉(CUBONE) -> marowakalola(marowakalola)
+- 双刃丸(DEWOTT) -> samurotthisui(samurotthisui)
+- 土龙弟弟(DUNSPARCE) -> dudunsparcethreesegment(dudunsparcethreesegment)
+- 妙喵(ESPURR) -> meowsticf(meowsticf)
+- 岩狗狗(ROCKRUFF) -> lycanrocmidnight(lycanrocmidnight)
+- 投羽枭(DARTRIX) -> decidueyehisui(decidueyehisui)
+- 毛头小鹰(RUFFLET) -> braviaryhisui(braviaryhisui)
+- 火岩鼠(QUILAVA) -> typhlosionhisui(typhlosionhisui)
+- 熊徒弟(KUBFU) -> urshifurapidstrike(urshifurapidstrike)
+- 爱吃豚(LECHONK) -> oinkolognef(oinkolognef)
+- 瓦斯弹(KOFFING) -> weezinggalar(weezinggalar)
+- 电音婴(TOXEL) -> toxtricitylowkey(toxtricitylowkey)
+- 百合根娃娃(PETILIL) -> lilliganthisui(lilliganthisui)
+- 皮卡丘(PIKACHU) -> raichualola(raichualola)
+- 粉蝶蛹(SPEWPA) -> vivillonfancy(vivillonfancy)
+- 结草儿(BURMY) -> wormadamsandy(wormadamsandy)
+- 结草儿(BURMY) -> wormadamtrash(wormadamtrash)
+- 蛋蛋(EXEGGCUTE) -> exeggutoralola(exeggutoralola)
+- 魔尼尼(MIMEJR) -> mrmimegalar(mrmimegalar)
+- 黏黏宝(GOOMY) -> sliggoohisui(sliggoohisui)

@@ -64,6 +64,20 @@
             android:exported="false"
             android:taskAffinity=""
             android:theme="@style/TamagotchiTheme.Full" />
+
+        <!-- 形态切换页：进化/退化候选列表（M?），独立 Activity，关闭即放弃切换 -->
+        <activity
+            android:name=".presentation.screen.FormSwitchActivity"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@style/TamagotchiTheme.Full" />
+
+        <!-- 建档详情页：独立 Activity；列表页仅传宠主名 + 默认形态文件，seed 由本页生成、确认时回传系统落档 -->
+        <activity
+            android:name=".presentation.screen.setup.PetDetailActivity"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@style/TamagotchiTheme.Full" />
     </application>
 
 </manifest>

@@ -1,6 +1,10 @@
 package com.lollipop.tamagotchi.presentation.screen
 
+import android.app.Activity
+import android.content.Intent
 import android.content.pm.ApplicationInfo
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -9,14 +13,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.lollipop.tamagotchi.core.attribute.FoodType
 import com.lollipop.tamagotchi.core.attribute.PlayType
 import com.lollipop.tamagotchi.core.attribute.ToyType
-import com.lollipop.tamagotchi.data.store.PetStore
+import com.lollipop.tamagotchi.data.store.PetState
 import com.lollipop.tamagotchi.data.time.SystemClock
 import com.lollipop.tamagotchi.domain.engine.ActionType
 import com.lollipop.tamagotchi.domain.engine.PetActions
@@ -27,12 +33,11 @@ import com.lollipop.tamagotchi.domain.util.FxSeq
 import com.lollipop.tamagotchi.domain.log.InMemorySessionLog
 import com.lollipop.tamagotchi.domain.log.EventLog
 import com.lollipop.tamagotchi.domain.log.EventLogType
-import com.lollipop.tamagotchi.domain.model.PetProfile
 import com.lollipop.tamagotchi.presentation.base.BaseActivity
 import com.lollipop.tamagotchi.presentation.boot.BootLog
 import com.lollipop.tamagotchi.presentation.boot.BootStage
+import com.lollipop.tamagotchi.presentation.screen.setup.PetDetailActivity
 import com.lollipop.tamagotchi.presentation.screen.setup.SetupProfileScreen
-import com.lollipop.tamagotchi.presentation.i18n.PokemonNames
 import com.lollipop.tamagotchi.presentation.screen.OnlineEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -45,7 +50,7 @@ import kotlinx.coroutines.withContext
  * boot 流程：
  * 1. [showShell] 挂载 Logo 壳后注入 Compose 主屏；
  * 2. 读档：有档 → [PetScreen]（真实快照）；无档/坏档 → [SetupProfileScreen] 建档；
- * 3. 建档确认 → PetProfile.new（注册表建档初值 + 随机性格）→ [PetStore.save] → 切主屏；
+ * 3. 建档确认 → PetProfile.new（注册表建档初值 + 随机性格）→ [PetState.set]（自动存档+广播）→ 首页观察状态切主屏；
  * 4. debug 构建主屏长按 → 快捷面板「重开档」清档回到建档（release 不注入回调）；
  *    同入口的精灵核对屏内置「结算 Debug：时间旅行」回拨 lastSettledAt（M5.S2）。
  *
@@ -58,11 +63,9 @@ class PetActivity : BaseActivity() {
 
     override fun onBootStart() {
         showShell()
-        val store = PetStore(this)
         val isDebug = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
         injectContent(load = { Unit }) {
             EntryFlow(
-                store = store,
                 debugTools = isDebug,
             )
         }
@@ -80,19 +83,20 @@ private const val EVENT_LOG_WINDOW_MS = 30 * 60_000L
 
 /**
  * 有档 / 建档路由。建档确认存盘后置 profile 即切主屏；
- * profile 的创建只此一处（PetStore.save → 内存态 → UI），无二义事实源。
+ * profile 的创建只此一处（PetState.set → 内存态 → UI），无二义事实源。
  *
  * settle 编排（M5.S2，doc/08 §1 第⑤阶）：入口统一走 [requestSettle]——
  * 后台 [SettleEngine.settle]（纯计算 + SP commit 同放 Default，不阻塞主线程）→
- * 主线程一次 apply = [PetStore.save] + profile state 更新（数值层/主环/状态环随之重组刷新）。
+ * 主线程一次 apply = [PetState.set]（store.save + 广播）→ 首页观察状态重组刷新（数值层/主环/状态环随之刷新）。
  */
 @Composable
 private fun EntryFlow(
-    store: PetStore,
     debugTools: Boolean,
 ) {
-    val initial = remember { store.load() }
-    var profile by remember { mutableStateOf(initial) }
+    val ctx = LocalContext.current
+    PetState.attach(ctx)
+    // 全程状态驱动（doc/00 §7）：首页只观察中央状态机；null=建档列表，非 null=宠物屏，切屏全自动，无页面间回传。
+    val profile by PetState.profile.collectAsState()
     val scope = rememberCoroutineScope()
     val settleEngine = remember { SettleEngine() }
     val clock = remember { SystemClock() }
@@ -128,11 +132,10 @@ private fun EntryFlow(
         )
         val outcome = withContext(Dispatchers.Default) {
             val r = settleEngine.settle(now, cur)
-            if (r.changed) store.save(r.profile)
+            if (r.changed) PetState.set(r.profile)
             r
         }
         if (outcome.changed) {
-            profile = outcome.profile
             sessionLog.openWith(outcome.summary) // M7.S2 开场段回填
             lastSettleSummary = outcome.summary
             val d = outcome.summary.totalDelta
@@ -172,10 +175,9 @@ private fun EntryFlow(
                     ActionType.CLEAN -> PetActions.onClean(cur, now, sessionLog)
                     ActionType.STUDY -> PetActions.onStudy(cur, now, sessionLog)
                 }
-                if (r != null) store.save(r.profile)
+                if (r != null) PetState.set(r.profile)
                 r
             } ?: return@launch
-            profile = result.profile
             lastActionEvent = ActionEvent(id = fxSeq.next(), result = result)
         }
     }
@@ -186,10 +188,27 @@ private fun EntryFlow(
             val cur = profile ?: return@launch
             val now = clock.nowMillis()
             val shifted = cur.copy(lastSettledAt = now - hours * 3_600_000L)
-            store.save(shifted)
-            profile = shifted
+            PetState.set(shifted)
             BootLog.s(BootStage.Settle, "Debug 时间旅行：lastSettledAt 拨回 ${hours}h")
             runSettle("时间旅行结算", force = true)
+        }
+    }
+
+    /** 进化/退化：经中央状态机改模型（[PetState.evolve]/[PetState.devolve]，内部不存档），再 [PetState.set] 落档。 */
+    fun switchForm(newId: String, devolve: Boolean = false) {
+        val np = (if (devolve) PetState.devolve(newId) else PetState.evolve(newId)) ?: return
+        PetState.set(np)
+    }
+
+    /** 形态切换 Activity（进化/退化）：返回选中形态主名 + 方向即改模型落档；关闭/取消不改动当前档。 */
+    val formLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val newId = result.data?.getStringExtra(FormSwitchActivity.EXTRA_PET_ID)
+                ?: return@rememberLauncherForActivityResult
+            val mode = runCatching {
+                FormMode.valueOf(result.data?.getStringExtra(FormSwitchActivity.EXTRA_MODE) ?: FormMode.EVOLVE.name)
+            }.getOrDefault(FormMode.EVOLVE)
+            switchForm(newId, devolve = mode == FormMode.DEVOLVE)
         }
     }
 
@@ -226,8 +245,7 @@ private fun EntryFlow(
                 EventEngine.EventContext(cur, now, recent),
                 sessionLog,
             ) ?: continue
-            withContext(Dispatchers.Default) { store.save(triggered.profile) }
-            profile = triggered.profile
+            withContext(Dispatchers.Default) { PetState.set(triggered.profile) }
             onlineEvent = OnlineEvent(nonce = fxSeq.next(), petEvent = triggered.event)
             onlineReview = sessionLog.liveLogsSince(0).filter { it.type == EventLogType.RANDOM_EVENT }
         }
@@ -236,15 +254,13 @@ private fun EntryFlow(
     val current = profile
     if (current == null) {
         SetupProfileScreen(
-            onConfirm = { pet, personality ->
-                val created = PetProfile.new(
-                    petId = pet.id,
-                    displayName = PokemonNames.lookup(pet.id),
-                    personality = personality,
-                    now = System.currentTimeMillis(),
+            onPick = { pet ->
+                ctx.startActivity(
+                    Intent(ctx, PetDetailActivity::class.java).apply {
+                        putExtra(PetDetailActivity.EXTRA_PET_ID, pet.id)
+                        putExtra(PetDetailActivity.EXTRA_PET_FILE, pet.defaultFile)
+                    },
                 )
-                store.save(created)
-                profile = created
             },
         )
     } else {
@@ -254,14 +270,21 @@ private fun EntryFlow(
             onSettleReady = { requestSettle("冷启动五阶", force = true) },
             onTimeTravel = if (debugTools) { { hours -> timeTravelBack(hours) } } else null,
             onResetProfile = if (debugTools) {
-                {
-                    store.delete()
-                    profile = null
-                }
+                { PetState.clear() }
             } else {
                 null
             },
             onAction = { type, food, toy -> performAction(type, food, toy) },
+            onFormSwitch = { mode ->
+                val cur = profile
+                if (cur != null) {
+                    val intent = Intent(ctx, FormSwitchActivity::class.java).apply {
+                        putExtra(FormSwitchActivity.EXTRA_PET_ID, cur.petId)
+                        putExtra(FormSwitchActivity.EXTRA_MODE, mode.name)
+                    }
+                    formLauncher.launch(intent)
+                }
+            },
             actionEvent = lastActionEvent,
             onlineEvent = onlineEvent,
             onlineReview = onlineReview,

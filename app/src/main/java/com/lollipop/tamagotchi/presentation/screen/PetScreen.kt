@@ -225,6 +225,8 @@ fun PetScreen(
     onResetProfile: (() -> Unit)? = null,
     /** M6.S2：请求执行动作（投喂需 [FoodType]；EntryFlow 执行、存档、上抛 [actionEvent]）。 */
     onAction: (type: ActionType, food: FoodType?, toy: ToyType?) -> Unit = { _, _, _ -> },
+    /** 进化 / 退化：打开形态切换 Activity（EntryFlow 负责启动与回写当前档）。 */
+    onFormSwitch: (mode: FormMode) -> Unit = {},
     /** M6.S2：最近一次动作执行事件（成功才非空，[ActionEvent.id] 单调自增）。 */
     actionEvent: ActionEvent? = null,
     /** M9.S2：最近一次在线随机事件（命中风波自增号，[OnlineEvent.nonce] 单调自增）。 */
@@ -285,6 +287,13 @@ fun PetScreen(
             }
             if (reveal == 0f) panel = null
         }
+    }
+
+    // 进化/退化成功后自动收起抽屉：形态切换只改 profile.petId，抽屉面板状态需显式复位，
+    // 否则 FormSwitchActivity 返回主屏后操作抽屉仍盖在上面（需求：进化/退化后直接回主页）。
+    // 取消切换（petId 不变）不会触发；面板本就关闭时为无操作。
+    LaunchedEffect(profile.petId) {
+        closeSheet()
     }
 
     /**
@@ -664,6 +673,7 @@ fun PetScreen(
                     onDismiss = { closeSheet() },
                     onAction = onAction,
                     onShowStatus = { swapToPanel(Panel.Status) },
+                    onFormSwitch = onFormSwitch,
                 )
             }
 
@@ -702,6 +712,7 @@ private fun BoxScope.OverlayLayer(
     onDismiss: () -> Unit,
     onAction: (type: ActionType, food: FoodType?, toy: ToyType?) -> Unit,
     onShowStatus: () -> Unit,
+    onFormSwitch: (mode: FormMode) -> Unit,
 ) {
     val edge = when (p) {
         Panel.Status -> SheetEdge.Top
@@ -754,6 +765,7 @@ private fun BoxScope.OverlayLayer(
                         profile = profile,
                         onAction = onAction,
                         onShowStatus = onShowStatus,
+                        onFormSwitch = onFormSwitch,
                     )
                 }
             }
@@ -1072,6 +1084,7 @@ private fun ColumnScope.ActionPanelBody(
     profile: PetProfile,
     onAction: (type: ActionType, food: FoodType?, toy: ToyType?) -> Unit,
     onShowStatus: () -> Unit,
+    onFormSwitch: (mode: FormMode) -> Unit,
 ) {
     DismissStrip(dir = ChevronDir.Down, onDismiss)
     Box(
@@ -1096,6 +1109,7 @@ private fun ColumnScope.ActionPanelBody(
                 onOpenFeed = { page = ActionPage.Feed },
                 onOpenToy = { page = ActionPage.Toy },
                 onAction = onAction,
+                onFormSwitch = onFormSwitch,
             )
         } else if (page == ActionPage.Toy) {
             ToyPage(
@@ -1122,6 +1136,7 @@ private fun ActionListPage(
     onOpenFeed: () -> Unit,
     onOpenToy: () -> Unit,
     onAction: (type: ActionType, food: FoodType?, toy: ToyType?) -> Unit,
+    onFormSwitch: (mode: FormMode) -> Unit,
 ) {
     RoundList {
         RoundEdgeSpace(48.dp)
@@ -1184,6 +1199,21 @@ private fun ActionListPage(
                 dotColor = ColorToken.Health,
                 onClick = { onAction(ActionType.HEAL, null, null) },
             )
+        }
+        // 进化 / 退化（M?：形态切换，无属性变化、不新建档、保留性格与固有属性）
+        val nextForms = PokemonNames.nextOf(profile.petId)
+        val prevForms = PokemonNames.prevOf(profile.petId)
+        RoundListSpacer()
+        if (nextForms.isNotEmpty()) {
+            PillItem(stringResource(R.string.action_evolve), filled = true, onClick = { onFormSwitch(FormMode.EVOLVE) })
+        } else {
+            PillItem(stringResource(R.string.action_evolve_none), filled = false)
+        }
+        RoundListSpacer()
+        if (prevForms.isNotEmpty()) {
+            PillItem(stringResource(R.string.action_devolve), filled = true, onClick = { onFormSwitch(FormMode.DEVOLVE) })
+        } else {
+            PillItem(stringResource(R.string.action_devolve_none), filled = false)
         }
         RoundEdgeSpace(48.dp)
     }
