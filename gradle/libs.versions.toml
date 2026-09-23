@@ -1,9 +1,9 @@
 [versions]
-agp = "9.4.0"
-kotlin = "2.4.10"
+agp = "9.4.1"
+kotlin = "2.4.20"
 junit = "4.13.2"
-orgjson = "20240303"
-composeBom = "2026.08.00"
+orgjson = "20260814"
+composeBom = "2026.09.00"
 composeMaterial3 = "1.6.2"
 composeFoundation = "1.6.2"
 composeUiTooling = "1.6.2"
