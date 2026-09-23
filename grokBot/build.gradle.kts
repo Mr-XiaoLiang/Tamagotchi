@@ -31,17 +31,8 @@ android {
 }
 
 dependencies {
-    api(platform(libs.androidx.compose.bom))
-    api(libs.androidx.compose.ui)
-    api(libs.androidx.compose.ui.graphics)
-    implementation(libs.androidx.compose.foundation)
-    implementation(libs.androidx.core.ktx)
-
-    testImplementation(libs.junit)
-}
-
-// `GrokFrameDumpTest` writes the geometry the pixel comparison renders. Gradle does not forward
-// `-D` from the command line into the test JVM, so the switch is passed through explicitly.
-tasks.withType<Test>().configureEach {
-    System.getProperty("pixdiff.dump")?.let { systemProperty("pixdiff.dump", it) }
+    implementation(platform(libs.compose.bom))
+    implementation(libs.ui)
+    implementation(libs.ui.graphics)
+    implementation(libs.compose.foundation)
 }
