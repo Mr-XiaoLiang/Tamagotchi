@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Tamagotchi"
 include(":app")
+include(":grokBot")
