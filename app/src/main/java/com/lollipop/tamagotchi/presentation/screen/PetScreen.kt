@@ -113,6 +113,9 @@ import com.lollipop.tamagotchi.domain.model.PetProfile
 import com.lollipop.tamagotchi.presentation.boot.BootStage
 import com.lollipop.tamagotchi.presentation.boot.ShellBridge
 import com.lollipop.tamagotchi.presentation.render.PetLivingSprite
+import com.lollipop.tamagotchi.presentation.face.RobotFace
+import com.lollipop.tamagotchi.presentation.face.coarseRobotMood
+import com.lollipop.tamagotchi.presentation.face.robotFaceSize
 import com.lollipop.tamagotchi.presentation.component.ColorDot
 import com.lollipop.tamagotchi.presentation.component.PillItem
 import androidx.compose.foundation.layout.Column
@@ -202,9 +205,6 @@ data class OnlineEvent(
 
 /** 操作面板页内子级：动作列表 ⇄ 食物选择（投喂子页）⇄ 玩具选择（M13 子页）。 */
 private enum class ActionPage { Actions, Feed, Toy }
-
-/** 主屏顶内「状态图标区」图标种类（doc/06 §3.1：饥饿/不开心/脏/病，异常才亮）。 */
-private enum class StatusIconKind { HUNGRY, SAD, DIRTY, SICK, KNOWLEDGE }
 
 /**
  * 主屏四区 + 三 overlay 路由（doc/06 §1/§2/§5，Task.md M1.S2）。
@@ -600,60 +600,23 @@ fun PetScreen(
                 EdgeHint(ChevronDir.Left)
             }
 
-            // ── 状态图标区（顶内「主环内沿」提示带，doc/06 §3.1；点击 = 展开状态面板）──
-            // 与顶缘下拉/下面板「状态」同一入口（§3.2 三入口合一）。异常才亮（低值阈值见
-            // doc/06 §2）：饥饿/不开心/脏 <30 分别亮碗/云/水滴，SICK 亮「病」十字；
-            // 图标沿用对应属性语义色（§4）。平时空载隐藏、不占常观感。
-            val iconRowR = metrics.iconRowR
-            val statusIcons = if (stage >= BootStage.Status) {
-                buildList {
-                    if (profile.attributes[AttributeId.SATIATION] < LOW_VALUE_WARN) {
-                        add(StatusIconKind.HUNGRY)
-                    }
-                    if (profile.attributes[AttributeId.MOOD] < LOW_VALUE_WARN) {
-                        add(StatusIconKind.SAD)
-                    }
-                    if (profile.attributes[AttributeId.HYGIENE] < LOW_VALUE_WARN) {
-                        add(StatusIconKind.DIRTY)
-                    }
-                    if (profile.fsmState == PetState.SICK) add(StatusIconKind.SICK)
-                }
-            } else {
-                emptyList()
-            }
-            if (statusIcons.isNotEmpty()) {
-                // 缓慢呼吸闪烁（约 1.6s 一轮，1↔0.3 反向）表示「需要操作」提醒；
-                // 与外层 statusAlpha（进场/淡出）相乘叠加，不影响热区与进场动画。
-                val blinkAlpha by rememberInfiniteTransition(label = "statusIconBlink")
-                    .animateFloat(
-                        initialValue = 1f,
-                        targetValue = 0.3f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(durationMillis = 1600, easing = FastOutSlowInEasing),
-                            repeatMode = RepeatMode.Reverse,
-                        ),
-                        label = "statusIconBlinkAlpha",
-                    )
-                Box(
-                    Modifier
-                        .align(Alignment.Center)
-                        .offset(y = -iconRowR)
-                        .alpha(statusAlpha),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Row(
-                        Modifier.alpha(blinkAlpha),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        statusIcons.forEach { kind ->
-                            StatusIconButton(
-                                kind = kind,
-                                onClick = { openSheet(Panel.Status) },
-                            )
-                        }
-                    }
-                }
+            // ── 常驻 Robot 表情（2.0 / doc/10 §2；取代原「状态图标区」，D1 已拍板移除）──
+            // 位置沿用原状态图标行半径（iconRowR）；边长 = 屏短边 × RobotTokens.SIZE_FACTOR。
+            // 异常状态不再用图标表达，改由表情的情绪表达（M18.S2 接 MoodEngine 后为真实情绪）。
+            // 常动（D4）：只在「不可见」时暂停 —— 退后台 / 抽屉面板打开 / debug 覆盖屏。
+            Box(
+                Modifier
+                    .align(Alignment.Center)
+                    .offset(y = -metrics.iconRowR)
+                    .alpha(statusAlpha),
+                contentAlignment = Alignment.Center,
+            ) {
+                RobotFace(
+                    mood = coarseRobotMood(profile),
+                    size = metrics.robotFaceSize(),
+                    paused = !appActive || panel != null || debugGrid,
+                    contentDescription = stringResource(R.string.robot_face_cd),
+                )
             }
 
             // ── Overlay 层（置顶，互斥）────────────────────────
@@ -1018,43 +981,6 @@ private fun attributeColor(id: AttributeId): Color = when (id) {
     AttributeId.HEALTH -> ColorToken.Health
     AttributeId.KNOWLEDGE -> ColorToken.Knowledge
     AttributeId.HYGIENE -> ColorToken.Hygiene
-}
-
-/**
- * 状态图标按钮（主屏顶内，doc/06 §3.1）：热区 ≥30dp、字形 22dp、颜色随属性语义色；
- * 点击任一图标 = 展开状态面板（与顶缘下拉同入口）。
- */
-@Composable
-private fun StatusIconButton(kind: StatusIconKind, onClick: () -> Unit) {
-    // 与状态面板行首、主环进度条同源字形（drawAttributeGlyph）：直接用对应属性图标，
-    // 不再另画一套（原 drawStatusIcon 的云/四角星等与之不一致，已移除）。
-    // 颜色取「低值预警」同款 Warn（与状态面板低值行、迷你环预警同色），统一提醒语义。
-    val id = when (kind) {
-        StatusIconKind.HUNGRY -> AttributeId.SATIATION
-        StatusIconKind.SAD -> AttributeId.MOOD
-        StatusIconKind.DIRTY -> AttributeId.HYGIENE
-        StatusIconKind.SICK -> AttributeId.HEALTH
-        StatusIconKind.KNOWLEDGE -> AttributeId.KNOWLEDGE
-    }
-    val description = when (kind) {
-        StatusIconKind.HUNGRY -> stringResource(R.string.status_icon_hungry)
-        StatusIconKind.SAD -> stringResource(R.string.status_icon_sad)
-        StatusIconKind.DIRTY -> stringResource(R.string.status_icon_dirty)
-        StatusIconKind.SICK -> stringResource(R.string.status_icon_sick)
-        StatusIconKind.KNOWLEDGE -> stringResource(R.string.status_icon_knowledge)
-    }
-    val cd = stringResource(R.string.status_icon_cd, description)
-    val metrics = screenMetrics()
-    Box(
-        modifier = Modifier
-            .size(metrics.dp(30.dp))
-            .clip(CircleShape)
-            .clickable(onClick = onClick)
-            .semantics { contentDescription = cd },
-        contentAlignment = Alignment.Center,
-    ) {
-        AttributeIcon(id, ColorToken.Warn)
-    }
 }
 
 /** 状态面板行首图标：复用首页主环同源字形（碗/气球/十字…，见 [drawAttributeGlyph]），

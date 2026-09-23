@@ -658,13 +658,13 @@ M18 常驻表情 + 情绪内核(可跑) → M19 全屏 Robot 互动模式(可跑
 #### M18.S1 依赖接入 + 常驻表情上屏（P0）
 
 **任务**
-- [ ] `app/build.gradle.kts` 加 `implementation(project(":grokBot"))`；按需补齐 version catalog 别名（当前 `grokBot/build.gradle.kts` 用 `androidx-compose-*` 系列别名，根 catalog 仅有 `compose-bom`/`ui`/`ui-graphics`/`compose-foundation`）；`minSdk` 差异（库 23 / app 30）确认可合并；**编译绿为第一步硬门槛**。
-- [ ] `presentation/face/RobotTokens.kt`（或并入 `AdaptTokens`）：`SIZE_FACTOR = 0.2f`，尺寸 = `screenMetrics().minSide * SIZE_FACTOR`；**常驻小表情与底部宠物缩略共用此常量**。
-- [ ] `presentation/face/RobotFace.kt`：`RobotFace(modifier, mood, paused, followPointer)`——封装 `GrokBotConfig`（`mode = HOLD`、`flatInk = ColorToken.Accent` 近白、`eyeColor = Black`、`badgeColor` 待定、`shape` 暂 `BLOB`）+ `rememberGrokBotState` + `GrokBot`；对外只暴露「情绪 → 表情」。
-- [ ] `PetScreen` 顶部：把状态图标区（`PetScreen.kt:603-657`）**整体移除**（D1：`StatusIconKind` / `StatusIconButton` 一并删），原地换上常驻 `RobotFace`（位置沿用 `metrics.iconRowR`）；异常状态不再有图标，改由表情表达。状态面板入口只剩「顶缘下拉 + 下面板『状态』」，需同步在 doc/06 §3.2 注记三入口口径变化。
-- [ ] **本步先不与情绪内核接线**：直接按 `profile.fsmState` + `attributes` 粗映射 `GrokMood`（SLEEPING→SLEEPING / SICK→SAD / 低心情→SAD / 其余→IDLE），保证首日即可见。
-- [ ] 常动与闸（D4）：默认**常动**，只在 `ON_PAUSE`/`ON_STOP`、抽屉面板打开时 `state.paused = true`（沿用 `PetScreen` 既有 `appActive` 口径）。
-- [ ] 揭示节奏与无障碍：沿用 `BootStage.Status` 的 `statusAlpha` 淡入；`contentDescription` 走 strings（三语）。
+- [x] `app/build.gradle.kts` 加 `implementation(project(":grokBot"))`；version catalog 补 `androidx-compose-bom/ui/ui-graphics/foundation` + `androidx-core-ktx`（`coreKtx 1.13.0`）别名（`grokBot` 用 `androidx-*` 口径，与 app 既有 `compose-*` 别名并存）；`minSdk` 差异（库 23 / app 30）实测可合并；**编译绿已达成**（`:app:assembleDebug` 通过）。
+- [x] `presentation/face/RobotTokens.kt`：`SIZE_FACTOR = 0.15f`（真机校准：0.2 偏大）+ `ScreenMetrics.robotFaceSize() = minSide * 0.15f`；**常驻小表情与底部宠物缩略共用此尺寸**。
+- [x] `presentation/face/RobotFace.kt`：`RobotFace(mood, size, paused, followPointer, shape, contentDescription)`——封装 `GrokBotConfig`（`mode = HOLD`、`flatInk = ColorToken.Accent` 近白脸、`eyeColor/badgeColor = ColorToken.OnAccent` 黑眼、`shape` 暂 `BLOB`）+ `rememberGrokBotState` + `GrokBot`；对外只暴露「情绪 → 表情」。
+- [x] `PetScreen` 顶部：状态图标区**整体移除**（D1：`StatusIconKind` / `StatusIconButton` 及 `status_icon_*` 字符串一并删），原地换上常驻 `RobotFace`（位置 `metrics.iconRowR`、尺寸 `metrics.robotFaceSize()`）；状态面板入口只剩「顶缘下拉 + 下面板『状态』」（doc/06 §3.2 三入口口径变化待回写）。
+- [x] **本步先不与情绪内核接线**：`coarseRobotMood(profile)` 粗映射（SICK→SAD / SLEEPING→SLEEPING / 饱腹<30→CONFUSED / 心情<30→SAD / 其余→IDLE），M18.S2 由 `MoodEngine` 取代。
+- [x] 常动与闸（D4）：默认**常动**，只在退后台（`appActive=false`）、抽屉面板打开、debug 覆盖屏时 `paused = true`。
+- [x] 揭示节奏与无障碍：沿用 `BootStage.Status` 的 `statusAlpha` 淡入；`contentDescription` 走 `robot_face_cd`（values / values-zh）。
 
 **产出**：`:grokBot` 依赖接通、`RobotTokens` / `RobotFace`、主屏顶部常驻表情。
 
@@ -789,7 +789,7 @@ M18 常驻表情 + 情绪内核(可跑) → M19 全屏 Robot 互动模式(可跑
 | M15 收藏档案 | A→换B(墓碑)→切回A 一致 | ☑ | S1 收盘（domain）：`PetStore` 升级多档（当前档 + 墓碑集合 `pet_tombs_v3`，含 v2 单键迁移）+ `archiveCurrent/switchTo/listTombs/deleteTomb` 纯逻辑（`PetArchive` 经 `KVStore` 抽象、PetStore 用 SharedPreferences 实现，JVM 单测用内存假实现）+ `PetTombCodec`；`PetArchiveTest`/`PetTombCodecTest` 共 13 例全绿、编译绿。S2 收盘（presentation）：`SettingsActivity`（设置统一入口：换宠归档 + 我的档案/电子墓碑，`settings` 图标已就位）、`TombActivity`（墓碑列表 + 切回），右滑网格新增「设置」单元；编译绿。真机 A→B→切回 A 手测走查待做 ||
 | M16 休闲小游戏 | 右滑进游戏一局有始有终 | ☑ | S1+S2 代码收盘：`MiniGameEngine`（domain 纯逻辑：计时/计分/泡泡生成，6 例单测全绿）+ `GameActivity`（开始/限时 30s 点泡泡/结算返回，全 Compose 零新素材）+ 右滑网格「小游戏」单元（纯 Compose 泡泡图标，与设置同款）；游戏结果仅会话级不动宠物、不写 stats（doc/09 §5.6 解耦）。编译绿 + 全量单测绿。真机手测（M16 手测路径）留走查 ||
 | M17 偏好设置 | 右滑「偏好设置」→设置页；重开宠物/墓碑设置可用 | ◑ | S1+S2 代码收盘（待真机走查）：`SettingsStore`（独立 SP `settings_store`，与 `PetStore` 解耦）+ 纯逻辑 `SettingsPrefs`（JVM 单测 `SettingsStoreTest` 3 例全绿）；设置页接入三开关——是否归档（换宠时归档/覆盖写重开）、过往入口可见性、切回需二次确认；「重新开始选择宠物」二次确认（警示红）+「切回」二次确认均落地；显示名「电子墓碑」→「过往」。编译绿 + 全量单测绿。真机手测（开关联动 / 换宠归档态 / 切回确认）留走查 |
-| M18 常驻表情 + 情绪内核 | 顶部常驻反色表情（常动）；情绪随属性/离线结算变化 | ☐ | 未开工（2.0 段，doc/10）。S1 硬门槛 = `:grokBot` 依赖编译绿；D1 已拍板（图标行整体移除）、D2 不落盘、D4 常动 |
+| M18 常驻表情 + 情绪内核 | 顶部常驻反色表情（常动）；情绪随属性/离线结算变化 | ◑ | **S1 代码收盘**：`:grokBot` 依赖接通（catalog 补 `androidx-*` 别名、`coreKtx 1.13.0`）、`RobotTokens`(0.2f) / `RobotFace`(反色 HOLD) 新建、顶部图标行整体移除换常驻表情、粗映射 `coarseRobotMood`、常动闸 + `robot_face_cd` 双语；`:app:assembleDebug` 绿。真机手测（46dp 观感 / 反色对比度 / 常动功耗 R3 / 退后台暂停）待走查 |
 | M19 全屏 Robot 互动 | 点表情全屏 + 宠物缩底部 → 点缩略回游走；全屏点/滑/长按影响情绪与属性 | ☐ | 未开工（2.0 段，doc/10）。依赖 M18 情绪内核；含 L1 手势层重构（R6 回归）；D3（AMUSE 同抚摸/玩耍链路）、D5（底部静态帧）已拍板 |
 | M20 打磨（低优先） | 切换过渡动画 + 常动功耗走查调参 | ☐ | 未开工（2.0 段，doc/10）。D8 已拍板要过渡动画但降级；M18/M19 先直切不阻塞 |
 

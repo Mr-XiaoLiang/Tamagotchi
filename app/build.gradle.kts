@@ -54,6 +54,8 @@ dependencies {
     implementation(libs.ui)
     implementation(libs.ui.graphics)
     implementation(libs.ui.tooling.preview)
+    // 2.0 表情系统（doc/10）：本地 Compose Library，提供 Robot 表情组件
+    implementation(project(":grokBot"))
     implementation(libs.wear.tooling.preview)
     androidTestImplementation(libs.ui.test.junit4)
     testImplementation(libs.junit)

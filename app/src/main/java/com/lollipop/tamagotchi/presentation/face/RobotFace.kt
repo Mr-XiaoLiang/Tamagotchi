@@ -1,0 +1,94 @@
+package com.lollipop.tamagotchi.presentation.face
+
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
+import com.lollipop.grokbot.GrokBot
+import com.lollipop.grokbot.GrokBotConfig
+import com.lollipop.grokbot.GrokColor
+import com.lollipop.grokbot.GrokMode
+import com.lollipop.grokbot.GrokMood
+import com.lollipop.grokbot.GrokScheme
+import com.lollipop.grokbot.GrokShape
+import com.lollipop.grokbot.rememberGrokBotState
+import com.lollipop.tamagotchi.core.attribute.AttributeId
+import com.lollipop.tamagotchi.core.behavior.PetState
+import com.lollipop.tamagotchi.domain.model.PetProfile
+import com.lollipop.tamagotchi.presentation.theme.ColorToken
+
+/**
+ * 常驻 Robot 表情（doc/10 §2）。
+ *
+ * 反色设计：**脸用近白**（`ColorToken.Accent`）、**眼睛用黑**（`ColorToken.OnAccent`），
+ * 眼内徽标块同取黑，保证整体只有黑白两级。
+ *
+ * 驱动方式：
+ * - `mode = HOLD` —— 表情由宿主显式给定，绝不跑库自带的 onboarding 轮播；
+ *   [GrokBot] 会在配置变化时把新 mood 推给运行中的引擎（动画不中断）。
+ * - **D4 常动**：默认不暂停，只在调用方判定「不可见」（退后台 / 面板打开）时传 `paused = true`。
+ *
+ * @param mood 当前要显示的情绪（M18.S2 起由 `MoodEngine` 的 `Mood` 映射而来）。
+ * @param size 表情边长；不传则填满约束（见 [GrokBot]）。
+ * @param shape 体型（D7：随种类/性格，无法判定退回 [GrokShape.BLOB]）。
+ */
+@Composable
+fun RobotFace(
+    mood: GrokMood,
+    modifier: Modifier = Modifier,
+    size: Dp? = null,
+    paused: Boolean = false,
+    followPointer: Boolean = false,
+    shape: GrokShape = GrokShape.BLOB,
+    contentDescription: String? = null,
+) {
+    val config = remember(shape, paused, followPointer, mood) {
+        GrokBotConfig(
+            shape = shape,
+            color = GrokColor.BLACK,
+            scheme = GrokScheme.LIGHT,
+            mood = mood,
+            mode = GrokMode.HOLD,
+            followPointer = followPointer,
+            paused = paused,
+            // 反色：平涂近白脸 + 黑眼（覆盖 color/scheme 渐变）
+            flatInk = ColorToken.Accent,
+            eyeColor = ColorToken.OnAccent,
+            badgeColor = ColorToken.OnAccent,
+        )
+    }
+    val state = rememberGrokBotState(config)
+    GrokBot(
+        modifier = modifier
+            .then(if (size != null) Modifier.size(size) else Modifier)
+            .then(
+                if (contentDescription != null) {
+                    Modifier.semantics { this.contentDescription = contentDescription }
+                } else {
+                    Modifier
+                },
+            ),
+        config = config,
+        state = state,
+    )
+}
+
+/**
+ * M18.S1 临时粗映射：直接由当前快照推 [GrokMood]，
+ * 让常驻表情第一天就能随宠物状态变化（M18.S2 由 `MoodEngine` 的 `Mood` 映射取代）。
+ *
+ * 判定顺序沿用既有的「病 > 睡 > 生理低值」优先级（doc/10 §3.1）。
+ */
+fun coarseRobotMood(profile: PetProfile): GrokMood = when {
+    profile.fsmState == PetState.SICK -> GrokMood.SAD
+    profile.fsmState == PetState.SLEEPING -> GrokMood.SLEEPING
+    profile.attributes[AttributeId.SATIATION] < LOW_ATTR_WARN -> GrokMood.CONFUSED
+    profile.attributes[AttributeId.MOOD] < LOW_ATTR_WARN -> GrokMood.SAD
+    else -> GrokMood.IDLE
+}
+
+/** 与状态面板低值预警同一阈值（doc/06 §2：小于 30 视为偏低）。 */
+private const val LOW_ATTR_WARN = 30f

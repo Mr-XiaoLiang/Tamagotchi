@@ -5,12 +5,8 @@
 
     <!-- 中文显式覆盖（与默认 values/ 一致；设备 zh 区域走此处） -->
     <string name="status_title">状态 · %1$s</string>
-    <string name="status_icon_hungry">饥饿</string>
-    <string name="status_icon_sad">不开心</string>
-    <string name="status_icon_dirty">脏</string>
-    <string name="status_icon_sick">生病</string>
-    <string name="status_icon_knowledge">知识</string>
-    <string name="status_icon_cd">%1$s（点按查看状态）</string>
+    <!-- 2.0 常驻 Robot 表情（doc/10）：取代原状态图标行 -->
+    <string name="robot_face_cd">伙伴表情</string>
 
     <string name="actions_title">操作</string>
     <string name="action_status">状态</string>

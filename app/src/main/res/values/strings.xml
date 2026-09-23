@@ -5,12 +5,8 @@
 
     <!-- English (M7 i18n scaffold; primary copy is zh in values/). -->
     <string name="status_title">Status · %1$s</string>
-    <string name="status_icon_hungry">Hungry</string>
-    <string name="status_icon_sad">Unhappy</string>
-    <string name="status_icon_dirty">Dirty</string>
-    <string name="status_icon_sick">Sick</string>
-    <string name="status_icon_knowledge">Knowledge</string>
-    <string name="status_icon_cd">%1$s (tap to view status)</string>
+    <!-- 2.0 Robot face (doc/10): the resident expression that replaced the status icon row. -->
+    <string name="robot_face_cd">Companion face</string>
 
     <string name="actions_title">Actions</string>
     <string name="action_status">Status</string>
