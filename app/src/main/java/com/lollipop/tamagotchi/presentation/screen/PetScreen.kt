@@ -114,8 +114,8 @@ import com.lollipop.tamagotchi.presentation.boot.BootStage
 import com.lollipop.tamagotchi.presentation.boot.ShellBridge
 import com.lollipop.tamagotchi.presentation.render.PetLivingSprite
 import com.lollipop.tamagotchi.presentation.face.RobotFace
-import com.lollipop.tamagotchi.presentation.face.coarseRobotMood
 import com.lollipop.tamagotchi.presentation.face.robotFaceSize
+import com.lollipop.tamagotchi.presentation.face.toGrokMood
 import com.lollipop.tamagotchi.presentation.component.ColorDot
 import com.lollipop.tamagotchi.presentation.component.PillItem
 import androidx.compose.foundation.layout.Column
@@ -154,6 +154,7 @@ import com.lollipop.tamagotchi.domain.engine.ActionResult
 import com.lollipop.tamagotchi.domain.engine.ActionRule
 import com.lollipop.tamagotchi.domain.engine.ActionType
 import com.lollipop.tamagotchi.domain.engine.EventEngine
+import com.lollipop.tamagotchi.domain.engine.Mood
 import com.lollipop.tamagotchi.domain.engine.OfflineEvent
 import com.lollipop.tamagotchi.domain.engine.SettlementSummary
 import com.lollipop.tamagotchi.domain.log.EventLog
@@ -235,6 +236,11 @@ fun PetScreen(
     onlineReview: List<EventLog> = emptyList(),
     /** M14 宠物便条：原始会话日志（供 [NoteGenerator] 统计本次互动，doc/04 §4）。 */
     sessionLog: SessionLog? = null,
+    /**
+     * 2.0 / doc/10：当前情绪（由 `MoodEngine` 产出，运行时状态不落盘）。
+     * **同源两消费**：顶部 Robot 表情 + 宠物精灵形变（D6）。
+     */
+    mood: Mood = Mood.IDLE,
 ) {
     var stage by remember { mutableStateOf(BootStage.Shell) }
     // 当前挂载面板：null=主屏；非 null=抽屉在「拖出中 / 展开动画 / 全开 / 收回动画」任一阶段
@@ -552,6 +558,8 @@ fun PetScreen(
                     modifier = Modifier.fillMaxSize(),
                     // M6.S2：动作短演出指令（气泡/浮字/蹦跳/咀嚼/亲昵，内部按 tick 相位推进）
                     fx = currentFx,
+                    // 2.0：持久态情绪形变与表情同源（短演出覆盖优先，见 PetLivingSprite）
+                    mood = mood,
                 )
             }
 
@@ -612,7 +620,7 @@ fun PetScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 RobotFace(
-                    mood = coarseRobotMood(profile),
+                    mood = mood.toGrokMood(),
                     size = metrics.robotFaceSize(),
                     paused = !appActive || panel != null || debugGrid,
                     contentDescription = stringResource(R.string.robot_face_cd),

@@ -668,18 +668,19 @@ M18 常驻表情 + 情绪内核(可跑) → M19 全屏 Robot 互动模式(可跑
 
 **产出**：`:grokBot` 依赖接通、`RobotTokens` / `RobotFace`、主屏顶部常驻表情。
 
-**验收（P0）**：真机——主屏顶部出现白色 Robot、黑眼，大小约屏短边 20%，**持续在动**（呼吸/眨眼）；随宠物入睡/生病/低心情换表情；退后台动画停止；编译绿。
+**验收（P0）**：真机——主屏顶部出现白色 Robot、黑眼，大小约屏短边 15%（`SIZE_FACTOR = 0.15f`，230dp 圆屏 ≈ 34.5dp），**持续在动**（呼吸/眨眼）；随宠物入睡/生病/低心情换表情；退后台动画停止；编译绿。
 **风险检查点**：R1 依赖接入、R3 功耗（**常动**下的真机温升/掉电粗测）、R4 小屏观感与反色对比度 —— **本步暴露**。若常动功耗不可接受，回退方案（可见才动 / 降帧 / 简化形态）需先回写 doc/10 §2.4 勘误。
 
 #### M18.S2 MoodEngine 情绪内核 + 接线（P1 + P0）
 
 **任务**
-- [ ] `domain/engine/MoodEngine.kt`（纯 Kotlin、零 Android）：`enum class Mood`（SLEEP / SLEEPY / SICK / HUNGRY / DIRTY / SAD / IDLE + 瞬态 PLAYFUL / HAPPY / CURIOUS / EXCITED / THINKING）；`MoodEngine` 纯函数三入口——`onBoot(now, profile, summary)`（消费 `EndingMood`，初态 SLEEP 之后落真实情绪）、`update(now, profile, mood)`（属性漂移 / 瞬态到期回落基线）、`onEvent(mood, kind, profile, now)`（动作/在线事件/交互覆盖瞬态，带 `until`）。
-- [ ] 优先级表落地（doc/10 §3.1）：生理/持久态压制瞬态；瞬态到期回落；**初始态 = SLEEP**；「应用停止即结束」= 只活组合层 State、**不落盘**（D2 已拍板，不动 `PetProfile` schema / codec）。
-- [ ] presentation 映射：`Mood → GrokMood`（表驱动，放 `presentation/face/MoodGrokMapping.kt`）+ `Mood → Emotion`（喂 M10 `PetRenderer` 形变层）。**D6 已拍板：二者必须同源**——同一个 `Mood` 两处消费，表达同一状态，不各算一套。
-- [ ] `presentation/face/RobotShapePicker.kt`（D7）：`petId` 稳定哈希为主判据 + 性格 traits 邻域微调 + 无法判定退回 `GrokShape.BLOB`（团块/圆形）；形状建档即定、不随情绪时间变化，`remember(petId)` 缓存；纯函数单测（同 petId 恒定、越界兜底 BLOB）。
-- [ ] 接线：`EntryFlow` 在 settle 完成后调 `onBoot`；前台节奏旁挂情绪 tick（复用既有前台循环，**不新增常驻 Flow**，遵守被动生成纪律）；动作/在线事件命中后调 `onEvent`。
-- [ ] 单测：`MoodEngineTest`——初态 SLEEP、onBoot 按 EndingMood/属性落点、优先级压制、瞬态到期回落、同输入可复现。
+- [x] `domain/engine/MoodEngine.kt`（纯 Kotlin、零 Android）：`enum class Mood`（SLEEP / SLEEPY / SICK / HUNGRY / DIRTY / SAD / IDLE + 瞬态 PLAYFUL / HAPPY / CURIOUS / EXCITED / THINKING）；`MoodState(base, transient, until)`；`MoodEngine` 纯函数三入口——`onBoot(now, profile, summary)`（消费 `EndingMood`，初态 SLEEP 之后落真实情绪）、`update(now, profile, state)`（属性漂移 / 瞬态到期回落基线）、`onEvent(state, event, profile, now)`（动作/在线事件覆盖瞬态，带 `until`）。
+- [x] 优先级表落地（doc/10 §3.1）：病 > 睡 > 饿 > 脏 > 闷 > 常态；**硬压制**（病/睡）不接瞬态、**软压制**（饿/脏/闷）瞬态只留 `SUPPRESSED_MS=1.5s`「一瞬」；瞬态到期回落；**初始态 = SLEEP**（`MoodEngine.BOOT`）；「应用停止即结束」= 只活组合层 State、**不落盘**（D2 已拍板，不动 `PetProfile` schema / codec）。
+- [x] 睡眠判定补**夜间作息档**（22:00~07:00）：`SettleEngine` 只落 SICK/SAD/IDLE，夜间入睡不体现在 `profile.fsmState`，只按时段判定才能与 FSM 的夜间入睡同源（doc/10 §3.1「或夜间作息档」）。
+- [x] presentation 映射 `presentation/face/MoodGrokMapping.kt`：`Mood.toGrokMood()` + `Mood.toEmotion()`。**D6 已拍板同源**：同一个 `Mood` 两处消费（`RobotFace` 表情 / `PetLivingSprite` 形变），不各算一套。
+- [ ] `presentation/face/RobotShapePicker.kt`（D7）：**移入 M20 打磨**（形状变体不影响情绪闭环）；`petId` 稳定哈希为主判据 + 性格 traits 邻域微调 + 无法判定退回 `GrokShape.BLOB`；形状建档即定，`remember(petId)` 缓存。
+- [x] 接线：`EntryFlow` settle 完成（含 noOp）调 `onBoot`；`LaunchedEffect(profile)` 属性漂移即 update；瞬态到期挂**一次性 delay**（不新增常驻轮询）；动作成功 / 在线事件命中后调 `onEvent`；`PetScreen` 收 `mood: Mood` 分别喂 `RobotFace` 与 `PetLivingSprite`。
+- [x] 单测：`app/src/test/.../MoodEngineTest.kt`（12 例全绿）——初态 SLEEP、基线优先级、onBoot 迎接瞬态与负面态压制、瞬态到期回落、软/硬压制、ActionType→MoodEvent。
 
 **产出**：`MoodEngine` + 映射表 + 接线 + 单测。
 
@@ -763,7 +764,7 @@ M18 常驻表情 + 情绪内核(可跑) → M19 全屏 Robot 互动模式(可跑
 | Robot 逐帧 Canvas 功耗与温升 | doc/10 R3 | M18.S1 粗测 / M19 | 真机温升与掉电走查 |
 | 小屏观感：46dp 表情细节与反色对比度 | doc/10 R4 | M18.S1 | 真机目测 |
 | 手势冲突：边缘三向 vs Robot 层 vs 欢迎气泡 | doc/10 R2 | M19.S2 | 真机手测定案 |
-| 情绪与精灵 Emotion 双源漂移 | doc/10 R5 | M18.S2 | 真机同源核对 |
+| 情绪与精灵 Emotion 双源漂移 | doc/10 R5 | M18.S2 | 已同源（同一 `Mood` 两处消费），真机同源核对 |
 | L1 手势层重构回归（根 modifier → 顶层独立手势层） | doc/10 R6 | M19.S2 | 三向抽屉行为回归全通过 |
 
 ---
@@ -789,7 +790,7 @@ M18 常驻表情 + 情绪内核(可跑) → M19 全屏 Robot 互动模式(可跑
 | M15 收藏档案 | A→换B(墓碑)→切回A 一致 | ☑ | S1 收盘（domain）：`PetStore` 升级多档（当前档 + 墓碑集合 `pet_tombs_v3`，含 v2 单键迁移）+ `archiveCurrent/switchTo/listTombs/deleteTomb` 纯逻辑（`PetArchive` 经 `KVStore` 抽象、PetStore 用 SharedPreferences 实现，JVM 单测用内存假实现）+ `PetTombCodec`；`PetArchiveTest`/`PetTombCodecTest` 共 13 例全绿、编译绿。S2 收盘（presentation）：`SettingsActivity`（设置统一入口：换宠归档 + 我的档案/电子墓碑，`settings` 图标已就位）、`TombActivity`（墓碑列表 + 切回），右滑网格新增「设置」单元；编译绿。真机 A→B→切回 A 手测走查待做 ||
 | M16 休闲小游戏 | 右滑进游戏一局有始有终 | ☑ | S1+S2 代码收盘：`MiniGameEngine`（domain 纯逻辑：计时/计分/泡泡生成，6 例单测全绿）+ `GameActivity`（开始/限时 30s 点泡泡/结算返回，全 Compose 零新素材）+ 右滑网格「小游戏」单元（纯 Compose 泡泡图标，与设置同款）；游戏结果仅会话级不动宠物、不写 stats（doc/09 §5.6 解耦）。编译绿 + 全量单测绿。真机手测（M16 手测路径）留走查 ||
 | M17 偏好设置 | 右滑「偏好设置」→设置页；重开宠物/墓碑设置可用 | ◑ | S1+S2 代码收盘（待真机走查）：`SettingsStore`（独立 SP `settings_store`，与 `PetStore` 解耦）+ 纯逻辑 `SettingsPrefs`（JVM 单测 `SettingsStoreTest` 3 例全绿）；设置页接入三开关——是否归档（换宠时归档/覆盖写重开）、过往入口可见性、切回需二次确认；「重新开始选择宠物」二次确认（警示红）+「切回」二次确认均落地；显示名「电子墓碑」→「过往」。编译绿 + 全量单测绿。真机手测（开关联动 / 换宠归档态 / 切回确认）留走查 |
-| M18 常驻表情 + 情绪内核 | 顶部常驻反色表情（常动）；情绪随属性/离线结算变化 | ◑ | **S1 代码收盘**：`:grokBot` 依赖接通（catalog 补 `androidx-*` 别名、`coreKtx 1.13.0`）、`RobotTokens`(0.2f) / `RobotFace`(反色 HOLD) 新建、顶部图标行整体移除换常驻表情、粗映射 `coarseRobotMood`、常动闸 + `robot_face_cd` 双语；`:app:assembleDebug` 绿。真机手测（46dp 观感 / 反色对比度 / 常动功耗 R3 / 退后台暂停）待走查 |
+| M18 常驻表情 + 情绪内核 | 顶部常驻反色表情（常动）；情绪随属性/离线结算变化 | ◑ | **S1+S2 代码收盘**：`:grokBot` 依赖接通（catalog 补 `androidx-*` 别名、`coreKtx 1.13.0`）、`RobotTokens`(**0.15f**，真机校准) / `RobotFace`(反色 HOLD) 新建、顶部图标行整体移除换常驻表情、常动闸 + `robot_face_cd` 双语；`MoodEngine` + `MoodGrokMapping`(同源 GrokMood/Emotion) + `EntryFlow` 接线（onBoot/update/onEvent）+ 12 例单测绿。真机手测（34.5dp 观感 / 反色对比度 / 常动功耗 R3 / 退后台暂停 / 冷启动先睡再换脸 / 时间旅行掉属性换脸 / 同源核对）待走查 |
 | M19 全屏 Robot 互动 | 点表情全屏 + 宠物缩底部 → 点缩略回游走；全屏点/滑/长按影响情绪与属性 | ☐ | 未开工（2.0 段，doc/10）。依赖 M18 情绪内核；含 L1 手势层重构（R6 回归）；D3（AMUSE 同抚摸/玩耍链路）、D5（底部静态帧）已拍板 |
 | M20 打磨（低优先） | 切换过渡动画 + 常动功耗走查调参 | ☐ | 未开工（2.0 段，doc/10）。D8 已拍板要过渡动画但降级；M18/M19 先直切不阻塞 |
 

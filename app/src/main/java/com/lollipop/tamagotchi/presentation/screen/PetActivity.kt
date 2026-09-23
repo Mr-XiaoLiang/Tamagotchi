@@ -28,6 +28,9 @@ import com.lollipop.tamagotchi.domain.engine.ActionType
 import com.lollipop.tamagotchi.domain.engine.PetActions
 import com.lollipop.tamagotchi.domain.engine.SettleEngine
 import com.lollipop.tamagotchi.domain.engine.EventEngine
+import com.lollipop.tamagotchi.domain.engine.MoodEngine
+import com.lollipop.tamagotchi.domain.engine.MoodEvent
+import com.lollipop.tamagotchi.domain.engine.MoodState
 import com.lollipop.tamagotchi.domain.engine.SettlementSummary
 import com.lollipop.tamagotchi.domain.util.FxSeq
 import com.lollipop.tamagotchi.domain.log.InMemorySessionLog
@@ -117,6 +120,9 @@ private fun EntryFlow(
     var lastSettleWall by remember { mutableLongStateOf(0L) }
     // 最近一次结算摘要（含离线时间线 + 结局基调），供 PetScreen 迎接气泡 / 回放（M7.S2）。
     var lastSettleSummary by remember { mutableStateOf<SettlementSummary?>(null) }
+    // 2.0 / doc/10 §3：情绪（运行时状态，不落盘 D2）。初态 SLEEP，结算完成后由 onBoot 落真实情绪；
+    // 「应用停止即结束」= 只活在本组合层，ON_STOP 随组合销毁，下次启动重新 onBoot。
+    var mood by remember { mutableStateOf(MoodEngine.BOOT) }
 
     suspend fun runSettle(tag: String, force: Boolean) {
         val cur = profile ?: return
@@ -147,6 +153,9 @@ private fun EntryFlow(
         } else {
             BootLog.s(BootStage.Settle, "$tag noOp：窗口 ≤ 0，快照不变")
         }
+        // 2.0：结算完成（含 noOp）即落情绪 —— 初态 SLEEP 到此为止，
+        // 之后由「离线结局 + 当前属性」决定脸（doc/10 §3.2）。
+        mood = MoodEngine.onBoot(now, outcome.profile, outcome.summary)
     }
 
     fun requestSettle(tag: String, force: Boolean = false) {
@@ -178,6 +187,8 @@ private fun EntryFlow(
                 if (r != null) PetState.set(r.profile)
                 r
             } ?: return@launch
+            // 2.0：动作命中 → 情绪瞬态（喂食→HAPPY / 玩耍→PLAYFUL …），到期自行回落
+            mood = MoodEngine.onEvent(mood, MoodEvent.of(type), result.profile, now)
             lastActionEvent = ActionEvent(id = fxSeq.next(), result = result)
         }
     }
@@ -246,9 +257,28 @@ private fun EntryFlow(
                 sessionLog,
             ) ?: continue
             withContext(Dispatchers.Default) { PetState.set(triggered.profile) }
+            // 2.0：在线事件 → 好奇张望（瞬态）
+            mood = MoodEngine.onEvent(mood, MoodEvent.RANDOM, triggered.profile, now)
             onlineEvent = OnlineEvent(nonce = fxSeq.next(), petEvent = triggered.event)
             onlineReview = sessionLog.liveLogsSince(0).filter { it.type == EventLogType.RANDOM_EVENT }
         }
+    }
+
+    // 2.0 情绪推进：属性/状态一变就重算基线（settle apply、动作、在线事件都在这里落定），
+    // 不新增常驻轮询循环（doc/10 §3.2「不新增常驻 Flow」）。
+    LaunchedEffect(profile) {
+        val cur = profile ?: return@LaunchedEffect
+        mood = MoodEngine.update(clock.nowMillis(), cur, mood)
+    }
+
+    // 瞬态到期回落：只在「当前确有瞬态」时挂一个一次性 delay，到点再 update 一次。
+    LaunchedEffect(mood.transient, mood.until) {
+        val until = mood.until
+        if (mood.transient == null) return@LaunchedEffect
+        val wait = until - clock.nowMillis()
+        if (wait > 0) delay(wait)
+        val cur = profile ?: return@LaunchedEffect
+        mood = MoodEngine.update(clock.nowMillis(), cur, mood)
     }
 
     val current = profile
@@ -289,6 +319,7 @@ private fun EntryFlow(
             onlineEvent = onlineEvent,
             onlineReview = onlineReview,
             sessionLog = sessionLog,
+            mood = mood.current,
         )
     }
 }

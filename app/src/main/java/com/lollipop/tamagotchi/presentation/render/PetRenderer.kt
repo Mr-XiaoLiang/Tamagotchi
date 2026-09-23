@@ -33,8 +33,10 @@ import com.lollipop.tamagotchi.core.behavior.PetState
 import com.lollipop.tamagotchi.core.motion.NormalizedPos
 import com.lollipop.tamagotchi.domain.engine.BehaviorFSM
 import com.lollipop.tamagotchi.domain.engine.FSMResult
+import com.lollipop.tamagotchi.domain.engine.Mood
 import com.lollipop.tamagotchi.domain.model.PetPosition
 import com.lollipop.tamagotchi.domain.model.PetProfile
+import com.lollipop.tamagotchi.presentation.face.toEmotion
 import com.lollipop.tamagotchi.presentation.theme.ColorToken
 import kotlinx.coroutines.delay
 import kotlin.math.PI
@@ -125,13 +127,7 @@ private fun fxEmotion(kind: FxKind): Emotion = when (kind) {
     FxKind.STUDYING -> Emotion.NONE
 }
 
-/** FSM 持久状态 → 情绪（doc/07 §3 触发场景）。 */
-private fun stateEmotion(state: PetState): Emotion = when (state) {
-    PetState.SAD -> Emotion.SAD
-    PetState.SICK -> Emotion.SICK
-    PetState.SLEEPING -> Emotion.TIRED
-    else -> Emotion.NONE
-}
+
 
 /**
  * 情绪 → 参数化形变脚本（doc/07 §3）：纯数值（amplitude/period），不新增状态机逻辑。
@@ -242,6 +238,8 @@ private fun restingPose(profile: PetProfile): LivingPose {
  *   （心跳 cap 单步 ≤250ms，不跨帧跳跃）。由上层接 onPause/onStop 与 overlay 覆盖状态。
  * @param modifier 全屏方形画布（调用方 `size(minSide)` + 圆 clip = 物理屏圆）；
  *   宠物位移范围与恒不出屏由 FSM clamp（R=1）+ 本组件映射（扣模型半径/呼吸余量）保证。
+ * @param mood 当前情绪（2.0 / doc/10 D6）：与 Robot 表情同源，驱动持久态形变；
+ *   短演出（[fx]）的情绪覆盖优先于它。
  */
 @Composable
 fun PetLivingSprite(
@@ -250,6 +248,7 @@ fun PetLivingSprite(
     running: Boolean,
     modifier: Modifier = Modifier,
     fx: PetFx? = null,
+    mood: Mood = Mood.IDLE,
 ) {
     val seed = profile.personality.seed
     val fsm = remember(seed) { BehaviorFSM(seed = seed) }
@@ -355,13 +354,13 @@ fun PetLivingSprite(
         } else {
             cos(2.0 * PI * frame.tick / (PetRenderer.BREATH_TICKS_HALF * 2)).toFloat()
         }
-        // ── 层2 情绪修饰（doc/07 §3）：由 state（SAD/SICK/SLEEPING→TIRED）或
-        //    动作短演出（EXCITED→HAPPY / AFFECTION→SHY）派生；SICK 附灰 tint。
+        // ── 层2 情绪修饰（doc/07 §3 / doc/10 D6）：持久态由 [mood] 派生（与 Robot 表情同源），
+        //    动作短演出（EXCITED→HAPPY / AFFECTION→SHY）覆盖之；SICK 附灰 tint。
         //    可由 [EmotionLayer.enabled] 整体停用，不破坏状态/演出。
         val emotion = if (inFx) {
-            activeFx!!.fx.emotion ?: fxEmotion(activeFx!!.fx.kind)
+            activeFx!!.fx.emotion ?: fxEmotion(activeFx.fx.kind)
         } else {
-            stateEmotion(pose.state)
+            mood.toEmotion()
         }
         val et = if (EmotionLayer.enabled) emotionTransform(emotion, frame.tick, dstSide) else PoseTransform.IDENTITY
         // ── 层3 短脚本：动作专属小动效（与情绪层正交）；EATING 低头咀嚼、TREATED 轻微摇摆 ──

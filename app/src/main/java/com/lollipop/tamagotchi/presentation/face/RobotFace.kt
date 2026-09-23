@@ -15,9 +15,6 @@ import com.lollipop.grokbot.GrokMood
 import com.lollipop.grokbot.GrokScheme
 import com.lollipop.grokbot.GrokShape
 import com.lollipop.grokbot.rememberGrokBotState
-import com.lollipop.tamagotchi.core.attribute.AttributeId
-import com.lollipop.tamagotchi.core.behavior.PetState
-import com.lollipop.tamagotchi.domain.model.PetProfile
 import com.lollipop.tamagotchi.presentation.theme.ColorToken
 
 /**
@@ -76,19 +73,4 @@ fun RobotFace(
     )
 }
 
-/**
- * M18.S1 临时粗映射：直接由当前快照推 [GrokMood]，
- * 让常驻表情第一天就能随宠物状态变化（M18.S2 由 `MoodEngine` 的 `Mood` 映射取代）。
- *
- * 判定顺序沿用既有的「病 > 睡 > 生理低值」优先级（doc/10 §3.1）。
- */
-fun coarseRobotMood(profile: PetProfile): GrokMood = when {
-    profile.fsmState == PetState.SICK -> GrokMood.SAD
-    profile.fsmState == PetState.SLEEPING -> GrokMood.SLEEPING
-    profile.attributes[AttributeId.SATIATION] < LOW_ATTR_WARN -> GrokMood.CONFUSED
-    profile.attributes[AttributeId.MOOD] < LOW_ATTR_WARN -> GrokMood.SAD
-    else -> GrokMood.IDLE
-}
 
-/** 与状态面板低值预警同一阈值（doc/06 §2：小于 30 视为偏低）。 */
-private const val LOW_ATTR_WARN = 30f
