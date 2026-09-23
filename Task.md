@@ -55,7 +55,7 @@
 
 ---
 
-## 3. 里程碑计划（M1–M17：主链 20 步 + 扩展 14 步，每里程碑 ≤ 2 步）
+## 3. 里程碑计划（M1–M17：主链 20 步 + 扩展 14 步；2.0 段 M18–M19 共 4 步；每里程碑 ≤ 2 步）
 
 ### 3.1 总览与依赖
 
@@ -76,6 +76,10 @@ M9 在线惊喜(随机事件+会话回顾，可跑) ─ M10 表现质感 + 性�
 ── 扩展段（M11–M17，doc/09 §5 扩展位连续落地，不叫 V2）──
 M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 收藏档案(墓碑+切换) → M16 休闲小游戏入右滑 → M17 偏好设置(功能清单入口)
 （各步都踩在主链对应基建上：M6 动作框架 / M9 回顾 / M10 表现 / M8 插件位；M16 仅依赖 M8，可随时并行；M17 偏好设置依赖 M8 功能清单面板 + M15 墓碑/切换）
+
+── 2.0 段（M18–M20，doc/10 表情与情绪系统，用户命名「2.0 计划」）──
+M18 常驻表情 + 情绪内核(可跑) → M19 全屏 Robot 互动模式(可跑) → M20 打磨：过渡动画 + 走查调参(可跑，低优先)
+（M18 依赖 M10 表现层 Emotion + M5/M7 结算链路 + `grokBot` 库接入；M19 依赖 M18 情绪内核 + L1 顶层手势层重构；M20 仅打磨，不阻塞前两个里程碑的验证）
 ```
 
 | 里程碑 | 主题 | 步数 | 收盘演示 | 吸收的原 Phase |
@@ -104,6 +108,14 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 | M15 | 收藏档案：电子墓碑 + 快照切换（§5.5） | 换宠归档旧宠、可切回、原样恢复 | M3 建档 / M10 stats / M14 |
 | M16 | 休闲小游戏入右滑（§5.6） | 右滑清单内可玩一局小游戏 | M8 插件位（可并行） |
 | M17 | 偏好设置（§5.7） | 右滑清单「偏好设置」→ 独立设置页；重开宠物 / 墓碑相关设置可用 | M8 功能清单 / M15 墓碑 |
+
+**2.0 里程碑（M18–M19，doc/10 表情与情绪系统）**：
+
+| 里程碑 | 主题 | 步数 | 收盘演示 | 依赖 |
+|---|---|---|---|---|
+| M18 | 常驻 Robot 表情 + 情绪内核 | 2 | 主屏顶部常驻反色表情、情绪随属性/离线结算变化 | M10 Emotion / M5+M7 结算 / `grokBot` 接入 |
+| M19 | 全屏 Robot 互动模式 | 2 | 点表情全屏 + 宠物缩底部（静态帧）→ 点缩略回游走；Robot 展示层自接点/滑/长按并涨属性 | M18 情绪内核 / L1 顶层手势层 |
+| M20 | 打磨（低优先） | 2 | 切换过渡动画（共享元素缩放）+ 常动功耗走查与调参 | M18 / M19 |
 
 ---
 
@@ -632,6 +644,93 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 
 ---
 
+### 2.0 段：表情与情绪系统（M18–M19）
+
+> 设计依据：**doc/10-表情与情绪系统设计.md**（四层模型、情绪模型、映射表、手势归属、决策记录）。本节只拆步与验收。
+> 用户原始诉求（五条）：① 顶部异常标识改为**常驻 Robot 表情**（反色：脸白眼黑，尺寸 = `min(宽,高) × 0.2`）；② 引入**情绪系统**，启动即运行、应用停止即结束，初态 Sleep，离线结算完成后按「离线事件 + 当前属性」落情绪，情绪随属性与交互变化；③ 点顶部 Robot → **全屏 Robot**，宠物缩为固定图标钉在**屏幕底部中央**（与 ① 共享尺寸）；④ 全屏 Robot 支持**触摸交互**（点击/滑动）影响情绪，**边缘手势不受影响**；⑤ 点底部宠物缩略 → 切回**宠物游走模式**。
+>
+> **分层铁律（用户确认，doc/10 §4）**：**手势跟着面板/组件自己走，收起态天然没有事件**。顶层 L1 = 三向抽屉手势层（边缘带内消费、带外放行）；中层 L2 = OSD 状态展示层（**纯展示，不接手势**）；中下层 L3 = 缩略态控件（Robot 缩略表情 / 宝可梦缩略按钮，只 `clickable` 切模式）；下层 L4 = 展开态内容层（宝可梦游走层、Robot 表情展示层，**Robot 展开时自己接管点/滑/长按**）。Robot 手势用 `requireUnconsumed = true`，边缘事件被 L1 消费后到不了它 —— 天然隔离，不做矩形规避。
+
+### M18 常驻 Robot 表情 + 情绪内核（可跑）
+
+> 目的：先把 `:grokBot` 依赖与主屏常驻表情跑通（依赖/功耗/小屏观感三个风险前置），再把情绪内核做成 domain 纯函数并接到真实属性与离线结算上。**两步都能跑**。
+
+#### M18.S1 依赖接入 + 常驻表情上屏（P0）
+
+**任务**
+- [ ] `app/build.gradle.kts` 加 `implementation(project(":grokBot"))`；按需补齐 version catalog 别名（当前 `grokBot/build.gradle.kts` 用 `androidx-compose-*` 系列别名，根 catalog 仅有 `compose-bom`/`ui`/`ui-graphics`/`compose-foundation`）；`minSdk` 差异（库 23 / app 30）确认可合并；**编译绿为第一步硬门槛**。
+- [ ] `presentation/face/RobotTokens.kt`（或并入 `AdaptTokens`）：`SIZE_FACTOR = 0.2f`，尺寸 = `screenMetrics().minSide * SIZE_FACTOR`；**常驻小表情与底部宠物缩略共用此常量**。
+- [ ] `presentation/face/RobotFace.kt`：`RobotFace(modifier, mood, paused, followPointer)`——封装 `GrokBotConfig`（`mode = HOLD`、`flatInk = ColorToken.Accent` 近白、`eyeColor = Black`、`badgeColor` 待定、`shape` 暂 `BLOB`）+ `rememberGrokBotState` + `GrokBot`；对外只暴露「情绪 → 表情」。
+- [ ] `PetScreen` 顶部：把状态图标区（`PetScreen.kt:603-657`）**整体移除**（D1：`StatusIconKind` / `StatusIconButton` 一并删），原地换上常驻 `RobotFace`（位置沿用 `metrics.iconRowR`）；异常状态不再有图标，改由表情表达。状态面板入口只剩「顶缘下拉 + 下面板『状态』」，需同步在 doc/06 §3.2 注记三入口口径变化。
+- [ ] **本步先不与情绪内核接线**：直接按 `profile.fsmState` + `attributes` 粗映射 `GrokMood`（SLEEPING→SLEEPING / SICK→SAD / 低心情→SAD / 其余→IDLE），保证首日即可见。
+- [ ] 常动与闸（D4）：默认**常动**，只在 `ON_PAUSE`/`ON_STOP`、抽屉面板打开时 `state.paused = true`（沿用 `PetScreen` 既有 `appActive` 口径）。
+- [ ] 揭示节奏与无障碍：沿用 `BootStage.Status` 的 `statusAlpha` 淡入；`contentDescription` 走 strings（三语）。
+
+**产出**：`:grokBot` 依赖接通、`RobotTokens` / `RobotFace`、主屏顶部常驻表情。
+
+**验收（P0）**：真机——主屏顶部出现白色 Robot、黑眼，大小约屏短边 20%，**持续在动**（呼吸/眨眼）；随宠物入睡/生病/低心情换表情；退后台动画停止；编译绿。
+**风险检查点**：R1 依赖接入、R3 功耗（**常动**下的真机温升/掉电粗测）、R4 小屏观感与反色对比度 —— **本步暴露**。若常动功耗不可接受，回退方案（可见才动 / 降帧 / 简化形态）需先回写 doc/10 §2.4 勘误。
+
+#### M18.S2 MoodEngine 情绪内核 + 接线（P1 + P0）
+
+**任务**
+- [ ] `domain/engine/MoodEngine.kt`（纯 Kotlin、零 Android）：`enum class Mood`（SLEEP / SLEEPY / SICK / HUNGRY / DIRTY / SAD / IDLE + 瞬态 PLAYFUL / HAPPY / CURIOUS / EXCITED / THINKING）；`MoodEngine` 纯函数三入口——`onBoot(now, profile, summary)`（消费 `EndingMood`，初态 SLEEP 之后落真实情绪）、`update(now, profile, mood)`（属性漂移 / 瞬态到期回落基线）、`onEvent(mood, kind, profile, now)`（动作/在线事件/交互覆盖瞬态，带 `until`）。
+- [ ] 优先级表落地（doc/10 §3.1）：生理/持久态压制瞬态；瞬态到期回落；**初始态 = SLEEP**；「应用停止即结束」= 只活组合层 State、**不落盘**（D2 已拍板，不动 `PetProfile` schema / codec）。
+- [ ] presentation 映射：`Mood → GrokMood`（表驱动，放 `presentation/face/MoodGrokMapping.kt`）+ `Mood → Emotion`（喂 M10 `PetRenderer` 形变层）。**D6 已拍板：二者必须同源**——同一个 `Mood` 两处消费，表达同一状态，不各算一套。
+- [ ] `presentation/face/RobotShapePicker.kt`（D7）：`petId` 稳定哈希为主判据 + 性格 traits 邻域微调 + 无法判定退回 `GrokShape.BLOB`（团块/圆形）；形状建档即定、不随情绪时间变化，`remember(petId)` 缓存；纯函数单测（同 petId 恒定、越界兜底 BLOB）。
+- [ ] 接线：`EntryFlow` 在 settle 完成后调 `onBoot`；前台节奏旁挂情绪 tick（复用既有前台循环，**不新增常驻 Flow**，遵守被动生成纪律）；动作/在线事件命中后调 `onEvent`。
+- [ ] 单测：`MoodEngineTest`——初态 SLEEP、onBoot 按 EndingMood/属性落点、优先级压制、瞬态到期回落、同输入可复现。
+
+**产出**：`MoodEngine` + 映射表 + 接线 + 单测。
+
+**验收（P1+P0）**：单测全绿；真机——冷启动先睡 → 结算完成按离线结果换脸；时间旅行拨 24h → 属性掉 → 表情转饿/病/闷；喂食/玩耍后表情转瞬态并按时回落；宠物精灵形变与表情同源不打架。
+**风险检查点**：R5 双源漂移 —— **本步验证**。
+
+---
+
+### M19 全屏 Robot 互动模式（可跑）
+
+> 目的：完成诉求 ③④⑤——模式切换骨架先跑通（可玩），再接触摸互动与情绪反馈。
+
+#### M19.S1 全屏/游走模式切换骨架（P0）
+
+**任务**
+- [ ] `FaceMode { COMPANION, ROBOT }`：`PetScreen` 组合层 `remember` state（不进 `PetProfile`、不新开 Activity，避免重建 `PetState`/FSM/SessionLog）。
+- [ ] **L4 展示层**：`ROBOT` 下 Robot 铺满内切正方（`GrokBot`，**只画不接业务手势**）；同时 `PetLivingSprite(running = false)` 停 FSM 循环（省电）。
+- [ ] **L3 控件层**：`COMPANION` → 顶部 Robot 缩略表情（`clickable` → 切 ROBOT）；`ROBOT` → 屏幕**底部中央**宠物缩略按钮（静态 pose 帧，尺寸 = `RobotTokens.SIZE_FACTOR`，与顶部表情共享；`clickable` → 切 COMPANION）。两者只吃点击，不接滑动。
+- [ ] `BackHandler`：ROBOT 模式下返回 → COMPANION（不退出 App）；与既有面板返回互斥不打架。
+- [ ] 过渡：本步**直切**（D8），动画留打磨步。
+
+**产出**：`FaceMode` 切换闭环（L3 ⇄ L4 分工）。
+
+**验收（P0）**：真机——点顶部表情全屏、宠物到底部中央且大小与顶部表情一致、点它回游走、返回键回游走不退出；ROBOT 模式下宠物不再走动（省电可见）；全屏 Robot 拖拽/点击暂不响应（等 S2）。
+
+#### M19.S2 分层手势重构 + 全屏互动 → 情绪与属性（P1 + P0）
+
+**任务**
+- [ ] **L1 顶层手势层重构**：把三向抽屉手势从「根 `BoxWithConstraints` 的 modifier」（`PetScreen.kt:357`，现为最外层父节点、晚于子节点收事件）改为**最后声明的独立全屏手势层 Box**（透明），带内起手 `down.consume()` 后照常开/拖抽屉，带外不消费直接放行。回归项：点按展开 / 跟手拖拽 / 松手过半保留 / 面板内不重复开（**R6**）。
+- [ ] **L4 Robot 展示层自带手势**（手势跟着面板走）：`awaitFirstDown(requireUnconsumed = true)`，只吃 L1 放行的 → 边缘天然隔离，不做矩形规避。语义：单击 → `bounce()` + PLAYFUL；横滑 → `spin()` + EXCITED；纵滑 → `burst()` + HAPPY；长按 → LISTENING/THINKING。收起为 L3 缩略表情时**手势随面板消失**（无需判 `FaceMode`）。
+- [ ] `GrokBot` 库内 `pointerInput`（眼随手指）与宿主手势并存、不参与业务判定（**R2**，真机验证）。
+- [ ] `GreetingBubble` 优先级：气泡展示期间由它吃掉点击，消失后再响应 Robot 交互。
+- [ ] **domain（D3 已拍板：与抚摸/玩耍同性质）**：新增 `ActionType.AMUSE` + `ActionHint.AMUSED`；`PetActions.onAmuse`（`mood +小`、`sat −微`、受性格系数、`stats.amuse +1`、写 `ACTION_AMUSE` 日志）+ `ActionRule.amuseDenied` / `AMUSE_COOLDOWN_MS`（防刷，暂定 30s 级）。**两层反馈**：表现层（表情/动效）每次都给；属性层受冷却与收益递减限制，冷却中给「玩累了」气泡。
+- [ ] 单测：`ActionsTest` 增量（冷却 / clamp / 递减 / 统计 / 日志）+ `MoodEngineTest` 增量（交互 → 瞬态 → 回落）。
+
+**产出**：分层手势（L1/L2）+ 全屏互动闭环 + 单测。
+
+**验收（P0）**：真机——全屏内点/滑/长按各有表情与动效反馈并涨心情（冷却内不涨）；边缘三向抽屉手势完全照常；气泡期间不吃交互；回游走后情绪回落正常。
+**风险检查点**：R2 手势冲突、R6 手势层重构回归 —— **本步暴露并定案**。
+
+#### M19 之后：M20 打磨（可跑，优先级低）
+
+> D8 已拍板「要做过渡动画，但优先级降低」，故单列打磨里程碑；M18/M19 仍先直切，不影响前两个里程碑的验证节奏。
+
+- **M20.S1 切换过渡动画（P0）**：Robot ⇄ 宝可梦切换的**共享元素缩放**（缩略尺寸 ⇄ 全屏尺寸，`RobotTokens.SIZE_FACTOR` 为两端共享的关键帧），配 `BackHandler` 与打断处理。
+- **M20.S2 走查与调参（P2）**：**常动**（D4）下的功耗/帧率正式走查（08 §5 口径）+ 包体增量；`AMUSE` 冷却与数值、情绪回落时长、形状映射观感真机调参；结论回写 doc/10 与 doc/01 §11。
+
+**决策记录（D1–D8 全部拍板，详见 doc/10 §6）**：D1 图标整体移除 / D2 情绪不落盘 / D3 交互改变属性（同抚摸·玩耍）/ D4 常驻常动 / D5 底部宠物静态帧 / D6 表情与 Emotion 同源 / D7 形状随种类·性格、兜底圆形 / D8 过渡动画（降级到 M20）。
+
+---
+
 ## 4. 工作规则（编码期，AI 与人共守）
 
 1. **范围纪律**：一个里程碑内只做该里程碑范围（主链各线 v1 内容 / M11–M16 扩展）；发现想法不在当前范围时记录到后续里程碑或 doc/09 §5 扩展位，不顺手实现、不提前混入。
@@ -660,6 +759,12 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 | 插件 ROM 启动 Flags | 05 §5 | M8.S2 | 真机触发手测 |
 | 形变露边 | 07 §9 | M10.S1 | 遮罩后无破边 |
 | 内存 <30MB / 后台 0 CPU | 07/08 §5 | M10.S2 | Profiler 走查 |
+| `grokBot` 依赖接入（catalog 别名 / minSdk / 包体） | doc/10 R1 | M18.S1 | 编译绿 + 安装成功 |
+| Robot 逐帧 Canvas 功耗与温升 | doc/10 R3 | M18.S1 粗测 / M19 | 真机温升与掉电走查 |
+| 小屏观感：46dp 表情细节与反色对比度 | doc/10 R4 | M18.S1 | 真机目测 |
+| 手势冲突：边缘三向 vs Robot 层 vs 欢迎气泡 | doc/10 R2 | M19.S2 | 真机手测定案 |
+| 情绪与精灵 Emotion 双源漂移 | doc/10 R5 | M18.S2 | 真机同源核对 |
+| L1 手势层重构回归（根 modifier → 顶层独立手势层） | doc/10 R6 | M19.S2 | 三向抽屉行为回归全通过 |
 
 ---
 
@@ -683,7 +788,10 @@ M11 清洁 → M12 学习(智力) → M13 玩具变体 → M14 便条 → M15 �
 | M14 宠物便条 | 长按/回顾见贴合便条 | ☑ | S1 收盘（domain）：`NoteGenerator` 纯函数（输入 `SettlementSummary`+`SessionLog` → 结构化 `PetNote`：离线开场档位 + 在线陪伴计数）+ `NoteGeneratorTest` 9 例全绿。S2 收盘（presentation）：`PetNote.toText`（映射 `NoteTone`→`greet_*` 五档 + 在线计数模板）、状态面板顶部便条卡（圆角胶囊、低 alpha 底、文字不透明）、`sessionLog` 由 PetActivity 经 PetScreen→OverlayLayer→StatusPanelBody 透传；真机手测走查待做 ||
 | M15 收藏档案 | A→换B(墓碑)→切回A 一致 | ☑ | S1 收盘（domain）：`PetStore` 升级多档（当前档 + 墓碑集合 `pet_tombs_v3`，含 v2 单键迁移）+ `archiveCurrent/switchTo/listTombs/deleteTomb` 纯逻辑（`PetArchive` 经 `KVStore` 抽象、PetStore 用 SharedPreferences 实现，JVM 单测用内存假实现）+ `PetTombCodec`；`PetArchiveTest`/`PetTombCodecTest` 共 13 例全绿、编译绿。S2 收盘（presentation）：`SettingsActivity`（设置统一入口：换宠归档 + 我的档案/电子墓碑，`settings` 图标已就位）、`TombActivity`（墓碑列表 + 切回），右滑网格新增「设置」单元；编译绿。真机 A→B→切回 A 手测走查待做 ||
 | M16 休闲小游戏 | 右滑进游戏一局有始有终 | ☑ | S1+S2 代码收盘：`MiniGameEngine`（domain 纯逻辑：计时/计分/泡泡生成，6 例单测全绿）+ `GameActivity`（开始/限时 30s 点泡泡/结算返回，全 Compose 零新素材）+ 右滑网格「小游戏」单元（纯 Compose 泡泡图标，与设置同款）；游戏结果仅会话级不动宠物、不写 stats（doc/09 §5.6 解耦）。编译绿 + 全量单测绿。真机手测（M16 手测路径）留走查 ||
-| M17 偏好设置 | 右滑「偏好设置」→设置页；重开宠物/墓碑设置可用 | ◑ | S1+S2 代码收盘（待真机走查）：`SettingsStore`（独立 SP `settings_store`，与 `PetStore` 解耦）+ 纯逻辑 `SettingsPrefs`（JVM 单测 `SettingsStoreTest` 3 例全绿）；设置页接入三开关——是否归档（换宠时归档/覆盖写重开）、过往入口可见性、切回需二次确认；「重新开始选择宠物」二次确认（警示红）+「切回」二次确认均落地；显示名「电子墓碑」→「过往」。编译绿 + 全量单测绿。真机手测（开关联动 / 换宠归档态 / 切回确认）留走查 ||
+| M17 偏好设置 | 右滑「偏好设置」→设置页；重开宠物/墓碑设置可用 | ◑ | S1+S2 代码收盘（待真机走查）：`SettingsStore`（独立 SP `settings_store`，与 `PetStore` 解耦）+ 纯逻辑 `SettingsPrefs`（JVM 单测 `SettingsStoreTest` 3 例全绿）；设置页接入三开关——是否归档（换宠时归档/覆盖写重开）、过往入口可见性、切回需二次确认；「重新开始选择宠物」二次确认（警示红）+「切回」二次确认均落地；显示名「电子墓碑」→「过往」。编译绿 + 全量单测绿。真机手测（开关联动 / 换宠归档态 / 切回确认）留走查 |
+| M18 常驻表情 + 情绪内核 | 顶部常驻反色表情（常动）；情绪随属性/离线结算变化 | ☐ | 未开工（2.0 段，doc/10）。S1 硬门槛 = `:grokBot` 依赖编译绿；D1 已拍板（图标行整体移除）、D2 不落盘、D4 常动 |
+| M19 全屏 Robot 互动 | 点表情全屏 + 宠物缩底部 → 点缩略回游走；全屏点/滑/长按影响情绪与属性 | ☐ | 未开工（2.0 段，doc/10）。依赖 M18 情绪内核；含 L1 手势层重构（R6 回归）；D3（AMUSE 同抚摸/玩耍链路）、D5（底部静态帧）已拍板 |
+| M20 打磨（低优先） | 切换过渡动画 + 常动功耗走查调参 | ☐ | 未开工（2.0 段，doc/10）。D8 已拍板要过渡动画但降级；M18/M19 先直切不阻塞 |
 
 > 里程碑建议顺序：主链 M1→…→M10（M8 可与 M9/M10 并行，仅依赖 M1）；扩展 M11→…→M17（编号连续、不叫 V2，M16 仅依赖 M8、可与 M11–M15 并行；M17 依赖 M8 功能清单 + M15 墓碑）。每里程碑收盘把「验证记录 / 例外」填入上表并同步更新 README §9 阶段指引。
 
