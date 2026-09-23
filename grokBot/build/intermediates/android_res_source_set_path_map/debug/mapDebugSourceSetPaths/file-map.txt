@@ -1,9 +1,0 @@
-com.lollipop.grokbot.grokBot-pngs-0 /Users/lollipop/Develop/Android/Project/GrokBot/grokBot/build/generated/res/pngs/debug
-com.lollipop.grokbot.grokBot-updated_navigation_xml-1 /Users/lollipop/Develop/Android/Project/GrokBot/grokBot/build/generated/updated_navigation_xml/debug
-com.lollipop.grokbot.grokBot-mergeDebugResources-2 /Users/lollipop/Develop/Android/Project/GrokBot/grokBot/build/intermediates/incremental/debug/mergeDebugResources/merged.dir
-com.lollipop.grokbot.grokBot-mergeDebugResources-3 /Users/lollipop/Develop/Android/Project/GrokBot/grokBot/build/intermediates/incremental/debug/mergeDebugResources/stripped.dir
-com.lollipop.grokbot.grokBot-debug-4 /Users/lollipop/Develop/Android/Project/GrokBot/grokBot/build/intermediates/merged_res/debug/mergeDebugResources
-com.lollipop.grokbot.grokBot-debug-5 /Users/lollipop/Develop/Android/Project/GrokBot/grokBot/build/intermediates/packaged_res/debug/packageDebugResources
-com.lollipop.grokbot.grokBot-debug-6 /Users/lollipop/Develop/Android/Project/GrokBot/grokBot/src/debug/res
-com.lollipop.grokbot.grokBot-main-7 /Users/lollipop/Develop/Android/Project/GrokBot/grokBot/src/main/res
-gradleHome-0 /Users/lollipop/.gradle
