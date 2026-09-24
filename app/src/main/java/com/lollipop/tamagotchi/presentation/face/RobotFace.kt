@@ -47,6 +47,8 @@ data class RobotAction(
  * @param mood 当前要显示的情绪（M18.S2 起由 `MoodEngine` 的 `Mood` 映射而来）。
  * @param size 表情边长；不传则填满约束（见 [GrokBot]）。
  * @param shape 体型（D7：随种类/性格，无法判定退回 [GrokShape.BLOB]）。
+ * @param inverted 画在**浅色背景**上（如实心胶囊选中态）时置 true：脸翻深色、眼翻浅色，
+ *   否则「白底 + 白脸」直接糊成一片看不见（M20.S5 脸型选择页实测）。
  * @param action 一次性动作指令（M19.S2：全屏娱乐交互）；按 [RobotAction.nonce] 去重重播。
  */
 @Composable
@@ -57,10 +59,11 @@ fun RobotFace(
     paused: Boolean = false,
     followPointer: Boolean = false,
     shape: GrokShape = GrokShape.BLOB,
+    inverted: Boolean = false,
     contentDescription: String? = null,
     action: RobotAction? = null,
 ) {
-    val config = remember(shape, paused, followPointer, mood) {
+    val config = remember(shape, paused, followPointer, mood, inverted) {
         GrokBotConfig(
             shape = shape,
             color = GrokColor.BLACK,
@@ -69,10 +72,11 @@ fun RobotFace(
             mode = GrokMode.HOLD,
             followPointer = followPointer,
             paused = paused,
-            // 反色：平涂近白脸 + 黑眼（覆盖 color/scheme 渐变）
-            flatInk = ColorToken.Accent,
-            eyeColor = ColorToken.OnAccent,
-            badgeColor = ColorToken.OnAccent,
+            // 反色：平涂近白脸 + 黑眼（覆盖 color/scheme 渐变）；
+            // 浅底（inverted）时整块翻过来 —— 深脸 + 浅眼，保证两层色差始终成立。
+            flatInk = if (inverted) ColorToken.OnAccent else ColorToken.Accent,
+            eyeColor = if (inverted) ColorToken.Accent else ColorToken.OnAccent,
+            badgeColor = if (inverted) ColorToken.Accent else ColorToken.OnAccent,
         )
     }
     val state = rememberGrokBotState(config)

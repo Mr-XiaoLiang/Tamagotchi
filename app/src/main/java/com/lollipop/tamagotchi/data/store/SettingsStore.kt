@@ -30,11 +30,25 @@ class SettingsPrefs(private val kv: KVStore) {
     fun faceModeName(): String? = kv.get(KEY_FACE_MODE)
     fun setFaceModeName(name: String) { kv.put(KEY_FACE_MODE, name) }
 
+    /**
+     * 手动指定的 Robot 脸型（doc/10 §2.5，M20.S5）：存在则**覆盖**自动选择（种类 + 性格）。
+     *
+     * **按宠物 id 存**（键 = 前缀 + petId）：脸型本就随种类定，覆盖也该跟着这只宠走 ——
+     * 换宠后新宠仍走自动，不会被上一只的口味绑住。
+     * `null` = 跟随自动；恢复自动走 [clearFaceShapeOverride]（删键，不写空串）。
+     *
+     * 同样**只存字符串**：`GrokShape` 是 UI 库枚举，data 层不反向依赖它，解析在 presentation。
+     */
+    fun faceShapeOverride(petId: String): String? = kv.get(KEY_FACE_SHAPE + petId)
+    fun setFaceShapeOverride(petId: String, name: String) { kv.put(KEY_FACE_SHAPE + petId, name) }
+    fun clearFaceShapeOverride(petId: String) { kv.remove(KEY_FACE_SHAPE + petId) }
+
     companion object {
         const val KEY_ARCHIVE_ENABLED = "archive_enabled"
         const val KEY_TOMB_VISIBLE = "tomb_entry_visible"
         const val KEY_SWITCH_CONFIRM = "switch_back_confirm"
         const val KEY_FACE_MODE = "face_mode"
+        const val KEY_FACE_SHAPE = "face_shape_"
     }
 }
 
@@ -62,6 +76,10 @@ class SettingsStore(context: Context) : KVStore {
 
     fun faceModeName(): String? = prefs.faceModeName()
     fun setFaceModeName(name: String) = prefs.setFaceModeName(name)
+
+    fun faceShapeOverride(petId: String): String? = prefs.faceShapeOverride(petId)
+    fun setFaceShapeOverride(petId: String, name: String) = prefs.setFaceShapeOverride(petId, name)
+    fun clearFaceShapeOverride(petId: String) = prefs.clearFaceShapeOverride(petId)
 
     companion object {
         const val NAME = "settings_store"

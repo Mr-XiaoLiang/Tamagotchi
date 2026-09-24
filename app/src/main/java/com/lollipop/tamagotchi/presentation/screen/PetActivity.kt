@@ -42,8 +42,10 @@ import com.lollipop.tamagotchi.presentation.base.BaseActivity
 import com.lollipop.tamagotchi.presentation.boot.BootLog
 import com.lollipop.tamagotchi.presentation.boot.BootStage
 import com.lollipop.tamagotchi.presentation.screen.setup.PetDetailActivity
+import com.lollipop.grokbot.GrokShape
 import com.lollipop.tamagotchi.presentation.face.FaceMode
 import com.lollipop.tamagotchi.presentation.face.RobotGesture
+import com.lollipop.tamagotchi.presentation.face.RobotShapePicker
 import com.lollipop.tamagotchi.presentation.face.toMoodEvent
 import com.lollipop.tamagotchi.presentation.screen.setup.SetupProfileScreen
 import com.lollipop.tamagotchi.presentation.screen.OnlineEvent
@@ -137,6 +139,17 @@ private fun EntryFlow(
     var mood by remember { mutableStateOf(MoodEngine.BOOT) }
     // 2.0 / doc/10 §3.3：逗弄节流（运行时，不落盘 —— 全屏 Robot 手势极易连发，属性层必须挡）
     var lastAmuseAt by remember { mutableLongStateOf(0L) }
+
+    // doc/10 §2.5：手动指定的 Robot 脸型（设置页覆盖自动选择）；null = 跟随自动（种类 + 性格推导）。
+    // **从设置页返回时要重读** —— 主屏是常驻 Activity，不刷新就看不到刚选的脸型。
+    var shapeOverride by remember { mutableStateOf<GrokShape?>(null) }
+
+    /** 重读覆盖：直取 [PetState] 权威源，避免闭包捕获到旧的 profile 快照。 */
+    fun refreshShapeOverride() {
+        val id = PetState.snapshot()?.petId ?: return
+        shapeOverride = RobotShapePicker.restore(settings.faceShapeOverride(id))
+    }
+    LaunchedEffect(profile?.petId) { refreshShapeOverride() }
 
     suspend fun runSettle(tag: String, force: Boolean) {
         val cur = profile ?: return
@@ -271,6 +284,8 @@ private fun EntryFlow(
             when (event) {
                 Lifecycle.Event.ON_START, Lifecycle.Event.ON_RESUME -> {
                     if (!lastActive) requestSettle("热恢复")
+                    // 从设置页（脸型）返回：覆盖可能刚变，重读一次即时生效
+                    refreshShapeOverride()
                     lastActive = true
                 }
                 Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> lastActive = false
@@ -362,6 +377,8 @@ private fun EntryFlow(
             // 视图模式跨冷启动记住（doc/10 §4.1）：初值来自偏好 SP，切换即异步落盘
             initialFaceMode = initialFaceMode,
             onFaceModeChange = { settings.setFaceModeName(it.name) },
+            // 脸型：手动覆盖优先于自动（种类 + 性格推导），null = 跟随自动
+            robotShapeOverride = shapeOverride,
         )
     }
 }

@@ -51,6 +51,13 @@
             android:taskAffinity=""
             android:theme="@style/TamagotchiTheme.Full" />
 
+        <!-- Robot 脸型选择页：手动覆盖「种类 + 性格」自动选择，入口在设置页 -->
+        <activity
+            android:name=".presentation.screen.FaceShapeActivity"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@style/TamagotchiTheme.Full" />
+
         <!-- 电子墓碑页：墓碑列表 + 切回 -->
         <activity
             android:name=".presentation.screen.TombActivity"

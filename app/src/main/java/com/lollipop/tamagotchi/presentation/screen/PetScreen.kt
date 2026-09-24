@@ -56,6 +56,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import com.lollipop.grokbot.GrokShape
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
@@ -280,6 +281,11 @@ fun PetScreen(
     initialFaceMode: FaceMode = FaceMode.COMPANION,
     /** 视图模式一变就落盘（下次冷启动恢复）；调用方保证不卡 UI（本屏已在 IO 线程调用）。 */
     onFaceModeChange: (FaceMode) -> Unit = {},
+    /**
+     * doc/10 §2.5：手动指定的脸型（设置页选择，按宠物 id 存在偏好 SP）。
+     * **非 null 即覆盖**自动选择（种类哈希 + 性格邻域）；null = 跟随自动。
+     */
+    robotShapeOverride: GrokShape? = null,
 ) {
     var stage by remember { mutableStateOf(BootStage.Shell) }
     // 当前挂载面板：null=主屏；非 null=抽屉在「拖出中 / 展开动画 / 全开 / 收回动画」任一阶段
@@ -757,8 +763,9 @@ fun PetScreen(
             // 常动（D4）：只在「不可见」时暂停 —— 退后台 / 抽屉面板打开 / debug 覆盖屏。
             // D7：体型随种类 + 性格（activity 邻域微调）选定，建档即固定、不随情绪时间漂移；
             // 结果按 petId 缓存，不写 PetProfile（与 D2 一致）。
-            val robotShape = remember(profile.petId, profile.personality.seed) {
-                RobotShapePicker.pick(profile.petId, profile.personality.traits)
+            // 手动覆盖（设置页）优先：选过就以选的为准，没选才走自动推导。
+            val robotShape = remember(profile.petId, profile.personality.seed, robotShapeOverride) {
+                robotShapeOverride ?: RobotShapePicker.pick(profile.petId, profile.personality.traits)
             }
             val faceSide = lerp(metrics.robotFaceSize(), metrics.robotFullFaceSize(), robotProgress)
             val faceOffsetY = lerp(-metrics.iconRowR, 0.dp, robotProgress)

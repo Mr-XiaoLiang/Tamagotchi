@@ -1,6 +1,7 @@
 package com.lollipop.tamagotchi.presentation.face
 
 import com.lollipop.grokbot.GrokShape
+import com.lollipop.tamagotchi.R
 import com.lollipop.tamagotchi.domain.model.Traits
 
 /**
@@ -21,6 +22,38 @@ import com.lollipop.tamagotchi.domain.model.Traits
  */
 object RobotShapePicker {
 
+    /** 形状显示名的 string 资源（i18n）：库自带 `GrokShape.label` 只有英文，这里走 strings 以便中文化。 */
+    @androidx.annotation.StringRes
+    fun labelRes(shape: GrokShape): Int = when (shape) {
+        GrokShape.BLOB -> R.string.robot_shape_blob
+        GrokShape.PEBBLE -> R.string.robot_shape_pebble
+        GrokShape.BEAN -> R.string.robot_shape_bean
+        GrokShape.EGG -> R.string.robot_shape_egg
+        GrokShape.SQUIRCLE -> R.string.robot_shape_squircle
+        GrokShape.TABLET -> R.string.robot_shape_tablet
+        GrokShape.CAPSULE -> R.string.robot_shape_capsule
+        GrokShape.CYLINDER -> R.string.robot_shape_cylinder
+        GrokShape.HEX -> R.string.robot_shape_hex
+        GrokShape.GEM -> R.string.robot_shape_gem
+        GrokShape.CRYSTAL -> R.string.robot_shape_crystal
+        GrokShape.WEDGE -> R.string.robot_shape_wedge
+        GrokShape.SHIELD -> R.string.robot_shape_shield
+        GrokShape.DOME -> R.string.robot_shape_dome
+        GrokShape.ARCH -> R.string.robot_shape_arch
+        GrokShape.CLOUD -> R.string.robot_shape_cloud
+        GrokShape.TEARDROP -> R.string.robot_shape_teardrop
+        GrokShape.LEAF -> R.string.robot_shape_leaf
+    }
+
+    /**
+     * 从持久化名恢复**手动指定**的脸型（设置页选择）；`null` / 空 / 未知值 → `null`（= 跟随自动）。
+     *
+     * 与 [pick] 的兜底不同：未知值时**不能**退回 [GrokShape.BLOB] —— 那会把「跟随自动」变成
+     * 「永远团块」，用户再也回不到自动选择。
+     */
+    fun restore(name: String?): GrokShape? =
+        if (name.isNullOrBlank()) null else runCatching { GrokShape.valueOf(name) }.getOrNull()
+
     /**
      * 候选体型（有序）：只挑「圆润、适合当脸」的轮廓。
      *
@@ -38,6 +71,15 @@ object RobotShapePicker {
         GrokShape.CLOUD,     // 云
         GrokShape.TEARDROP,  // 水滴（最跳脱）
     )
+
+    /**
+     * 设置页「手动选脸型」的可选清单（M20.S5）：**圆润系（[CANDIDATES]）排前**，
+     * 其后接库里其余偏棱角 / 器物感的形状。
+     *
+     * 手动模式把它们全部放出来由用户自己挑（覆盖 = 用户明确要这个），但排序上
+     * 先把「适合当脸」的推到眼前，避免翻两屏才看到云朵。
+     */
+    val SELECTABLE: List<GrokShape> = CANDIDATES + (GrokShape.entries - CANDIDATES.toSet())
 
     /** `activity` 高/低的分档阈值（0~1；中间档不偏移）。 */
     private const val ACTIVE_HIGH = 0.66f

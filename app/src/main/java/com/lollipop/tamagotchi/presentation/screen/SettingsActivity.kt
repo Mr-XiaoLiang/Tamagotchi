@@ -58,6 +58,7 @@ class SettingsActivity : BaseActivity() {
                 settingsStore = store,
                 onRestartPet = ::restartPet,
                 onOpenArchive = ::openArchive,
+                onOpenFaceShape = ::openFaceShape,
             )
         }
     }
@@ -86,6 +87,11 @@ class SettingsActivity : BaseActivity() {
     private fun openArchive() {
         startActivity(Intent(this, TombActivity::class.java))
     }
+
+    /** Robot 脸型：手动覆盖自动选择（种类 + 性格推导），见 doc/10 §2.5。 */
+    private fun openFaceShape() {
+        startActivity(Intent(this, FaceShapeActivity::class.java))
+    }
 }
 
 /** 设置页首屏数据快照（偏好项初始值，由 [SettingsStore] 载入）。 */
@@ -102,6 +108,7 @@ private fun SettingsContent(
     settingsStore: SettingsStore,
     onRestartPet: () -> Unit,
     onOpenArchive: () -> Unit,
+    onOpenFaceShape: () -> Unit,
 ) {
     var confirmRestart by remember { mutableStateOf(false) }
     var archiveEnabled by remember { mutableStateOf(snapshot.archiveEnabled) }
@@ -126,6 +133,7 @@ private fun SettingsContent(
             onToggleSwitchConfirm = { v -> switchBackConfirm = v; settingsStore.setSwitchBackConfirm(v) },
             onRequestRestart = { confirmRestart = true },
             onOpenArchive = onOpenArchive,
+            onOpenFaceShape = onOpenFaceShape,
         )
     }
 }
@@ -140,6 +148,7 @@ private fun SettingsScreen(
     onToggleSwitchConfirm: (Boolean) -> Unit,
     onRequestRestart: () -> Unit,
     onOpenArchive: () -> Unit,
+    onOpenFaceShape: () -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier
@@ -178,6 +187,13 @@ private fun SettingsScreen(
                 filled = true,
                 textAlign = TextAlign.Center,
                 onClick = onRequestRestart,
+            )
+        }
+        item {
+            PillItem(
+                text = stringResource(R.string.settings_face_shape),
+                textAlign = TextAlign.Center,
+                onClick = onOpenFaceShape,
             )
         }
         if (tombEntryVisible) {
