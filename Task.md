@@ -732,6 +732,7 @@ M18 常驻表情 + 情绪内核(可跑) → M19 全屏 Robot 互动模式(可跑
 
 - [x] **M20.S1 切换过渡动画（P0）**：Robot ⇄ 宝可梦切换改为**共享元素缩放** —— 顶部小表情与全屏 Robot 合并成**同一个 `RobotFace`**（一个 `GrokBotState`，不再两个实例互斥挂载），边长 `34.5dp ⇄ 143dp`、位置 `−iconRowR ⇄ 屏心` 都由 `robotProgress`（`ROBOT_SWITCH_MS = 280ms`）插值，切换连续不闪断；游走宠物层与底▲ 把手随同一进度淡出。展开态手势层只在完全展开后挂载（防动画中误触），收起态 44dp 热区只在 COMPANION 存在。
 - [x] **气泡优先级定案**（原「待真机确认」）：`GreetingBubble` 增 `onVisibleChange`，`PetScreen` 持有 `bubbleVisible`，Robot 手势层 `enabled` 加 `!bubbleVisible`；且宿主手势改回 `requireUnconsumed = true`（依据库源码：库内 `pointerInput` 只记录坐标、从不 consume，block 是 `while(true)` 不会触发自动吞事件），于是「点缩略 / 点气泡」这类已被消费的点击不会再顺带逗一下 Robot —— **R2 收口**。
+- [x] **M20.S1b 体型选择 D7 落地**：`presentation/face/RobotShape.kt` —— `RobotShapePicker.pick(petId, traits)` 纯函数（FNV-1a 稳定哈希 → 圆润系 8 候选；`activity` 只做 ±1 邻域偏移且 **clamp 贴边**不回落；空白 `petId` 兜底 `BLOB`）；`PetScreen` 按 `remember(petId, personality.seed)` 缓存后传给 `RobotFace(shape=…)`，不写 `PetProfile`（与 D2 一致）。`RobotShapePickerTest` 5 例全绿（稳定性 / 分布散开 / 兜底 / 缺 traits / 邻域不跨类）。
 - **M20.S2 走查与调参（P2）**：**常动**（D4）下的功耗/帧率正式走查（08 §5 口径）+ 包体增量；`AMUSE` 冷却与数值、情绪回落时长、形状映射观感真机调参；结论回写 doc/10 与 doc/01 §11。
 
 **决策记录（D1–D8 全部拍板，详见 doc/10 §6）**：D1 图标整体移除 / D2 情绪不落盘 / D3 交互改变属性（同抚摸·玩耍）/ D4 常驻常动 / D5 底部宠物静态帧 / D6 表情与 Emotion 同源 / D7 形状随种类·性格、兜底圆形 / D8 过渡动画（降级到 M20）。

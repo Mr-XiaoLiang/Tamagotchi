@@ -122,6 +122,7 @@ import com.lollipop.tamagotchi.presentation.face.RobotAction
 import com.lollipop.tamagotchi.presentation.face.RobotFace
 import com.lollipop.tamagotchi.presentation.face.ROBOT_SWITCH_MS
 import com.lollipop.tamagotchi.presentation.face.RobotGesture
+import com.lollipop.tamagotchi.presentation.face.RobotShapePicker
 import com.lollipop.tamagotchi.presentation.face.robotFaceSize
 import com.lollipop.tamagotchi.presentation.face.robotFullFaceSize
 import com.lollipop.tamagotchi.presentation.face.robotThumbOffsetY
@@ -679,6 +680,11 @@ fun PetScreen(
             // 只有一个 Composable、一个 GrokBotState，动画连续不闪断（M19 直切版是两个实例互斥挂载）。
             // 异常状态不再用图标表达，改由表情的情绪表达（M18.S2 接 MoodEngine 后为真实情绪）。
             // 常动（D4）：只在「不可见」时暂停 —— 退后台 / 抽屉面板打开 / debug 覆盖屏。
+            // D7：体型随种类 + 性格（activity 邻域微调）选定，建档即固定、不随情绪时间漂移；
+            // 结果按 petId 缓存，不写 PetProfile（与 D2 一致）。
+            val robotShape = remember(profile.petId, profile.personality.seed) {
+                RobotShapePicker.pick(profile.petId, profile.personality.traits)
+            }
             val faceSide = lerp(metrics.robotFaceSize(), metrics.robotFullFaceSize(), robotProgress)
             val faceOffsetY = lerp(-metrics.iconRowR, 0.dp, robotProgress)
             Box(
@@ -694,6 +700,7 @@ fun PetScreen(
                     // 全屏态才跟手指（库自带 pointerInput，不参与业务判定，doc/10 §4.3）
                     followPointer = robotProgress > 0.5f,
                     paused = !appActive || panel != null || debugGrid,
+                    shape = robotShape,
                     contentDescription = stringResource(R.string.robot_face_cd),
                     action = robotAction,
                     modifier = Modifier.fillMaxSize(),
