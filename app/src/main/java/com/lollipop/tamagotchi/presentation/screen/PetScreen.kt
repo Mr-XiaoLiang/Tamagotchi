@@ -68,6 +68,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -113,9 +114,17 @@ import com.lollipop.tamagotchi.domain.model.PetProfile
 import com.lollipop.tamagotchi.presentation.boot.BootStage
 import com.lollipop.tamagotchi.presentation.boot.ShellBridge
 import com.lollipop.tamagotchi.presentation.render.PetLivingSprite
+import com.lollipop.tamagotchi.presentation.face.FaceMode
+import com.lollipop.tamagotchi.presentation.face.RobotAction
 import com.lollipop.tamagotchi.presentation.face.RobotFace
+import com.lollipop.tamagotchi.presentation.face.RobotGesture
 import com.lollipop.tamagotchi.presentation.face.robotFaceSize
+import com.lollipop.tamagotchi.presentation.face.robotFullFaceSize
+import com.lollipop.tamagotchi.presentation.face.robotThumbOffsetY
+import com.lollipop.tamagotchi.presentation.face.robotPlayGestures
 import com.lollipop.tamagotchi.presentation.face.toGrokMood
+import com.lollipop.tamagotchi.presentation.face.toOneShot
+import com.lollipop.tamagotchi.presentation.render.PetPoseThumb
 import com.lollipop.tamagotchi.presentation.component.ColorDot
 import com.lollipop.tamagotchi.presentation.component.PillItem
 import androidx.compose.foundation.layout.Column
@@ -241,6 +250,11 @@ fun PetScreen(
      * **同源两消费**：顶部 Robot 表情 + 宠物精灵形变（D6）。
      */
     mood: Mood = Mood.IDLE,
+    /**
+     * 2.0 / doc/10 §3.3：全屏 Robot 的娱乐手势（点/横滑/纵滑/长按）。
+     * 与抚摸、玩耍同性质的正式互动（D3）——属性层由 `EntryFlow` 走冷却与收益规则。
+     */
+    onAmuse: (RobotGesture) -> Unit = {},
 ) {
     var stage by remember { mutableStateOf(BootStage.Shell) }
     // 当前挂载面板：null=主屏；非 null=抽屉在「拖出中 / 展开动画 / 全开 / 收回动画」任一阶段
@@ -252,6 +266,12 @@ fun PetScreen(
     val sheetExtent = remember { mutableStateMapOf<Panel, Int>() }
     // Debug 构建（M2.S1）：中央活动区长按进入切片核对屏（release 不可达）
     var debugGrid by remember { mutableStateOf(false) }
+    // 2.0 / doc/10 §4.1：主屏「谁在当脸」——COMPANION 宠物游走 / ROBOT 表情全屏。
+    // 运行时状态，不进 PetProfile（同情绪），也不新开 Activity。
+    var faceMode by remember { mutableStateOf(FaceMode.COMPANION) }
+    // 2.0：全屏 Robot 的一次性动作指令（弹跳/旋转/迸发），nonce 自增去重；见 RobotPlay。
+    var robotAction by remember { mutableStateOf<RobotAction?>(null) }
+    var amuseNonce by remember { mutableLongStateOf(0L) }
     // Debug 判定：本工程未启用 BuildConfig，用应用可调试标记（debug 安装包为可调）
     val isDebug = (LocalContext.current.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
@@ -350,6 +370,101 @@ fun PetScreen(
     }
     BackHandler(enabled = panel != null) { closeSheet() }
     BackHandler(enabled = debugGrid && panel == null) { debugGrid = false }
+    // 2.0：ROBOT 模式下返回键 = 收回全屏表情回宠物游走，**不退出 App**（doc/10 §4.1）
+    BackHandler(enabled = faceMode == FaceMode.ROBOT) { faceMode = FaceMode.COMPANION }
+
+    /**
+     * L1 三向边缘手势（doc/06 §5 / doc/10 §4）：手指从三向边缘按正确方向拖动时，
+     * 整块面板沿轴向整体平移、1:1 跟随手指滑入屏内（不需要先过阈值再弹出）；
+     * 松手过半保留、不到一半弹回收起。
+     *
+     * **必须挂在根 `BoxWithConstraints` 的 modifier 上（父节点）**，不能做成「最后声明的置顶
+     * 独立手势层」：`awaitPointerEventScope` 在手势块结束时会**把未消费的 change 一并消费**，
+     * 置顶层即便「带外 return 不消费」也会把事件吞掉 —— 实测面板打不开操作不了、顶部表情点不动
+     * （R6 定案：置顶方案不可行）。父节点最晚收到事件，此时子节点（面板/控件/宠物层）已处理完，
+     * 它的自动消费不再影响任何人。
+     *
+     * 于是「边缘天然隔离」改由 **几何** 保证：Robot 娱乐手势层只覆盖 `minSide − 2×edgeBand`
+     * 的内圈（见 `robotPlayGestures` 调用处），边缘带压根不在它的 hit 范围内。
+     */
+    val edgeGesture: suspend PointerInputScope.() -> Unit = {
+        val minSidePx = minOf(size.width, size.height).toFloat()
+        val edgePx = EdgeBand.toPx()
+        awaitEachGesture {
+            // requireUnconsumed=false：本层是最外层父节点，内层可点控件会先消费 down
+            val down = awaitFirstDown(requireUnconsumed = false)
+            val start = down.position
+            // 抽屉已开时不通过本手势再开新抽屉（收回交给收起钮/点外部/返回键）
+            if (panel != null) return@awaitEachGesture
+            // 起点必须落在三向「边缘热区带」（贴屏缘常驻窄带，见 sheetDragZone）：
+            // 带内起手可点开、也可作拖拽起点；带外（中央宠物区）一律不响应，
+            // 避免大面积可拖带干扰宠物交互。
+            val startZone = sheetDragZone(start, size, edgePx)
+            if (startZone == null) return@awaitEachGesture
+            // 带内：本层接管到底（消费 down 与后续 move），下层（Robot/缩略）不再收到
+            down.consume()
+            var last = start
+            var acc = Offset.Zero
+            var zone: Panel? = null
+            val engagePx = 14.dp.toPx()
+            val abandonPx = 28.dp.toPx()
+            val tapSlopPx = 10.dp.toPx()
+            while (true) {
+                val event = awaitPointerEvent()
+                val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                change.consume()
+                val moved = change.position - last
+                acc += moved
+                last = change.position
+                if (!event.changes.any { it.pressed }) {
+                    // 松手：
+                    //  - 已进入拖拽（zone!=null）：过半保留，否则弹回收起。
+                    //  - 原地点按（累计位移 ≤ tapSlop）：= 点击边缘热区 → 动画展开。
+                    //  - 意图明确的短拉（同轴正向、位移未过 engage）：死区救援，也展开。
+                    // 手势的 await 块是受限作用域，不能直接调 suspend，动画放到组合作用域。
+                    if (zone != null) {
+                        if (reveal >= 0.5f) {
+                            animateRevealTo(1f, 170)
+                        } else {
+                            scope.launch {
+                                animate(
+                                    initialValue = reveal,
+                                    targetValue = 0f,
+                                    animationSpec = tween(170),
+                                ) { v, _ -> reveal = v }
+                                panel = null
+                            }
+                        }
+                    } else if (!debugGrid && acc.getDistance() <= tapSlopPx) {
+                        openSheet(startZone)
+                    } else if (!debugGrid &&
+                        sheetDragDominant(startZone, acc)
+                    ) {
+                        val travel = sheetDragTravel(startZone, acc)
+                        if (travel >= 0f && travel < engagePx) {
+                            openSheet(startZone)
+                        }
+                    }
+                    break
+                }
+                if (zone == null) {
+                    // 同轴拖动过 engage → 进入跟手模式（面板先挂载全收起、随指逐帧展开）
+                    if (sheetDragDominant(startZone, acc) &&
+                        sheetDragTravel(startZone, acc) >= engagePx
+                    ) {
+                        zone = startZone
+                        panel = startZone // 先挂载（此刻全收起），随后跟手指逐帧展开
+                        reveal = 0f
+                    } else if (acc.getDistance() > abandonPx) {
+                        break // 起点在带内但方向不符 / 幅度大：非抽屉手势，放弃
+                    }
+                    continue
+                }
+                val span = sheetOpenSpan(zone, sheetExtent, minSidePx)
+                reveal = (sheetDragTravel(zone, acc) / span).coerceIn(0f, 1f)
+            }
+        }
+    }
 
     BlackGlowBackground(glow = Color.White.copy(alpha = 0.04f)) {
         BoxWithConstraints(
@@ -357,85 +472,7 @@ fun PetScreen(
                 .fillMaxSize()
                 .then(
                     if (!debugGrid) {
-                        // 跟手抽屉（doc/06 §5）：手指从三向边缘按正确方向拖动时，
-                        // 整块面板沿轴向整体平移、1:1 跟随手指滑入屏内（不需要先过阈值再弹出）；
-                        // 松手过半保留、不到一半弹回收起。
-                        Modifier.pointerInput(Unit) {
-                            val minSidePx = minOf(size.width, size.height).toFloat()
-                            val edgePx = EdgeBand.toPx()
-                            awaitEachGesture {
-                                // requireUnconsumed=false：内层可点控件（debug 长按）会消费 down。
-                                // 三向开合不设独立可点控件：本手势统一承担「点按展开」与「跟手拖开」。
-                                val down = awaitFirstDown(requireUnconsumed = false)
-                                val start = down.position
-                                // 抽屉已开时不通过本手势再开新抽屉（收回交给收起钮/点外部/返回键）
-                                if (panel != null) return@awaitEachGesture
-                                // 起点必须落在三向「边缘热区带」（贴屏缘常驻窄带，见 sheetDragZone）：
-                                // 带内起手可点开、也可作拖拽起点；带外（中央宠物区）一律不响应，
-                                // 避免大面积可拖带干扰宠物交互。
-                                val startZone = sheetDragZone(start, size, edgePx)
-                                if (startZone == null) return@awaitEachGesture
-                                var last = start
-                                var acc = Offset.Zero
-                                var zone: Panel? = null
-                                val engagePx = 14.dp.toPx()
-                                val abandonPx = 28.dp.toPx()
-                                val tapSlopPx = 10.dp.toPx()
-                                while (true) {
-                                    val event = awaitPointerEvent()
-                                    val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                                    val moved = change.position - last
-                                    acc += moved
-                                    last = change.position
-                                    if (!event.changes.any { it.pressed }) {
-                                        // 松手：
-                                        //  - 已进入拖拽（zone!=null）：过半保留，否则弹回收起。
-                                        //  - 原地点按（累计位移 ≤ tapSlop）：= 点击边缘热区 → 动画展开。
-                                        //  - 意图明确的短拉（同轴正向、位移未过 engage）：死区救援，也展开。
-                                        // 手势的 await 块是受限作用域，不能直接调 suspend，动画放到组合作用域。
-                                        if (zone != null) {
-                                            if (reveal >= 0.5f) {
-                                                animateRevealTo(1f, 170)
-                                            } else {
-                                                scope.launch {
-                                                    animate(
-                                                        initialValue = reveal,
-                                                        targetValue = 0f,
-                                                        animationSpec = tween(170),
-                                                    ) { v, _ -> reveal = v }
-                                                    panel = null
-                                                }
-                                            }
-                                        } else if (!debugGrid && acc.getDistance() <= tapSlopPx) {
-                                            openSheet(startZone)
-                                        } else if (!debugGrid &&
-                                            sheetDragDominant(startZone, acc)
-                                        ) {
-                                            val travel = sheetDragTravel(startZone, acc)
-                                            if (travel >= 0f && travel < engagePx) {
-                                                openSheet(startZone)
-                                            }
-                                        }
-                                        break
-                                    }
-                                    if (zone == null) {
-                                        // 同轴拖动过 engage → 进入跟手模式（面板先挂载全收起、随指逐帧展开）
-                                        if (sheetDragDominant(startZone, acc) &&
-                                            sheetDragTravel(startZone, acc) >= engagePx
-                                        ) {
-                                            zone = startZone
-                                            panel = startZone // 先挂载（此刻全收起），随后跟手指逐帧展开
-                                            reveal = 0f
-                                        } else if (acc.getDistance() > abandonPx) {
-                                            break // 起点在带内但方向不符 / 幅度大：非抽屉手势，放弃
-                                        }
-                                        continue
-                                    }
-                                    val span = sheetOpenSpan(zone, sheetExtent, minSidePx)
-                                    reveal = (sheetDragTravel(zone, acc) / span).coerceIn(0f, 1f)
-                                }
-                            }
-                        }
+                        Modifier.pointerInput(Unit, edgeGesture)
                     } else {
                         Modifier
                     },
@@ -506,8 +543,18 @@ fun PetScreen(
             // 模型尺寸/位移由 PetRenderer 内部换算（模型≈0.30×屏直径，恒不出屏）。
             // 主环/三向把手/面板均在其上层 overlay——宠物走到环带、箭头下方重叠属预期。
             // petAlpha 控制 BootStage.Pet 揭示。
-            // 行为循环闸（doc/07 §5 / 08 §4）：前台 + 已揭示宠物 + 无面板/无 debug overlay 才跑
-            val livingRunning = appActive && stage >= BootStage.Pet && panel == null && !debugGrid
+            // ROBOT 模式：只有中央宠物层让位给 Robot（宠物变成底部缩略）；
+            // **OSD 主环保留**：Robot 展开时属性环形进度条照样可读（doc/10 §4.1 修订）。
+            val isRobot = faceMode == FaceMode.ROBOT
+            // 游走宠物在 Robot 展开时退场（同时省电：FSM 主循环停，D5）
+            val petFactor = if (isRobot) 0f else 1f
+            // 底向把手让位：该位置（handleR）由「收回宠物」缩略按钮接管，避免叠在一起
+            val bottomHandleFactor = if (isRobot) 0f else 1f
+
+            // 行为循环闸（doc/07 §5 / 08 §4）：前台 + 已揭示宠物 + 无面板/无 debug overlay 才跑；
+            // 2.0：ROBOT 模式下宠物只是底部图标（静态帧），FSM 主循环停（省电，D5）
+            val livingRunning =
+                appActive && stage >= BootStage.Pet && panel == null && !debugGrid && !isRobot
             val ctx = LocalContext.current
             val petRepo = remember(ctx) { SpriteRepository(ctx.assets) }
             val petSheet = remember(petRepo, profile.petId) {
@@ -516,7 +563,7 @@ fun PetScreen(
             Box(
                 Modifier
                     .align(Alignment.Center)
-                    .alpha(petAlpha)
+                    .alpha(petAlpha * petFactor)
                     .size(metrics.minSide)
                     // 全屏圆裁切（物理屏圆）；宠物不出屏由 FSM clamp + 渲染映射保证，clip 仅为保险
                     .clip(CircleShape)
@@ -560,10 +607,15 @@ fun PetScreen(
                     fx = currentFx,
                     // 2.0：持久态情绪形变与表情同源（短演出覆盖优先，见 PetLivingSprite）
                     mood = mood,
+                    // ROBOT 期间 this coroutine 就是停的；用 faceMode 当重启锚点，
+                    // 保证每次切回 COMPANION 行走循环必定重新起跑（不会定格不走）
+                    wakeKey = faceMode,
                 )
             }
 
             // ── 主环（贴边刻度环；段起点图标在环内侧）──────────
+            // ROBOT 全屏时照旧显示：Robot 本体被 [RobotTokens.FULL_SIZE_FACTOR] 收在 r≈71dp，
+            // 与 r=111dp 的环互不遮挡，属性进度始终可读。
             Box(
                 Modifier
                     .align(Alignment.Center)
@@ -595,7 +647,7 @@ fun PetScreen(
                 Modifier
                     .align(Alignment.Center)
                     .offset(y = handleR)
-                    .alpha(bottomAlpha),
+                    .alpha(bottomAlpha * bottomHandleFactor),
             ) {
                 EdgeHint(ChevronDir.Up)
             }
@@ -612,19 +664,80 @@ fun PetScreen(
             // 位置沿用原状态图标行半径（iconRowR）；边长 = 屏短边 × RobotTokens.SIZE_FACTOR。
             // 异常状态不再用图标表达，改由表情的情绪表达（M18.S2 接 MoodEngine 后为真实情绪）。
             // 常动（D4）：只在「不可见」时暂停 —— 退后台 / 抽屉面板打开 / debug 覆盖屏。
-            Box(
-                Modifier
-                    .align(Alignment.Center)
-                    .offset(y = -metrics.iconRowR)
-                    .alpha(statusAlpha),
-                contentAlignment = Alignment.Center,
-            ) {
-                RobotFace(
-                    mood = mood.toGrokMood(),
-                    size = metrics.robotFaceSize(),
-                    paused = !appActive || panel != null || debugGrid,
-                    contentDescription = stringResource(R.string.robot_face_cd),
+            if (!isRobot) {
+                Box(
+                    Modifier
+                        .align(Alignment.Center)
+                        .offset(y = -metrics.iconRowR)
+                        .alpha(statusAlpha)
+                        // 视觉尺寸 = robotFaceSize()（34.5dp），**热区放大到 44dp**：
+                        // 手表上手指点 34dp 偏小，热区放大不影响观感（内容居中）。
+                        .size(metrics.dp(44.dp))
+                        // 2.0：点小表情 → 展开为全屏 Robot（doc/10 §4.1）
+                        .clickable { faceMode = FaceMode.ROBOT },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    RobotFace(
+                        mood = mood.toGrokMood(),
+                        size = metrics.robotFaceSize(),
+                        paused = !appActive || panel != null || debugGrid,
+                        contentDescription = stringResource(R.string.robot_face_cd),
+                    )
+                }
+            }
+
+            // ── ROBOT 模式：表情居中（留白，不撑满）+ 底部中央宠物缩略（doc/10 §4.1；M19.S1 直切，动画在 M20）──
+            // 本体边长 = minSide × FULL_SIZE_FACTOR（230dp 屏 ≈ 143dp，r≈71dp）：
+            // 四周留出余量给 OSD 主环（r=111dp）与三向把手（r=89dp），也让弹跳/旋转有余地，
+            // 观感贴近 Demo 里那个会蹦跶的小家伙；调比例只改 RobotTokens.FULL_SIZE_FACTOR。
+            // 宠物缩略与常驻小表情共享 RobotTokens.SIZE_FACTOR，位置沿用底向把手半径。
+            if (isRobot) {
+                Box(
+                    Modifier
+                        .align(Alignment.Center)
+                        .size(metrics.robotFullFaceSize()),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    RobotFace(
+                        mood = mood.toGrokMood(),
+                        // 全屏态：眼随手指（库自带 pointerInput，不参与业务判定，doc/10 §4.3）
+                        followPointer = true,
+                        paused = !appActive || panel != null || debugGrid,
+                        contentDescription = stringResource(R.string.robot_face_cd),
+                        action = robotAction,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+                // 娱乐手势层：**只覆盖「屏内 − 边缘带」的内圈**（几何隔离）。
+                // 边缘带压根不在本层的 hit 范围内 → 三向抽屉天然不受影响，无需矩形规避；
+                // 且它是最外层父节点（根手势）的子节点，能先于抽屉手势拿到未消费的 down。
+                Box(
+                    Modifier
+                        .align(Alignment.Center)
+                        .size(metrics.minSide - metrics.edgeBand * 2)
+                        .robotPlayGestures(enabled = panel == null && !debugGrid) { gesture ->
+                            amuseNonce += 1
+                            // 表现层每次都给：动效 + 情绪瞬态（不受属性冷却限制）
+                            gesture.toOneShot()?.let { robotAction = RobotAction(it, amuseNonce) }
+                            onAmuse(gesture)
+                        },
                 )
+                Box(
+                    Modifier
+                        .align(Alignment.Center)
+                        // 不再用 handleR（89dp，整个按钮泡在底向边缘带里 → 点它会顺带拖开操作面板）；
+                        // 位置由 robotThumbOffsetY() 统一算出「屏心 → 边缘带内侧」的安全位（≈61.75dp）。
+                        .offset(y = metrics.robotThumbOffsetY())
+                        .size(metrics.robotFaceSize())
+                        .clickable { faceMode = FaceMode.COMPANION },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    PetPoseThumb(
+                        sheet = petSheet,
+                        modifier = Modifier.fillMaxSize(),
+                        contentDescription = stringResource(R.string.pet_thumb_cd),
+                    )
+                }
             }
 
             // ── Overlay 层（置顶，互斥）────────────────────────

@@ -24,6 +24,7 @@ import com.lollipop.tamagotchi.core.attribute.PlayType
 import com.lollipop.tamagotchi.core.attribute.ToyType
 import com.lollipop.tamagotchi.data.store.PetState
 import com.lollipop.tamagotchi.data.time.SystemClock
+import com.lollipop.tamagotchi.domain.engine.ActionRule
 import com.lollipop.tamagotchi.domain.engine.ActionType
 import com.lollipop.tamagotchi.domain.engine.PetActions
 import com.lollipop.tamagotchi.domain.engine.SettleEngine
@@ -40,6 +41,8 @@ import com.lollipop.tamagotchi.presentation.base.BaseActivity
 import com.lollipop.tamagotchi.presentation.boot.BootLog
 import com.lollipop.tamagotchi.presentation.boot.BootStage
 import com.lollipop.tamagotchi.presentation.screen.setup.PetDetailActivity
+import com.lollipop.tamagotchi.presentation.face.RobotGesture
+import com.lollipop.tamagotchi.presentation.face.toMoodEvent
 import com.lollipop.tamagotchi.presentation.screen.setup.SetupProfileScreen
 import com.lollipop.tamagotchi.presentation.screen.OnlineEvent
 import kotlinx.coroutines.Dispatchers
@@ -123,6 +126,8 @@ private fun EntryFlow(
     // 2.0 / doc/10 §3：情绪（运行时状态，不落盘 D2）。初态 SLEEP，结算完成后由 onBoot 落真实情绪；
     // 「应用停止即结束」= 只活在本组合层，ON_STOP 随组合销毁，下次启动重新 onBoot。
     var mood by remember { mutableStateOf(MoodEngine.BOOT) }
+    // 2.0 / doc/10 §3.3：逗弄节流（运行时，不落盘 —— 全屏 Robot 手势极易连发，属性层必须挡）
+    var lastAmuseAt by remember { mutableLongStateOf(0L) }
 
     suspend fun runSettle(tag: String, force: Boolean) {
         val cur = profile ?: return
@@ -189,6 +194,30 @@ private fun EntryFlow(
             } ?: return@launch
             // 2.0：动作命中 → 情绪瞬态（喂食→HAPPY / 玩耍→PLAYFUL …），到期自行回落
             mood = MoodEngine.onEvent(mood, MoodEvent.of(type), result.profile, now)
+            lastActionEvent = ActionEvent(id = fxSeq.next(), result = result)
+        }
+    }
+
+    /**
+     * 2.0 逗弄（doc/10 §3.3）：全屏 Robot 的点 / 滑 / 长按。
+     *
+     * **两层反馈**：① 表现层（情绪瞬态 + 动效）**每次都给**，不受任何限制——连点没反应很怪；
+     * ② 属性层与抚摸/玩耍同链路（`PetActions.onAmuse`），受 [ActionRule.AMUSE_COOLDOWN_MS] 节流与
+     * 「心情已满」限制，防「刷 Robot 白嫖心情」。
+     */
+    fun performAmuse(gesture: RobotGesture) {
+        val cur = profile ?: return
+        val now = clock.nowMillis()
+        mood = MoodEngine.onEvent(mood, gesture.toMoodEvent(), cur, now)
+        if (now - lastAmuseAt < ActionRule.AMUSE_COOLDOWN_MS) return
+        lastAmuseAt = now
+        scope.launch {
+            val snapshot = profile ?: return@launch
+            val result = withContext(Dispatchers.Default) {
+                val r = PetActions.onAmuse(snapshot, now, sessionLog)
+                if (r != null) PetState.set(r.profile)
+                r
+            } ?: return@launch
             lastActionEvent = ActionEvent(id = fxSeq.next(), result = result)
         }
     }
@@ -320,6 +349,7 @@ private fun EntryFlow(
             onlineReview = onlineReview,
             sessionLog = sessionLog,
             mood = mood.current,
+            onAmuse = { gesture -> performAmuse(gesture) },
         )
     }
 }

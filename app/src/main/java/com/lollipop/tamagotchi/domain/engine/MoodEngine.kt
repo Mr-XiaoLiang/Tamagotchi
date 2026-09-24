@@ -48,6 +48,12 @@ enum class MoodEvent(
     STUDY(Mood.THINKING, 6_000L),
     /** 在线随机事件：先好奇地张望（doc/03 §2.3）。 */
     RANDOM(Mood.CURIOUS, 5_000L),
+
+    // ── 2.0 逗弄（doc/10 §3.3）：全屏 Robot 的娱乐交互 ──────────
+    AMUSE_TAP(Mood.PLAYFUL, 4_000L),
+    AMUSE_SPIN(Mood.EXCITED, 4_000L),
+    AMUSE_BURST(Mood.HAPPY, 4_000L),
+    AMUSE_HOLD(Mood.THINKING, 5_000L),
     ;
 
     companion object {

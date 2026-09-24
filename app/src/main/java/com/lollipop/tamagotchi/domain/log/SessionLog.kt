@@ -21,6 +21,8 @@ enum class EventLogType {
     ACTION_HEAL,
     ACTION_CLEAN,
     ACTION_STUDY,
+    /** 2.0 逗弄（doc/10 §3.3）：全屏 Robot 的点/滑/长按，与抚摸、玩耍同性质的正式互动。 */
+    ACTION_AMUSE,
     RANDOM_EVENT,
     STATE_CHANGE,
     WAKE,

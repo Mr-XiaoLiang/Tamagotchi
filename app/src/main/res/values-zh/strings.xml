@@ -7,6 +7,8 @@
     <string name="status_title">状态 · %1$s</string>
     <!-- 2.0 常驻 Robot 表情（doc/10）：取代原状态图标行 -->
     <string name="robot_face_cd">伙伴表情</string>
+    <!-- 2.0（doc/10 §4.1）：全屏表情模式下钉在屏幕底部中央的宠物缩略，点它回游走 -->
+    <string name="pet_thumb_cd">回到宠物</string>
 
     <string name="actions_title">操作</string>
     <string name="action_status">状态</string>

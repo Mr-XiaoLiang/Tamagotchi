@@ -2,6 +2,7 @@ package com.lollipop.tamagotchi.presentation.face
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
@@ -18,6 +19,21 @@ import com.lollipop.grokbot.rememberGrokBotState
 import com.lollipop.tamagotchi.presentation.theme.ColorToken
 
 /**
+ * 一次性动作（doc/10 §3.3）：点/滑命中时由宿主下发，交给 [GrokBotState] 播一次。
+ * 与「情绪」正交——情绪换脸、动作是动作，互不打断。
+ */
+enum class RobotOneShot { BOUNCE, SPIN, BURST }
+
+/**
+ * 一次性动作指令：[nonce] 单调自增，连续同类型也能可靠重播
+ * （与 `PetFx.nonce` 同一手法）。
+ */
+data class RobotAction(
+    val shot: RobotOneShot,
+    val nonce: Long,
+)
+
+/**
  * 常驻 Robot 表情（doc/10 §2）。
  *
  * 反色设计：**脸用近白**（`ColorToken.Accent`）、**眼睛用黑**（`ColorToken.OnAccent`），
@@ -31,6 +47,7 @@ import com.lollipop.tamagotchi.presentation.theme.ColorToken
  * @param mood 当前要显示的情绪（M18.S2 起由 `MoodEngine` 的 `Mood` 映射而来）。
  * @param size 表情边长；不传则填满约束（见 [GrokBot]）。
  * @param shape 体型（D7：随种类/性格，无法判定退回 [GrokShape.BLOB]）。
+ * @param action 一次性动作指令（M19.S2：全屏娱乐交互）；按 [RobotAction.nonce] 去重重播。
  */
 @Composable
 fun RobotFace(
@@ -41,6 +58,7 @@ fun RobotFace(
     followPointer: Boolean = false,
     shape: GrokShape = GrokShape.BLOB,
     contentDescription: String? = null,
+    action: RobotAction? = null,
 ) {
     val config = remember(shape, paused, followPointer, mood) {
         GrokBotConfig(
@@ -58,6 +76,14 @@ fun RobotFace(
         )
     }
     val state = rememberGrokBotState(config)
+    LaunchedEffect(action) {
+        val shot = action?.shot ?: return@LaunchedEffect
+        when (shot) {
+            RobotOneShot.BOUNCE -> state.bounce()
+            RobotOneShot.SPIN -> state.spin()
+            RobotOneShot.BURST -> state.burst()
+        }
+    }
     GrokBot(
         modifier = modifier
             .then(if (size != null) Modifier.size(size) else Modifier)

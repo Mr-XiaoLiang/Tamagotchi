@@ -91,6 +91,12 @@ object ActionRule {
     /** 学习冷却 5s（doc/01 §6.2 / §10；与喂/玩/抚/清洁统一最小间隔）。 */
     const val STUDY_COOLDOWN_MS: Long = 5 * 1000L
 
+    /**
+     * 逗弄节流（doc/10 §3.3）：比抚摸长得多——全屏 Robot 的手势极易连发，
+     * 属性层必须挡住，只留表现层每次响应。运行时节流，不进 `Cooldowns`（不动 schema）。
+     */
+    const val AMUSE_COOLDOWN_MS: Long = 30 * 1000L
+
     /** 口味契合加成（doc/01 §7：额外 +10%）。 */
     const val FLAVOR_BONUS: Float = 1.1f
 
@@ -130,6 +136,16 @@ object ActionRule {
 
     fun petDenied(profile: PetProfile, now: Long): ActionDenied? =
         cooldown(profile.cooldowns.petUntil, now)
+
+    /**
+     * 逗弄（2.0 / doc/10 §3.3）：**冷却不落盘**——它由全屏 Robot 的连点触发，属于表现层节奏，
+     * 由 UI 在运行时节流（[AMUSE_COOLDOWN_MS]）；引擎侧只挡「心情已到顶」。
+     */
+    fun amuseDenied(profile: PetProfile): ActionDenied? {
+        val mood = profile.attributes[AttributeId.MOOD]
+        if (mood >= PLAY_MOOD_CEILING) return ActionDenied.AttributeCeiling(AttributeId.MOOD, mood)
+        return null
+    }
 
     fun cleanDenied(profile: PetProfile, now: Long): ActionDenied? {
         cooldown(profile.cooldowns.cleanUntil, now)?.let { return it }
@@ -370,6 +386,31 @@ object PetActions {
     }
 
     /**
+     * 逗弄（2.0 / doc/10 §3.3）：全屏 Robot 的点击 / 滑动 / 长按——**与抚摸、玩耍同性质的正式互动**，
+     * 走同一套数值通道（特质缩放 × 边际递减 × 浮动），避免「刷 Robot 就能白嫖心情」。
+     *
+     * 数值方向：心情小幅↑（随急躁放大）、饱食微↓（玩闹消耗）；**不产生新属性、不写冷却、不进里程碑**
+     * （冷却由 UI 运行时节流，见 [ActionRule.AMUSE_COOLDOWN_MS]；schema 不动）。
+     * 心情已到顶（≥ [ActionRule.PLAY_MOOD_CEILING]）→ 返回 null（属性层不再给）。
+     */
+    fun onAmuse(
+        profile: PetProfile,
+        now: Long,
+        log: SessionLog? = null,
+    ): ActionResult? {
+        if (ActionRule.amuseDenied(profile) != null) return null
+        val cur = profile.attributes
+        val moodGain = ActionRule.diminishedGain(
+            traitScale(AMUSE_MOOD_GAIN, profile.personality.traits.temper, TEMPER_SLOPE), cur[MOOD])
+        val attrs = cur
+            .set(MOOD, cur[MOOD] + jitter(moodGain))
+            .set(SAT, cur[SAT] + jitter(-AMUSE_SAT_COST))
+        val after = withSadRecovery(profile, attrs)
+        return finish(profile, now, after, ActionHint.EXCITED,
+            null, EventLogType.ACTION_AMUSE, log, null)
+    }
+
+    /**
      * 治疗：仅 SICK 可用；health +40（固定，clamp 100）并结束 SICK（→ IDLE）；耗少量饱食。
      * 全部经 [jitter] 浮动。无冷却字段（治愈即不可再点）。成功 stats.heal +1。
      */
@@ -441,6 +482,10 @@ object PetActions {
     }
 
     private const val PET_MOOD_GAIN = 5f
+
+    /** 逗弄：心情增益（比抚摸小——极易连发）与饱食消耗。 */
+    private const val AMUSE_MOOD_GAIN = 2.5f
+    private const val AMUSE_SAT_COST = 0.5f
 
     private const val CLEAN_HYGIENE_GAIN = 35f
     private const val CLEAN_SAT_COST = 3f

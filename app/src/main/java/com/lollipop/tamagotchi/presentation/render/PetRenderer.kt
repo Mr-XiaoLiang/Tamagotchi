@@ -240,6 +240,9 @@ private fun restingPose(profile: PetProfile): LivingPose {
  *   宠物位移范围与恒不出屏由 FSM clamp（R=1）+ 本组件映射（扣模型半径/呼吸余量）保证。
  * @param mood 当前情绪（2.0 / doc/10 D6）：与 Robot 表情同源，驱动持久态形变；
  *   短演出（[fx]）的情绪覆盖优先于它。
+ * @param wakeKey 取值变化即**强制重启 tick 循环**（2.0 修 bug）：ROBOT 模式下 [running] 为 false、
+ *   主循环协程整体退出，回 COMPANION 时需要一个确定的重启锚点，否则可能出现「切回来宠物定格不动」。
+ *   调用方传 `faceMode`（每次模式切换都会变号一次），正常来回切换不影响既有行为。
  */
 @Composable
 fun PetLivingSprite(
@@ -249,6 +252,7 @@ fun PetLivingSprite(
     modifier: Modifier = Modifier,
     fx: PetFx? = null,
     mood: Mood = Mood.IDLE,
+    wakeKey: Any? = null,
 ) {
     val seed = profile.personality.seed
     val fsm = remember(seed) { BehaviorFSM(seed = seed) }
@@ -293,7 +297,9 @@ fun PetLivingSprite(
         pendingFx = fx
     }
 
-    LaunchedEffect(fsm, running, profile) {
+    // 主循环闸：[running] 为假即整体退出协程（0 CPU）；[wakeKey] 变化必重启 —— ROBOT 期间循环是
+    // 退出的，回到 COMPANION 靠这个锚点保证一定重新起跑（见 [PetLivingSprite.wakeKey]）。
+    LaunchedEffect(fsm, running, profile, wakeKey) {
         if (!running) return@LaunchedEffect
         while (true) {
             val now = System.currentTimeMillis()
