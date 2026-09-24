@@ -12,8 +12,12 @@ import androidx.compose.ui.unit.dp
  * 所有响应式尺寸都从 [ScreenMetrics] 取值，**调参只改 [AdaptTokens] 一处**，
  * 避免「适配调试 = 重构」：换设备宽度 / 调边距时，无需回到各业务布局里翻公式。
  *
+ * **口径（M20.S4 起）**：界面一律跑在 [WatchStage] 的 1:1 圆形舞台里，本文件量到的
+ * 「屏」就是舞台（短边恒 = [AdaptTokens.DESIGN_WIDTH]），不再是真实物理屏 —— 手机/平板
+ * 这类非 1:1 屏由舞台**整体等比缩放**消化，业务不该、也不会再按真实屏宽放大元素（详见 Stage.kt）。
+ *
  * - [ScreenMetrics.radius] / [ScreenMetrics.ringOuter] / [ScreenMetrics.handleR] / [ScreenMetrics.iconRowR]
- *   由真实屏宽（短边）等比推导，主屏主环、三向把手、状态图标行随之缩放。
+ *   由舞台短边等比推导，主屏主环、三向把手、状态图标行随之缩放。
  * - [ScreenMetrics.scale] 仅随屏宽「放大」（下限 1.0，不缩小，护住小屏 ≥30dp 触控热区），
  *   固定尺寸（图标/按钮）经 [ScreenMetrics.dp] 放大以填充大屏；230dp 基准屏下恒为 1.0，观感不变。
  */
@@ -78,9 +82,17 @@ data class ScreenMetrics(
     fun dp(base: Dp): Dp = base * scale
 }
 
-/** 读取并缓存当前屏幕尺寸推导的 [ScreenMetrics]（按屏幕宽高变化重算）。 */
+/**
+ * 读取当前尺寸口径的 [ScreenMetrics]。
+ *
+ * **在 [WatchStage] 舞台内一律返回舞台口径**（短边恒 = [AdaptTokens.DESIGN_WIDTH]，
+ * `scale` 恒 1.0）：界面已被锁进 1:1 圆里整体缩放，业务不许再按真实屏幕放大元素，
+ * 否则「大屏」会把半径/留白二次拉伸 —— 缩放只该发生在舞台那一次。
+ * 舞台外（未套 [WatchStage] 的宿主）才退回真实屏幕推导。
+ */
 @Composable
 fun screenMetrics(): ScreenMetrics {
+    LocalStageMetrics.current?.let { return it }
     val config = LocalConfiguration.current
     return remember(config.screenWidthDp, config.screenHeightDp) {
         ScreenMetrics(config.screenWidthDp.dp, config.screenHeightDp.dp)

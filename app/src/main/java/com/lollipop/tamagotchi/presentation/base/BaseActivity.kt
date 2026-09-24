@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import com.lollipop.tamagotchi.R
 import com.lollipop.tamagotchi.presentation.boot.BootLog
 import com.lollipop.tamagotchi.presentation.boot.BootStage
+import com.lollipop.tamagotchi.presentation.component.WatchStage
 import com.lollipop.tamagotchi.presentation.theme.ColorToken
 import com.lollipop.tamagotchi.presentation.theme.TamagotchiTheme
 import kotlinx.coroutines.Dispatchers
@@ -88,7 +89,9 @@ abstract class BaseActivity : ComponentActivity() {
             val cv = ComposeView(this@BaseActivity).apply {
                 alpha = 0f
                 setContent {
-                    TamagotchiTheme { content(data) }
+                    // 锁进 1:1 圆形舞台、按设计 DPI 整体等比缩放（见 WatchStage）：
+                    // 手机/平板这类非 1:1 屏上还原圆表观感，且内部尺寸公式不被大屏拉伸。
+                    TamagotchiTheme { WatchStage { content(data) } }
                 }
             }
             root.addView(
