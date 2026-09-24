@@ -678,7 +678,7 @@ M18 常驻表情 + 情绪内核(可跑) → M19 全屏 Robot 互动模式(可跑
 - [x] 优先级表落地（doc/10 §3.1）：病 > 睡 > 饿 > 脏 > 闷 > 常态；**硬压制**（病/睡）不接瞬态、**软压制**（饿/脏/闷）瞬态只留 `SUPPRESSED_MS=1.5s`「一瞬」；瞬态到期回落；**初始态 = SLEEP**（`MoodEngine.BOOT`）；「应用停止即结束」= 只活组合层 State、**不落盘**（D2 已拍板，不动 `PetProfile` schema / codec）。
 - [x] 睡眠判定补**夜间作息档**（22:00~07:00）：`SettleEngine` 只落 SICK/SAD/IDLE，夜间入睡不体现在 `profile.fsmState`，只按时段判定才能与 FSM 的夜间入睡同源（doc/10 §3.1「或夜间作息档」）。
 - [x] presentation 映射 `presentation/face/MoodGrokMapping.kt`：`Mood.toGrokMood()` + `Mood.toEmotion()`。**D6 已拍板同源**：同一个 `Mood` 两处消费（`RobotFace` 表情 / `PetLivingSprite` 形变），不各算一套。
-- [ ] `presentation/face/RobotShapePicker.kt`（D7）：**移入 M20 打磨**（形状变体不影响情绪闭环）；`petId` 稳定哈希为主判据 + 性格 traits 邻域微调 + 无法判定退回 `GrokShape.BLOB`；形状建档即定，`remember(petId)` 缓存。
+- [x] `presentation/face/RobotShape.kt`（D7，**M20.S1b 已落地**）：`RobotShapePicker.pick(petId, traits)` —— FNV-1a 稳定哈希为主判据（不依赖 `String.hashCode`）+ 圆润系 8 候选 + `activity` 邻域 ±1 偏移（**clamp 贴边**，不回落 BLOB，否则最跳脱体型被好动一推就越界掉回团块）+ 空白 `petId` 退回 `GrokShape.BLOB`；形状建档即定，`remember(petId, seed)` 缓存，不写 `PetProfile`。单测 `RobotShapePickerTest` 5 例全绿。
 - [x] 接线：`EntryFlow` settle 完成（含 noOp）调 `onBoot`；`LaunchedEffect(profile)` 属性漂移即 update；瞬态到期挂**一次性 delay**（不新增常驻轮询）；动作成功 / 在线事件命中后调 `onEvent`；`PetScreen` 收 `mood: Mood` 分别喂 `RobotFace` 与 `PetLivingSprite`。
 - [x] 单测：`app/src/test/.../MoodEngineTest.kt`（12 例全绿）——初态 SLEEP、基线优先级、onBoot 迎接瞬态与负面态压制、瞬态到期回落、软/硬压制、ActionType→MoodEvent。
 
@@ -733,7 +733,10 @@ M18 常驻表情 + 情绪内核(可跑) → M19 全屏 Robot 互动模式(可跑
 - [x] **M20.S1 切换过渡动画（P0）**：Robot ⇄ 宝可梦切换改为**共享元素缩放** —— 顶部小表情与全屏 Robot 合并成**同一个 `RobotFace`**（一个 `GrokBotState`，不再两个实例互斥挂载），边长 `34.5dp ⇄ 143dp`、位置 `−iconRowR ⇄ 屏心` 都由 `robotProgress`（`ROBOT_SWITCH_MS = 280ms`）插值，切换连续不闪断；游走宠物层与底▲ 把手随同一进度淡出。展开态手势层只在完全展开后挂载（防动画中误触），收起态 44dp 热区只在 COMPANION 存在。
 - [x] **气泡优先级定案**（原「待真机确认」）：`GreetingBubble` 增 `onVisibleChange`，`PetScreen` 持有 `bubbleVisible`，Robot 手势层 `enabled` 加 `!bubbleVisible`；且宿主手势改回 `requireUnconsumed = true`（依据库源码：库内 `pointerInput` 只记录坐标、从不 consume，block 是 `while(true)` 不会触发自动吞事件），于是「点缩略 / 点气泡」这类已被消费的点击不会再顺带逗一下 Robot —— **R2 收口**。
 - [x] **M20.S1b 体型选择 D7 落地**：`presentation/face/RobotShape.kt` —— `RobotShapePicker.pick(petId, traits)` 纯函数（FNV-1a 稳定哈希 → 圆润系 8 候选；`activity` 只做 ±1 邻域偏移且 **clamp 贴边**不回落；空白 `petId` 兜底 `BLOB`）；`PetScreen` 按 `remember(petId, personality.seed)` 缓存后传给 `RobotFace(shape=…)`，不写 `PetProfile`（与 D2 一致）。`RobotShapePickerTest` 5 例全绿（稳定性 / 分布散开 / 兜底 / 缺 traits / 邻域不跨类）。
-- **M20.S2 走查与调参（P2）**：**常动**（D4）下的功耗/帧率正式走查（08 §5 口径）+ 包体增量；`AMUSE` 冷却与数值、情绪回落时长、形状映射观感真机调参；结论回写 doc/10 与 doc/01 §11。
+- [x] **M20.S2 走查前置：帧率探针**：`PetScreen.FpsProbe`（release 不可达，`isDebug` 门控）—— `withFrameNanos` 逐帧计数、500ms 窗口折算真实合成帧率，屏底小字显示。**不受 `debugGrid` 门控**（网格打开时 Robot 是 paused 的，测不到常动）。走查法：COMPANION / ROBOT 各读一次，对比即知常动成本。
+- [x] **M20.S3 记住上次视图模式**（用户要求）：`SettingsPrefs.faceModeName/setFaceModeName`（偏好 SP `settings_store`，键 `face_mode`）→ `PetActivity` 在 `injectContent(load=...)` 里读（后台线程，避开首帧磁盘读）→ `EntryFlow(initialFaceMode)` → `PetScreen(initialFaceMode, onFaceModeChange)`，切换即 `LaunchedEffect` + `Dispatchers.IO` 落盘（`put` 用 `commit()` 是同步写，切模式正在跑过渡动画）。**不进 `PetProfile`**（换宠/归档与它无关），data 层只存字符串、解析兜底在 `FaceMode.restore()`（未知值退 COMPANION）。单测 `SettingsStoreTest` 4 例全绿（含默认值、roundtrip、跨实例恢复、未知值兜底）。
+- [x] **M20.S3 抽屉卡顿/面板迟到修复**（真机反馈，doc/06 §5 性能注记）：① **面板懒加载常驻** —— 打开过的面板永久留在组合树，收起只是隐藏（`hiddenNode()`：照常 measure 但**不 place** ⇒ 不绘制、不吃点击，保留滚动状态）；② **预取** —— down 落热区即挂载该面板（隐藏态）+ 启动链后延 600ms 每 250ms 挂一个把三个面板预热（顺带量得 `sheetExtent`，首次拖拽即用真实行程）；③ **参数稳定化** —— `reveal` 走 getter、回调全用 `rememberUpdatedState` 固定实例，拖拽期间面板整体跳过重组（此前每帧重组整棵子树 = 跟手卡顿大头）；④ **隐藏态动画停摆** —— `ActionPanelBody` 冷却倒计时每秒 tick、`MiniProgressRing` 2Hz 呼吸均按 `active/animated` 闸掉（否则关着也每秒唤醒）。已移除 M20.S2 的 debug 帧率探针。
+- **M20.S2 走查与调参（P2，需真机数据）**：**常动**（D4）下的功耗/帧率正式走查（08 §5 口径）+ 包体增量；`AMUSE` 冷却与数值、情绪回落时长、形状映射观感真机调参；结论回写 doc/10 与 doc/01 §11。
 
 **决策记录（D1–D8 全部拍板，详见 doc/10 §6）**：D1 图标整体移除 / D2 情绪不落盘 / D3 交互改变属性（同抚摸·玩耍）/ D4 常驻常动 / D5 底部宠物静态帧 / D6 表情与 Emotion 同源 / D7 形状随种类·性格、兜底圆形 / D8 过渡动画（降级到 M20）。
 

@@ -52,8 +52,11 @@ import com.lollipop.tamagotchi.presentation.i18n.PokemonNames
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -61,6 +64,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -183,8 +187,10 @@ import com.lollipop.tamagotchi.presentation.render.toEmotion
 import com.lollipop.tamagotchi.presentation.ui.MiniProgressRing
 import com.lollipop.tamagotchi.presentation.ui.RingProgressBar
 import com.lollipop.tamagotchi.presentation.ui.drawAttributeGlyph
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -193,6 +199,12 @@ private enum class Panel { Status, Action, Quick }
 
 /** 三向把手自动隐藏时长：从箭头自身显现时刻起计，到时淡出（doc/06 §1，避免常驻观感）。 */
 private const val HANDLE_HINT_MS = 10_000L
+
+/** 启动链走完后隔多久开始预取抽屉（让揭示动画的尾帧先走完，不与它抢帧）。 */
+private const val PANEL_PREWARM_DELAY_MS = 600L
+
+/** 预取时两个抽屉之间的间隔：一次只挂一个，把首次组合的开销摊到不同帧。 */
+private const val PANEL_PREWARM_GAP_MS = 250L
 
 /**
  * 三向「边缘热区带」带深：贴屏缘的常驻不可见窄带，同时是「点按展开」与「跟手拖拽」的
@@ -260,6 +272,13 @@ fun PetScreen(
      * 与抚摸、玩耍同性质的正式互动（D3）——属性层由 `EntryFlow` 走冷却与收益规则。
      */
     onAmuse: (RobotGesture) -> Unit = {},
+    /**
+     * 2.0 / doc/10 §4.1：主屏视图模式初值 —— 上次退出时的那一屏（由偏好 SP 恢复）。
+     * 只在首次组合生效，之后由用户手势决定。
+     */
+    initialFaceMode: FaceMode = FaceMode.COMPANION,
+    /** 视图模式一变就落盘（下次冷启动恢复）；调用方保证不卡 UI（本屏已在 IO 线程调用）。 */
+    onFaceModeChange: (FaceMode) -> Unit = {},
 ) {
     var stage by remember { mutableStateOf(BootStage.Shell) }
     // 当前挂载面板：null=主屏；非 null=抽屉在「拖出中 / 展开动画 / 全开 / 收回动画」任一阶段
@@ -272,8 +291,12 @@ fun PetScreen(
     // Debug 构建（M2.S1）：中央活动区长按进入切片核对屏（release 不可达）
     var debugGrid by remember { mutableStateOf(false) }
     // 2.0 / doc/10 §4.1：主屏「谁在当脸」——COMPANION 宠物游走 / ROBOT 表情全屏。
-    // 运行时状态，不进 PetProfile（同情绪），也不新开 Activity。
-    var faceMode by remember { mutableStateOf(FaceMode.COMPANION) }
+    // 运行时状态，不进 PetProfile（同情绪），也不新开 Activity；**但跨冷启动记住**（偏好 SP）。
+    var faceMode by remember { mutableStateOf(initialFaceMode) }
+    // 落盘：SP 用 commit（同步磁盘写），切到 IO 线程，别在切换动画那几帧上卡 UI 线程。
+    LaunchedEffect(faceMode) {
+        withContext(Dispatchers.IO) { onFaceModeChange(faceMode) }
+    }
     // 2.0：全屏 Robot 的一次性动作指令（弹跳/旋转/迸发），nonce 自增去重；见 RobotPlay。
     var robotAction by remember { mutableStateOf<RobotAction?>(null) }
     var amuseNonce by remember { mutableLongStateOf(0L) }
@@ -371,6 +394,52 @@ fun PetScreen(
         currentFx = ev.petEvent.toPetFx(ev.nonce, ctx)
     }
 
+    // ── 抽屉「懒加载常驻」──────────────────────────────────────────────
+    // 首次打开某个面板，要在同一帧里完成「整棵子树首次组合 + 首次测量」，那一帧必然是长帧 ——
+    // 真机表现就是「起手一顿、面板迟到半拍」。故**打开过的面板永久留在组合树里**：
+    // 收起只是隐藏（[Modifier.hiddenNode]：不放置 = 不绘制、不吃点击），再次打开即时可见；
+    // 代价只是三个面板的组合节点与滚动状态常驻，内存很小（doc/06 §5 性能注记）。
+    val everOpened = remember { mutableStateListOf<Panel>() }
+    LaunchedEffect(panel) {
+        val p = panel ?: return@LaunchedEffect
+        if (!everOpened.contains(p)) everOpened.add(p)
+    }
+
+    // ── 面板参数稳定化（抽屉跟手不掉帧的另一半）──────────────────────────
+    // 拖拽时 reveal 每帧写 → 本屏每帧重组；若这些回调每次重组都是**新 lambda 实例**，
+    // OverlayLayer 的参数就不等价 → 整棵面板子树（RoundList 几十项）跟着每帧重组，
+    // 这才是「跟手卡顿」的大头。固定实例、内部再取最新值后，面板可整体跳过重组，
+    // 只有 graphicsLayer 读 reveal 更新位移。
+    val curOnAction = rememberUpdatedState(onAction)
+    val stableOnAction: (ActionType, FoodType?, ToyType?) -> Unit = remember {
+        { type, food, toy -> curOnAction.value(type, food, toy) }
+    }
+    val curOnFormSwitch = rememberUpdatedState(onFormSwitch)
+    val stableOnFormSwitch: (FormMode) -> Unit = remember { { curOnFormSwitch.value(it) } }
+    // onResetProfile 的「有没有」本身是业务语义（debug 才显示「重开档」），null 必须保留
+    val hasReset = onResetProfile != null
+    val curOnReset = rememberUpdatedState(onResetProfile)
+    val stableOnReset: (() -> Unit)? = remember(hasReset) {
+        if (!hasReset) null else { { curOnReset.value?.invoke() } }
+    }
+    val stableOnDismiss: () -> Unit = remember { { closeSheet() } }
+    val stableOnShowStatus: () -> Unit = remember { { swapToPanel(Panel.Status) } }
+    // reveal 走 getter：面板本体在 graphicsLayer 里读最新值，不因此重组
+    val revealProvider: () -> Float = remember { { reveal } }
+
+    // 冷启动空闲预取（懒加载常驻的另一半）：启动链走完后，把三个抽屉**逐个、分帧**挂进树
+    // （隐藏态），不跟揭示动画抢帧。收益两条：
+    //  1) 首次拖/点抽屉也不必现搭 —— 「起手一顿、面板迟到半拍」彻底消失；
+    //  2) 顺带量得各面板满行程写进 sheetExtent，首次拖拽就用真实行程换算（此前靠屏径近似）。
+    LaunchedEffect(stage) {
+        if (stage < BootStage.Settle) return@LaunchedEffect
+        delay(PANEL_PREWARM_DELAY_MS)
+        Panel.values().forEach { p ->
+            if (!everOpened.contains(p)) everOpened.add(p)
+            delay(PANEL_PREWARM_GAP_MS)
+        }
+    }
+
     LaunchedEffect(Unit) {
         ShellBridge.reveal { stage = it }
         onSettleReady()
@@ -408,6 +477,11 @@ fun PetScreen(
             // 避免大面积可拖带干扰宠物交互。
             val startZone = sheetDragZone(start, size, edgePx)
             if (startZone == null) return@awaitEachGesture
+            // 预挂载（懒加载常驻的「预取」）：down 一落在抽屉热区就把该面板挂进树（隐藏态），
+            // 于是「整棵子树首次组合 + 首次测量」发生在手指移动到 engage 阈值（或抬手）这段
+            // 空档里，而不是等真要显示那一帧才现搭 —— 后者正是真机上「起手一顿、面板迟到半拍」
+            // 的来源。隐藏态不绘制、不吃点击（见 hiddenNode）。
+            if (!everOpened.contains(startZone)) everOpened.add(startZone)
             // 带内：本层接管到底（消费 down 与后续 move），下层（Robot/缩略）不再收到
             down.consume()
             var last = start
@@ -771,22 +845,26 @@ fun PetScreen(
             // ── Overlay 层（置顶，互斥）────────────────────────
             // 面板挂载 = panel 非空；reveal（0..1）决定整块面板平移出/入屏的程度。
             // reveal 以 lambda 传给 graphicsLayer，只触发重绘、不引发整树重组。
+            // 常驻渲染：已打开过的面板全部在树里，靠 [visible] 决定显示/隐藏（见 everOpened 注释）
             val mounted = panel
-            if (mounted != null) {
-                OverlayLayer(
-                    p = mounted,
-                    profile = profile,
-                    settleSummary = settleSummary,
-                    onlineReview = onlineReview,
-                    sessionLog = sessionLog,
-                    onResetProfile = onResetProfile,
-                    reveal = { reveal },
-                    sheetExtent = sheetExtent,
-                    onDismiss = { closeSheet() },
-                    onAction = onAction,
-                    onShowStatus = { swapToPanel(Panel.Status) },
-                    onFormSwitch = onFormSwitch,
-                )
+            everOpened.forEach { p ->
+                key(p) {
+                    OverlayLayer(
+                        p = p,
+                        visible = p == mounted,
+                        profile = profile,
+                        settleSummary = settleSummary,
+                        onlineReview = onlineReview,
+                        sessionLog = sessionLog,
+                        onResetProfile = stableOnReset,
+                        reveal = revealProvider,
+                        sheetExtent = sheetExtent,
+                        onDismiss = stableOnDismiss,
+                        onAction = stableOnAction,
+                        onShowStatus = stableOnShowStatus,
+                        onFormSwitch = stableOnFormSwitch,
+                    )
+                }
             }
 
             // ── Debug 安装：M2.S1 精灵切片核对 overlay（release 不可达）──
@@ -816,6 +894,11 @@ fun PetScreen(
 @Composable
 private fun BoxScope.OverlayLayer(
     p: Panel,
+    /**
+     * 是否正在显示。**false = 常驻但隐藏**：组合与测量照旧（保留节点与滚动状态），
+     * 只是不放置 —— 既不绘制也不参与 hit-test，隐藏的抽屉不会吃掉主屏点击。
+     */
+    visible: Boolean,
     profile: PetProfile,
     settleSummary: SettlementSummary? = null,
     onlineReview: List<EventLog> = emptyList(),
@@ -834,7 +917,11 @@ private fun BoxScope.OverlayLayer(
         Panel.Action -> SheetEdge.Bottom
         Panel.Quick -> SheetEdge.End
     }
-    Box(Modifier.fillMaxSize()) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .then(if (visible) Modifier else Modifier.hiddenNode()),
+    ) {
         // 面板外任一处点按 = 收回（透明热区，不画背景；主屏内容在面板外仍可见）
         Box(
             Modifier
@@ -861,6 +948,7 @@ private fun BoxScope.OverlayLayer(
                         onlineReview = onlineReview,
                         sessionLog = sessionLog,
                         onDismiss = onDismiss,
+                        active = visible,
                     )
                 }
             }
@@ -881,6 +969,7 @@ private fun BoxScope.OverlayLayer(
                         onAction = onAction,
                         onShowStatus = onShowStatus,
                         onFormSwitch = onFormSwitch,
+                        active = visible,
                     )
                 }
             }
@@ -904,6 +993,18 @@ private fun BoxScope.OverlayLayer(
                 }
             }
         }
+    }
+}
+
+/**
+ * 常驻面板的隐藏态：**照常测量**（保留测量结果，再打开不用重测），但**不放置** ——
+ * 于是既不绘制、也不参与 hit-test（隐藏的抽屉不会吃掉主屏点击），组合节点与其内部状态
+ * （滚动位置等）都保留。用于抽屉「懒加载常驻」（doc/06 §5 性能注记）。
+ */
+private fun Modifier.hiddenNode(): Modifier = layout { measurable, constraints ->
+    measurable.measure(constraints)
+    layout(0, 0) {
+        // 故意不 place：不绘制、命中测试也找不到它
     }
 }
 
@@ -1026,6 +1127,8 @@ private fun ColumnScope.StatusPanelBody(
     onlineReview: List<EventLog> = emptyList(),
     sessionLog: SessionLog? = null,
     onDismiss: () -> Unit,
+    /** 面板是否可见（常驻隐藏态 false）：内部动画必须据此停摆，见 [MiniProgressRing.animated]。 */
+    active: Boolean = true,
 ) {
     Box(
         Modifier
@@ -1049,7 +1152,13 @@ private fun ColumnScope.StatusPanelBody(
                     // 行首图标与首页环状状态条同源字形 + 同色（低值预警转 Warn），便于按形状对照
                     icon = { AttributeIcon(meta.id, if (warn) ColorToken.Warn else color) },
                     trailing = {
-                        MiniProgressRing(value = value, color = color, warn = warn)
+                        // 隐藏（常驻）态不呼吸：见 MiniProgressRing.animated
+                        MiniProgressRing(
+                            value = value,
+                            color = color,
+                            warn = warn,
+                            animated = active,
+                        )
                     },
                     onClick = null,
                 )
@@ -1173,6 +1282,8 @@ private fun ColumnScope.ActionPanelBody(
     onAction: (type: ActionType, food: FoodType?, toy: ToyType?) -> Unit,
     onShowStatus: () -> Unit,
     onFormSwitch: (mode: FormMode) -> Unit,
+    /** 面板是否可见（常驻隐藏态 false）：冷却倒计时必须据此停摆，否则关着也每秒唤醒。 */
+    active: Boolean = true,
 ) {
     DismissStrip(dir = ChevronDir.Down, onDismiss)
     Box(
@@ -1181,10 +1292,12 @@ private fun ColumnScope.ActionPanelBody(
             .weight(1f),
     ) {
         var page by remember { mutableStateOf(ActionPage.Actions) }
-        // 面板打开期间每秒推进一次当前时刻：冷却行的剩余倒计时实时刷新（到点自动恢复实心）
+        // 面板**可见**期间每秒推进一次当前时刻：冷却行的剩余倒计时实时刷新（到点自动恢复实心）。
+        // 常驻隐藏态必须停摆（active=false）—— 否则抽屉关着也每秒唤醒一次、白重组整棵子树
+        // （doc/06 §5 性能注记；与「后台 0 CPU」同一原则）。
         var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
-        LaunchedEffect(Unit) {
-            while (true) {
+        LaunchedEffect(active) {
+            while (active) {
                 delay(1000)
                 nowMs = System.currentTimeMillis()
             }

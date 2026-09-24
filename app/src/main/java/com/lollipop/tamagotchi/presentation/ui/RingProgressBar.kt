@@ -138,13 +138,18 @@ fun MiniProgressRing(
     size: Dp = 24.dp,
     strokeWidth: Dp = 3.5.dp,
     warn: Boolean = false,
+    /**
+     * 呼吸动画是否推进。**常驻隐藏的面板必须传 false**（doc/06 §5 性能注记）：
+     * 面板为了「打开不过卡顿」会留在组合树里，若隐藏态仍 2Hz 呼吸，等于白做功还持续唤醒。
+     */
+    animated: Boolean = true,
 ) {
     val frac = (value / 100f).coerceIn(0f, 1f)
     // 低值预警（warn）：前景弧换告警色 + 2Hz 呼吸（doc/06 §2/§3.2；弧/轨为装饰性描边，允许低 alpha）
     val ringColor = if (warn) ColorToken.Warn else color
     var pulse by remember { mutableFloatStateOf(1f) }
-    LaunchedEffect(warn) {
-        while (warn) {
+    LaunchedEffect(warn, animated) {
+        while (warn && animated) {
             pulse = 0.45f
             kotlinx.coroutines.delay(500)
             pulse = 1f

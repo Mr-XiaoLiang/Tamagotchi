@@ -23,6 +23,7 @@ import com.lollipop.tamagotchi.core.attribute.FoodType
 import com.lollipop.tamagotchi.core.attribute.PlayType
 import com.lollipop.tamagotchi.core.attribute.ToyType
 import com.lollipop.tamagotchi.data.store.PetState
+import com.lollipop.tamagotchi.data.store.SettingsStore
 import com.lollipop.tamagotchi.data.time.SystemClock
 import com.lollipop.tamagotchi.domain.engine.ActionRule
 import com.lollipop.tamagotchi.domain.engine.ActionType
@@ -41,6 +42,7 @@ import com.lollipop.tamagotchi.presentation.base.BaseActivity
 import com.lollipop.tamagotchi.presentation.boot.BootLog
 import com.lollipop.tamagotchi.presentation.boot.BootStage
 import com.lollipop.tamagotchi.presentation.screen.setup.PetDetailActivity
+import com.lollipop.tamagotchi.presentation.face.FaceMode
 import com.lollipop.tamagotchi.presentation.face.RobotGesture
 import com.lollipop.tamagotchi.presentation.face.toMoodEvent
 import com.lollipop.tamagotchi.presentation.screen.setup.SetupProfileScreen
@@ -70,9 +72,12 @@ class PetActivity : BaseActivity() {
     override fun onBootStart() {
         showShell()
         val isDebug = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
-        injectContent(load = { Unit }) {
+        val settings = SettingsStore(this)
+        // 视图模式在 load 里读（后台线程，避开首帧的 SP 磁盘读）
+        injectContent(load = { settings.faceModeName() }) { faceModeName ->
             EntryFlow(
                 debugTools = isDebug,
+                initialFaceMode = FaceMode.restore(faceModeName),
             )
         }
     }
@@ -98,8 +103,12 @@ private const val EVENT_LOG_WINDOW_MS = 30 * 60_000L
 @Composable
 private fun EntryFlow(
     debugTools: Boolean,
+    /** 上次退出时的主屏视图模式（偏好 SP 恢复，见 doc/10 §4.1）；默认宠物游走。 */
+    initialFaceMode: FaceMode = FaceMode.COMPANION,
 ) {
     val ctx = LocalContext.current
+    // 偏好 SP（M17）：与宠物快照解耦；这里只用于「视图模式」的落盘
+    val settings = remember { SettingsStore(ctx) }
     PetState.attach(ctx)
     // 全程状态驱动（doc/00 §7）：首页只观察中央状态机；null=建档列表，非 null=宠物屏，切屏全自动，无页面间回传。
     val profile by PetState.profile.collectAsState()
@@ -350,6 +359,9 @@ private fun EntryFlow(
             sessionLog = sessionLog,
             mood = mood.current,
             onAmuse = { gesture -> performAmuse(gesture) },
+            // 视图模式跨冷启动记住（doc/10 §4.1）：初值来自偏好 SP，切换即异步落盘
+            initialFaceMode = initialFaceMode,
+            onFaceModeChange = { settings.setFaceModeName(it.name) },
         )
     }
 }

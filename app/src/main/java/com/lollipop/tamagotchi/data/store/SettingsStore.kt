@@ -20,10 +20,21 @@ class SettingsPrefs(private val kv: KVStore) {
     fun isSwitchBackConfirm(): Boolean = kv.get(KEY_SWITCH_CONFIRM)?.let { it == "true" } ?: true
     fun setSwitchBackConfirm(value: Boolean) { kv.put(KEY_SWITCH_CONFIRM, value.toString()) }
 
+    /**
+     * 主屏视图模式名（doc/10 §4.1）：记住上次是「宠物游走」还是「全屏 Robot」，
+     * 下次冷启动直接恢复到那一屏。
+     *
+     * **这里只存字符串**：`FaceMode` 是 presentation 的 UI 枚举，data 层不反向依赖它；
+     * 解析（含未知值兜底）由 presentation 侧 [FaceMode] 的 restore 完成。
+     */
+    fun faceModeName(): String? = kv.get(KEY_FACE_MODE)
+    fun setFaceModeName(name: String) { kv.put(KEY_FACE_MODE, name) }
+
     companion object {
         const val KEY_ARCHIVE_ENABLED = "archive_enabled"
         const val KEY_TOMB_VISIBLE = "tomb_entry_visible"
         const val KEY_SWITCH_CONFIRM = "switch_back_confirm"
+        const val KEY_FACE_MODE = "face_mode"
     }
 }
 
@@ -48,6 +59,9 @@ class SettingsStore(context: Context) : KVStore {
     fun setTombEntryVisible(value: Boolean) = prefs.setTombEntryVisible(value)
     fun isSwitchBackConfirm(): Boolean = prefs.isSwitchBackConfirm()
     fun setSwitchBackConfirm(value: Boolean) = prefs.setSwitchBackConfirm(value)
+
+    fun faceModeName(): String? = prefs.faceModeName()
+    fun setFaceModeName(name: String) = prefs.setFaceModeName(name)
 
     companion object {
         const val NAME = "settings_store"
