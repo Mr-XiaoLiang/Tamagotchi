@@ -13,3 +13,11 @@ enum class FaceMode {
     COMPANION,
     ROBOT,
 }
+
+/**
+ * COMPANION ⇄ ROBOT 切换时长（D8 / M20.S1 过渡动画）。
+ *
+ * 共享元素（同一个 Robot 表情）在这段时间里插值尺寸与位置：
+ * 34.5dp ⇄ 143dp、−iconRowR ⇄ 屏心。手表屏小，280ms 够看清又不拖沓。
+ */
+const val ROBOT_SWITCH_MS = 280

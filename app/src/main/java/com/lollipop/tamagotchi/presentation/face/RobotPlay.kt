@@ -15,8 +15,12 @@ import kotlin.math.abs
  * **边缘隔离靠几何**：调用方把本层限制在 `minSide − 2×edgeBand` 的内圈，边缘带不在 hit 范围内，
  * 三向抽屉天然不受影响（不做矩形规避，也不依赖手势层的先后顺序）。
  *
- * `requireUnconsumed = false`：`GrokBot` 在 `followPointer = true` 时自带一层 `pointerInput`
- * （眼随手指），它可能已经消费过 down —— 不能假设 down 未被消费（R2，真机验证）。
+ * `requireUnconsumed = true`：只吃**未被消费**的 down —— 于是「点底部宠物缩略 / 点问候气泡」
+ * 这类已经被上层控件消费掉的点击，不会顺带把 Robot 逗一下（R2 收口）。
+ * 依据是库源码：`GrokBot` 自带那层 `pointerInput`（`GrokFace.kt`，眼随手指）只做
+ * `awaitPointerEvent` 记录坐标、**从不 `consume`**，且它的 block 是 `while(true)` 永不结束，
+ * 也就不会触发 `awaitPointerEventScope` 结束时对未消费 change 的统一吞掉 —— 所以 down 到本层时
+ * 一定是干净的。
  */
 enum class RobotGesture { TAP, SWIPE_X, SWIPE_Y, HOLD }
 
@@ -55,7 +59,7 @@ fun Modifier.robotPlayGestures(
         val slopPx = 12.dp.toPx()
         val holdMs = 500L
         awaitEachGesture {
-            val down = awaitFirstDown(requireUnconsumed = false)
+            val down = awaitFirstDown(requireUnconsumed = true)
             down.consume()
             val start = down.position
             var gesture: RobotGesture? = null

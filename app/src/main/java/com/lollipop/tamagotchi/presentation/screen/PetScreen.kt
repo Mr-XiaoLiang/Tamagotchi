@@ -18,6 +18,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -53,6 +54,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,6 +77,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -117,6 +120,7 @@ import com.lollipop.tamagotchi.presentation.render.PetLivingSprite
 import com.lollipop.tamagotchi.presentation.face.FaceMode
 import com.lollipop.tamagotchi.presentation.face.RobotAction
 import com.lollipop.tamagotchi.presentation.face.RobotFace
+import com.lollipop.tamagotchi.presentation.face.ROBOT_SWITCH_MS
 import com.lollipop.tamagotchi.presentation.face.RobotGesture
 import com.lollipop.tamagotchi.presentation.face.robotFaceSize
 import com.lollipop.tamagotchi.presentation.face.robotFullFaceSize
@@ -272,6 +276,8 @@ fun PetScreen(
     // 2.0：全屏 Robot 的一次性动作指令（弹跳/旋转/迸发），nonce 自增去重；见 RobotPlay。
     var robotAction by remember { mutableStateOf<RobotAction?>(null) }
     var amuseNonce by remember { mutableLongStateOf(0L) }
+    // doc/10 §4.3：问候气泡展示期间由它吃掉点击（下面 Robot 手势层据此卸责）
+    var bubbleVisible by remember { mutableStateOf(false) }
     // Debug 判定：本工程未启用 BuildConfig，用应用可调试标记（debug 安装包为可调）
     val isDebug = (LocalContext.current.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
@@ -546,10 +552,18 @@ fun PetScreen(
             // ROBOT 模式：只有中央宠物层让位给 Robot（宠物变成底部缩略）；
             // **OSD 主环保留**：Robot 展开时属性环形进度条照样可读（doc/10 §4.1 修订）。
             val isRobot = faceMode == FaceMode.ROBOT
-            // 游走宠物在 Robot 展开时退场（同时省电：FSM 主循环停，D5）
-            val petFactor = if (isRobot) 0f else 1f
-            // 底向把手让位：该位置（handleR）由「收回宠物」缩略按钮接管，避免叠在一起
-            val bottomHandleFactor = if (isRobot) 0f else 1f
+            // D8 / M20.S1 过渡动画：**共享元素进度** 0 = COMPANION（顶部小表情）、1 = ROBOT（居中全屏）。
+            // 尺寸与位置都由这一个进度插值，故「小表情 ⇄ 全屏」是同一个 Composable 在缩放/平移，
+            // 不出现「旧的消失、新的冒出来」的闪断（也因此只需一个 GrokBotState）。
+            val robotProgress by animateFloatAsState(
+                targetValue = if (isRobot) 1f else 0f,
+                animationSpec = tween(ROBOT_SWITCH_MS),
+                label = "robotProgress",
+            )
+            // 游走宠物在 Robot 展开时淡出（同时省电：FSM 主循环停，D5）
+            val petFactor = 1f - robotProgress
+            // 底向把手让位：该位置由「收回宠物」缩略按钮接管，避免叠在一起
+            val bottomHandleFactor = 1f - robotProgress
 
             // 行为循环闸（doc/07 §5 / 08 §4）：前台 + 已揭示宠物 + 无面板/无 debug overlay 才跑；
             // 2.0：ROBOT 模式下宠物只是底部图标（静态帧），FSM 主循环停（省电，D5）
@@ -660,76 +674,83 @@ fun PetScreen(
                 EdgeHint(ChevronDir.Left)
             }
 
-            // ── 常驻 Robot 表情（2.0 / doc/10 §2；取代原「状态图标区」，D1 已拍板移除）──
-            // 位置沿用原状态图标行半径（iconRowR）；边长 = 屏短边 × RobotTokens.SIZE_FACTOR。
+            // ── Robot 表情：COMPANION 顶部小表情 ⇄ ROBOT 居中全屏，**同一个共享元素**（D8 / M20.S1）──
+            // 边长 34.5dp ⇄ 143dp、位置 −iconRowR ⇄ 屏心，都由 [robotProgress] 插值：
+            // 只有一个 Composable、一个 GrokBotState，动画连续不闪断（M19 直切版是两个实例互斥挂载）。
             // 异常状态不再用图标表达，改由表情的情绪表达（M18.S2 接 MoodEngine 后为真实情绪）。
             // 常动（D4）：只在「不可见」时暂停 —— 退后台 / 抽屉面板打开 / debug 覆盖屏。
+            val faceSide = lerp(metrics.robotFaceSize(), metrics.robotFullFaceSize(), robotProgress)
+            val faceOffsetY = lerp(-metrics.iconRowR, 0.dp, robotProgress)
+            Box(
+                Modifier
+                    .align(Alignment.Center)
+                    .offset(y = faceOffsetY)
+                    .alpha(statusAlpha)
+                    .size(faceSide),
+                contentAlignment = Alignment.Center,
+            ) {
+                RobotFace(
+                    mood = mood.toGrokMood(),
+                    // 全屏态才跟手指（库自带 pointerInput，不参与业务判定，doc/10 §4.3）
+                    followPointer = robotProgress > 0.5f,
+                    paused = !appActive || panel != null || debugGrid,
+                    contentDescription = stringResource(R.string.robot_face_cd),
+                    action = robotAction,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+
+            // 收起态点击热区（独立透明层，z 高于本体）：视觉 34.5dp 在表上偏小，热区放大到 44dp。
+            // 只在 COMPANION 存在 —— 展开后收回由底部宠物缩略负责，本体留给娱乐交互。
             if (!isRobot) {
                 Box(
                     Modifier
                         .align(Alignment.Center)
                         .offset(y = -metrics.iconRowR)
-                        .alpha(statusAlpha)
-                        // 视觉尺寸 = robotFaceSize()（34.5dp），**热区放大到 44dp**：
-                        // 手表上手指点 34dp 偏小，热区放大不影响观感（内容居中）。
                         .size(metrics.dp(44.dp))
-                        // 2.0：点小表情 → 展开为全屏 Robot（doc/10 §4.1）
-                        .clickable { faceMode = FaceMode.ROBOT },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    RobotFace(
-                        mood = mood.toGrokMood(),
-                        size = metrics.robotFaceSize(),
-                        paused = !appActive || panel != null || debugGrid,
-                        contentDescription = stringResource(R.string.robot_face_cd),
-                    )
-                }
+                        .clickable(
+                            // 主屏上的「图形/透明热区」一律不要水波纹（默认 ripple 是圆角矩形，
+                            // 在小方形热区上会露出一圈方块高亮边）
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { faceMode = FaceMode.ROBOT },
+                )
             }
 
-            // ── ROBOT 模式：表情居中（留白，不撑满）+ 底部中央宠物缩略（doc/10 §4.1；M19.S1 直切，动画在 M20）──
-            // 本体边长 = minSide × FULL_SIZE_FACTOR（230dp 屏 ≈ 143dp，r≈71dp）：
-            // 四周留出余量给 OSD 主环（r=111dp）与三向把手（r=89dp），也让弹跳/旋转有余地，
-            // 观感贴近 Demo 里那个会蹦跶的小家伙；调比例只改 RobotTokens.FULL_SIZE_FACTOR。
-            // 宠物缩略与常驻小表情共享 RobotTokens.SIZE_FACTOR，位置沿用底向把手半径。
+            // 展开态娱乐手势层：**只覆盖「屏内 − 边缘带」的内圈**（几何隔离）。
+            // 边缘带压根不在本层的 hit 范围内 → 三向抽屉天然不受影响，无需矩形规避。
+            // 只在完全展开后接管，避免过渡动画期间误触。
             if (isRobot) {
                 Box(
                     Modifier
                         .align(Alignment.Center)
-                        .size(metrics.robotFullFaceSize()),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    RobotFace(
-                        mood = mood.toGrokMood(),
-                        // 全屏态：眼随手指（库自带 pointerInput，不参与业务判定，doc/10 §4.3）
-                        followPointer = true,
-                        paused = !appActive || panel != null || debugGrid,
-                        contentDescription = stringResource(R.string.robot_face_cd),
-                        action = robotAction,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                }
-                // 娱乐手势层：**只覆盖「屏内 − 边缘带」的内圈**（几何隔离）。
-                // 边缘带压根不在本层的 hit 范围内 → 三向抽屉天然不受影响，无需矩形规避；
-                // 且它是最外层父节点（根手势）的子节点，能先于抽屉手势拿到未消费的 down。
-                Box(
-                    Modifier
-                        .align(Alignment.Center)
                         .size(metrics.minSide - metrics.edgeBand * 2)
-                        .robotPlayGestures(enabled = panel == null && !debugGrid) { gesture ->
+                        .robotPlayGestures(
+                            enabled = panel == null && !debugGrid && !bubbleVisible,
+                        ) { gesture ->
                             amuseNonce += 1
                             // 表现层每次都给：动效 + 情绪瞬态（不受属性冷却限制）
                             gesture.toOneShot()?.let { robotAction = RobotAction(it, amuseNonce) }
                             onAmuse(gesture)
                         },
                 )
+            }
+
+            // ── 底部宠物缩略：宠物退场后的化身，随 [robotProgress] 从屏心「落」到安全位 ──
+            // 位置由 robotThumbOffsetY() 统一算出（整体落在底向边缘带之外，点它不会拖开操作面板）。
+            if (robotProgress > 0f) {
                 Box(
                     Modifier
                         .align(Alignment.Center)
-                        // 不再用 handleR（89dp，整个按钮泡在底向边缘带里 → 点它会顺带拖开操作面板）；
-                        // 位置由 robotThumbOffsetY() 统一算出「屏心 → 边缘带内侧」的安全位（≈61.75dp）。
-                        .offset(y = metrics.robotThumbOffsetY())
+                        .offset(y = metrics.robotThumbOffsetY() * robotProgress)
                         .size(metrics.robotFaceSize())
-                        .clickable { faceMode = FaceMode.COMPANION },
+                        .alpha(robotProgress)
+                        // 同上：宠物模型是图形不是按钮，按下不要水波纹
+                        .clickable(
+                            enabled = isRobot,
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { faceMode = FaceMode.COMPANION },
                     contentAlignment = Alignment.Center,
                 ) {
                     PetPoseThumb(
@@ -775,7 +796,10 @@ fun PetScreen(
                 }
             }
             // M7.S2 迎接气泡：离线回归一次性问候（靠下浮层，点击/超时消失，避免挡宠物）
-            GreetingBubble(settleSummary = settleSummary)
+            GreetingBubble(
+                settleSummary = settleSummary,
+                onVisibleChange = { bubbleVisible = it },
+            )
         }
     }
 }
@@ -941,7 +965,11 @@ internal fun RoundHeader(title: String, closeDir: ChevronDir, onDismiss: () -> U
  * 文案走扩展函数映射（core 不引 R）。
  */
 @Composable
-private fun GreetingBubble(settleSummary: SettlementSummary?) {
+private fun GreetingBubble(
+    settleSummary: SettlementSummary?,
+    /** 气泡是否正在展示（doc/10 §4.3：展示期间由它吃掉点击，Robot 手势整层卸责）。 */
+    onVisibleChange: (Boolean) -> Unit,
+) {
     var resId by remember { mutableStateOf<Int?>(null) }
     LaunchedEffect(settleSummary) {
         if (settleSummary != null) {
@@ -950,11 +978,17 @@ private fun GreetingBubble(settleSummary: SettlementSummary?) {
             resId = null
         }
     }
+    // 与渲染同步（不要放在 LaunchedEffect 里，那会晚一帧）
+    SideEffect { onVisibleChange(resId != null) }
     if (resId != null) {
         Box(
             Modifier
                 .fillMaxSize()
-                .clickable { resId = null },
+                // 全屏透明层：按下不要全屏水波纹（主屏不是 Material 表面）
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                ) { resId = null },
             contentAlignment = Alignment.Center,
         ) {
             Box(
