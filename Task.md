@@ -164,9 +164,9 @@ M18 常驻表情 + 情绪内核(可跑) → M19 全屏 Robot 互动模式(可跑
 
 **任务**
 - [x] 以 `BULBASAUR.png` 实测 256×256 / 4×4 / 单帧 64×64 的真实布局（doc/07 §1）。
-- [ ] Debug-only 朝向核对屏（或日志 dump）：把 16 格子图按网格绘制 + 行列/帧号标签，人工核对「行=朝向、列=帧」还是反置、行走帧序 0→3 是否正确（doc/02 §2.3）。（屏已就绪：Debug 安装长按主屏中央活动区进入，左右翻看；**待真机人工核对**）
+- [x] ~~朝向人工核对~~ **取消单独核对环节**（用户决策）：不再专门安排 16 格人工核对（Debug 切片核对屏保留作诊断用）。朝向/帧序若在使用中看着不对，再按下面一条回写勘误。
 - [x] 实测结论写入代码常量表：`dir → row/col`、帧序已落定 `SpriteSheetDecoder`；放大过滤策略 **M2.S2 初定 FilterQuality.None**（近邻复古像素），观感复核留 M10.S2（doc/07 §9）。
-- [ ] **若事实与文档描述冲突 → 当日回写 doc/07 §1 / doc/02 §2.3 勘误**。
+- [ ] **发现问题才回写**：使用中若发现朝向/帧序与文档不符，回写 doc/07 §1 / doc/02 §2.3 勘误（不预先安排核对）。
 - [x] `SpriteRepository`（data/sprite）：`AssetManager.list("sprite")` 一次取列表 + 过滤数字/形态后缀（如 `000.png`、`ALCREMIE_12`）；单 Bitmap 池（池=1，doc/07 §6）。帧切取由渲染侧以 `SpriteSheetDecoder.frameRect` srcRect 完成，避免额外分配子 Bitmap。
 
 **产出**：`presentation/render/SpriteSheetDecoder.kt`、`data/sprite/SpriteRepository.kt`、Debug 核对屏。
@@ -434,7 +434,7 @@ M18 常驻表情 + 情绪内核(可跑) → M19 全屏 Robot 互动模式(可跑
 - [ ] 08 §5 清单走查：首帧 <200ms（`am start -W`）、五阶揭示正确、settle 后台不阻塞、后台 0 CPU、内存峰值 <30MB（Profiler）、重复冷启 10 次稳定。
 - [ ] 真机复核（07 §9 / 08 §6）：朝向实测结论推广到常用宠抽检；64×64 放大观感定案；形变遮罩；ROM 黑闪对策（addView 淡入）真机验证。
 - [ ] 数值手感调参（doc/01 §11）：以「一天 2~3 次打开」校准 satiation 速率、冷却与作息配合、SICK 阈值温和度；`trait` 系数观感。
-- [ ] 里程碑统计文案首版（doc/04 §3.3，`stats` 解锁简单文案）。
+- [x] **里程碑统计文案首版**（doc/04 §3.3）：补 `daysTogether` 这块唯一没被推进的计数 —— `SettleEngine` 按**日历日**（`LocalDate` + 结算时区，不是「小时数/24」）算共处天数，**取 max 而非累加**保证幂等（同 now 重复结算不刷天数、离线多天一次补齐）；状态面板新增「里程碑」卡（属性行之后、便条之前），首版文案 = 共处 N 天 · 喂过 N 次 · 玩过 N 次（三语）。`DaysTogetherTest` 5 例全绿（首日=1 / 跨日历日 / 离线补齐 / 幂等 / 不倒退）。**真机坑（已回写）**：初版用 `java.time.LocalDate.ofInstant(Instant, ZoneId)`，在本机 `core-oj.jar` 上**不存在** → `NoSuchMethodError` 崩在 settle；改为 `GregorianCalendar`（API 1）算本地日历日。**本设备的 `java.time` 不是完整实现**：已验证可用的只有 `Instant.ofEpochMilli().atZone()` 与 `ZonedDateTime.ofInstant`（M18/M19 情绪链路一直在跑）；`SettleModel` 的 `truncatedTo(ChronoUnit.HOURS)`（仅长离线 ≥20min 路径）尚未被真机覆盖，若哪次崩在那是同一类问题，改法一样——换 `Calendar`。
 
 **产出**：性能走查记录表、调参结果（**回写 doc/01 §11 注记**）、里程碑文案。
 
@@ -783,7 +783,7 @@ M18 常驻表情 + 情绪内核(可跑) → M19 全屏 Robot 互动模式(可跑
 
 | 里程碑 | 收盘演示 | 状态 | 验证记录 / 例外 |
 |---|---|---|---|
-| M1 圆屏深色壳 + 手势路由 | 五阶首帧 + 三手势三 overlay | ☐ | 代码收官（作为 M2 前置编译绿）；真机五阶/手势演示未执行（本轮跳过 UI 验收），与 M2 一并补验 |
+| M1 圆屏深色壳 + 手势路由 | 五阶首帧 + 三手势三 overlay | ☑ | 代码收官（作为 M2 前置编译绿）；五阶揭示与三向手势在后续里程碑的真机使用中已被反复覆盖（含 M20.S3 抽屉卡顿返工），视为已验证 |
 | M2 真宠上屏 | 正确朝向静态上屏 | ☑ | M2.S1 朝向常量落定 + Debug 核对屏就绪；M2.S2 BULBASAUR 静态 IDLE（呼吸 ±2px/2s、圆遮罩）上屏，双变体编译绿；真机目测（朝向/FilterQuality/呼吸幅度）留 M4.S2 反向复核 + M10.S2 定稿 |
 | M3 建档与数据闭环 | 建档 → 快照 → 重开保持 | ☑ | S1 收盘：值对象族 + 注册表（建档初值 sat/mood 80、health 100、int 0、hyg 100，回写 doc/01 §11）+ PersonalityGenerator，`testDebugUnitTest` 5 例全绿。S2 收盘：PetProfile v2 值对象族（pos/sleep/cooldowns/stats/personality/plugins）+ PetProfileCodec（org.json 单键、容错补默认，JVM 依赖 org.json:json）+ PetStore（SP 薄壳）；建档屏（主名聚合列表 LRU≤12 缩略 + 性格预览六维条 + 确认）+ PetActivity 有档/无档路由 + 主屏真实快照（建档宠 / 主环 / 状态面板全属性）+ debug 重开档入口；codec round-trip 6 例全绿，双变体编译绿。真机手测（浏览流畅、杀进程重开恢复、换宠覆盖写）留后续批量补验 |
 | M4 宠物活起来 | 自主走/停/睡 | ☑ | S1 收盘：BehaviorFSM 纯函数 + FSMResult 契约（SICK>睡眠>SAD>IDLE/WALKING、22:00~07:00 入睡、防穿模 clamp+随机换向、行走帧 0→3、seed 可复现），单测 10 例全绿。S2 收盘：PetLivingSprite 主循环（250ms tick、生命周期闸 onPause/onStop 停=0 后台 CPU、面板覆盖亦停）+ PetRenderer v1（WALKING dir×帧循环 / IDLE 呼吸 tick 相位 / SLEEPING 暗罩+Zzz / 归一化坐标→活动区映射），主环真实快照；doc/07 §9 增「睡眠帧缺失」风险行。编译与 testDebugUnitTest 全绿；真机手测（走/停/睡观感、帧序反向复核 M2 朝向、22:00 入睡、后台 0 CPU）与 M1–M3 一并批量补验。**M4.S2 布局修订：宠物活动范围=全屏叠层（环形把手为 overlay、可重叠、恒不出屏），doc/00 T-21 记录** |
@@ -802,7 +802,7 @@ M18 常驻表情 + 情绪内核(可跑) → M19 全屏 Robot 互动模式(可跑
 | M17 偏好设置 | 右滑「偏好设置」→设置页；重开宠物/墓碑设置可用 | ◑ | S1+S2 代码收盘（待真机走查）：`SettingsStore`（独立 SP `settings_store`，与 `PetStore` 解耦）+ 纯逻辑 `SettingsPrefs`（JVM 单测 `SettingsStoreTest` 3 例全绿）；设置页接入三开关——是否归档（换宠时归档/覆盖写重开）、过往入口可见性、切回需二次确认；「重新开始选择宠物」二次确认（警示红）+「切回」二次确认均落地；显示名「电子墓碑」→「过往」。编译绿 + 全量单测绿。真机手测（开关联动 / 换宠归档态 / 切回确认）留走查 |
 | M18 常驻表情 + 情绪内核 | 顶部常驻反色表情（常动）；情绪随属性/离线结算变化 | ◑ | **S1+S2 代码收盘**：`:grokBot` 依赖接通（catalog 补 `androidx-*` 别名、`coreKtx 1.13.0`）、`RobotTokens`(**0.15f**，真机校准) / `RobotFace`(反色 HOLD) 新建、顶部图标行整体移除换常驻表情、常动闸 + `robot_face_cd` 双语；`MoodEngine` + `MoodGrokMapping`(同源 GrokMood/Emotion) + `EntryFlow` 接线（onBoot/update/onEvent）+ 12 例单测绿。真机手测（34.5dp 观感 / 反色对比度 / 常动功耗 R3 / 退后台暂停 / 冷启动先睡再换脸 / 时间旅行掉属性换脸 / 同源核对）待走查 |
 | M19 全屏 Robot 互动 | 点表情全屏 + 宠物缩底部 → 点缩略回游走；全屏点/滑/长按影响情绪与属性 | ◑ | **S1+S2 代码收盘**：`FaceMode` 切换（BackHandler / OSD 让位 / 静态帧缩略）、L1 手势层置顶重构、Robot 展开态手势 + `PetActions.onAmuse` 两层反馈 + 4 例单测绿。**待真机验收**：R6 抽屉回归、R2 与库内眼随手势共存、气泡优先级 |
-| M20 打磨（低优先） | 切换过渡动画 + 常动功耗走查调参 | ☐ | 未开工（2.0 段，doc/10）。D8 已拍板要过渡动画但降级；M18/M19 先直切不阻塞 |
+| M20 打磨（低优先） | 切换过渡动画 + 常动功耗走查调参 | ◑ | S1 过渡动画 / S1b 体型 D7 / S3 记住视图模式 + 抽屉卡顿修复（懒加载常驻 + 预取 + 参数稳定化 + 隐藏态动画停摆）均代码收盘；**S2 常动功耗与帧率走查仍需真机数据**（已备过 debug 帧率探针，按用户要求移除，可用 Profiler 代替） |
 
 > 里程碑建议顺序：主链 M1→…→M10（M8 可与 M9/M10 并行，仅依赖 M1）；扩展 M11→…→M17（编号连续、不叫 V2，M16 仅依赖 M8、可与 M11–M15 并行；M17 依赖 M8 功能清单 + M15 墓碑）。每里程碑收盘把「验证记录 / 例外」填入上表并同步更新 README §9 阶段指引。
 

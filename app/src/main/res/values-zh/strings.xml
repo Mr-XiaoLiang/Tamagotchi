@@ -126,6 +126,10 @@
     <string name="replay_title">在你离开的这段时间…</string>
     <string name="review_online_title">本次动态</string>
 
+    <!-- 跨会话里程碑统计（doc/04 §3.3） -->
+    <string name="milestone_title">里程碑</string>
+    <string name="milestone_line">共处 %1$d 天 · 喂过 %2$d 次 · 玩过 %3$d 次</string>
+
     <!-- M14 宠物便条（doc/04 §4/§5、doc/09 §5.4） -->
     <string name="note_title">宠物便条</string>
     <string name="note_offline">你离开了 %1$s——%2$s</string>

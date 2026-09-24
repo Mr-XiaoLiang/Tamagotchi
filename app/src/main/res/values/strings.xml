@@ -126,6 +126,10 @@
     <string name="replay_title">While you were away…</string>
     <string name="review_online_title">This session</string>
 
+    <!-- Milestone stats, cross-session (doc/04 §3.3) -->
+    <string name="milestone_title">Milestones</string>
+    <string name="milestone_line">Together %1$d days · fed %2$d times · played %3$d times</string>
+
     <!-- M14 Pet note (doc/04 §4/§5, doc/09 §5.4) -->
     <string name="note_title">Pet Note</string>
     <string name="note_offline">You were away for %1$s — %2$s</string>

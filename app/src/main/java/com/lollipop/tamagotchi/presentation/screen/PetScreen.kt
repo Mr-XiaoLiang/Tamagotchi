@@ -117,6 +117,7 @@ import kotlin.math.max
 import com.lollipop.tamagotchi.core.attribute.AttributeId
 import com.lollipop.tamagotchi.core.attribute.AttributeRegistry
 import com.lollipop.tamagotchi.data.sprite.SpriteRepository
+import com.lollipop.tamagotchi.domain.model.Milestones
 import com.lollipop.tamagotchi.domain.model.PetProfile
 import com.lollipop.tamagotchi.presentation.boot.BootStage
 import com.lollipop.tamagotchi.presentation.boot.ShellBridge
@@ -1163,6 +1164,8 @@ private fun ColumnScope.StatusPanelBody(
                     onClick = null,
                 )
             }
+            // doc/04 §3.3：跨会话里程碑统计（SP 整数计数，非日志）—— 首版文案
+            MilestoneCard(profile.milestones)
             // M14：宠物便条卡（离线开场 + 本次在线陪伴），见 doc/04 §4/§5。
             if (sessionLog != null) {
                 val note = NoteGenerator.generate(
@@ -1237,6 +1240,34 @@ private fun PetNoteCard(note: PetNote) {
     ) {
         Text(
             text = text,
+            color = ColorToken.Text2,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            lineHeight = 17.sp,
+        )
+    }
+}
+
+/**
+ * 里程碑统计卡（doc/04 §3.3 首版）。
+ *
+ * 跨会话累计只能走 SP 计数（日志是内存态、不持久化），因此**天数由 settle 推进**（见
+ * `SettleEngine.daysTogether`，按日历日、取 max 保证幂等），其余计数在动作成功时 +1。
+ */
+@Composable
+private fun MilestoneCard(m: Milestones) {
+    RoundListSpacer()
+    PanelTitle(stringResource(R.string.milestone_title))
+    RoundListSpacer()
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(ColorToken.Accent.copy(alpha = 0.10f))
+            .padding(12.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.milestone_line, m.daysTogether, m.feed, m.play),
             color = ColorToken.Text2,
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
