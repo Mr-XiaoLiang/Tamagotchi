@@ -13,8 +13,8 @@ android {
         applicationId = "com.lollipop.tamagotchi"
         minSdk = 30
         targetSdk = 37
-        versionCode = 1_02_00
-        versionName = "1.2.0"
+        versionCode = 2_00_00
+        versionName = "2.0.0"
 
     }
 
